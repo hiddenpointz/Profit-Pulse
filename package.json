@@ -1,0 +1,8 @@
+{
+  "name": "uedp-business-pulse",
+  "version": "1.0.0",
+  "description": "UEDP v5 Business Coherence Engine — G S Ramesh Kumar",
+  "scripts": { "dev": "vercel dev", "deploy": "vercel --prod" },
+  "engines": { "node": ">=18" },
+  "devDependencies": { "vercel": "^37.0.0" }
+}
