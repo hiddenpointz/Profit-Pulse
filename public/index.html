@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>UEDP Business Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090f;--bg2:#0d1018;--bg3:#131720;--bg4:#1a2030;
+  --border:#1e2840;--border2:#28344a;
+  --blue:#2d7fd4;--blue2:#5aacf0;--blue3:#0a2a50;
+  --amber:#d4900a;--amber2:#f5b830;--amber3:#3a2200;
+  --red:#c03030;--red2:#f07070;--red3:#280808;
+  --green:#1a8850;--green2:#40d080;--green3:#062018;
+  --cyan:#00b8b0;--cyan2:#40d8d0;
+  --text:#c8d4e8;--text2:#5a7098;--text3:#2a3858;
+  --mono:'IBM Plex Mono',monospace;
+  --cond:'Barlow Condensed',sans-serif;
+  --sans:'Barlow',sans-serif;
+  --oc:36.79%;/* Ω_crit % position on scale */
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(45,127,212,.04) 0%,transparent 60%),
+                   radial-gradient(ellipse at 80% 100%,rgba(26,136,80,.03) 0%,transparent 60%);}
+
+/* ── TOP BAR ─────────────────────────────────────────── */
+.bar{height:50px;background:var(--bg2);border-bottom:1px solid var(--border);
+     display:flex;align-items:center;gap:14px;padding:0 24px;position:sticky;top:0;z-index:100;
+     box-shadow:0 2px 20px rgba(0,0,0,.5);}
+.bar-logo{font-family:var(--cond);font-size:18px;font-weight:900;letter-spacing:3px;color:var(--blue2);}
+.bar-logo em{color:var(--amber2);font-style:normal;}
+.bar-sub{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.5px;}
+.bar-date{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--text2);}
+.compute-btn{
+  background:linear-gradient(135deg,#1a4a80,var(--blue));color:#fff;
+  border:none;border-radius:5px;padding:8px 18px;
+  font-family:var(--cond);font-size:13px;font-weight:700;letter-spacing:1.5px;
+  cursor:pointer;transition:.2s;box-shadow:0 2px 12px rgba(45,127,212,.4);
+}
+.compute-btn:hover{background:var(--blue2);box-shadow:0 4px 20px rgba(90,172,240,.4);}
+.compute-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* ── PAGE LAYOUT ─────────────────────────────────────── */
+.page{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 50px);}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:0 0 40px;}
+.panel{overflow-y:auto;padding:20px;}
+@media(max-width:860px){.page{grid-template-columns:1fr;}.sidebar{border-right:none;border-bottom:1px solid var(--border);max-height:60vh;}}
+
+/* ── SIDEBAR ─────────────────────────────────────────── */
+.sb-section{padding:16px 16px 0;}
+.sb-title{font-family:var(--cond);font-size:10px;font-weight:700;letter-spacing:2px;
+          text-transform:uppercase;color:var(--blue);border-bottom:1px solid var(--border);
+          padding-bottom:6px;margin-bottom:12px;}
+.field{margin-bottom:10px;}
+.field label{display:block;font-family:var(--mono);font-size:9px;font-weight:500;
+             color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;}
+.field input,.field select{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:4px;padding:7px 10px;color:var(--text);
+  font-family:var(--mono);font-size:11px;transition:.15s;
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(45,127,212,.15);}
+.field input[type=range]{padding:2px 0;height:20px;cursor:pointer;accent-color:var(--blue);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.hint{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px;line-height:1.5;}
+
+/* ── HOURLY TABLE (sidebar) ──────────────────────────── */
+.hr-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px;}
+.hr-table thead th{
+  font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.5px;padding:5px 4px;border-bottom:1px solid var(--border);text-align:left;
+}
+.hr-table tbody td{padding:2px 2px;border-bottom:1px solid rgba(30,40,64,.5);}
+.hr-table tbody td input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  border-radius:3px;padding:5px 6px;color:var(--text);font-family:var(--mono);font-size:10px;
+  text-align:right;
+}
+.hr-table tbody td input:focus{outline:none;border-color:var(--amber);}
+.hr-slot{font-family:var(--mono);font-size:9px;color:var(--text2);padding:5px 4px;white-space:nowrap;}
+.hr-bar{width:44px;}
+.hr-bwrap{height:5px;background:rgba(255,255,255,.04);border-radius:3px;overflow:hidden;}
+.hr-bfill{height:100%;border-radius:3px;transition:width .3s;}
+
+/* ── MIX TABLE (sidebar) ─────────────────────────────── */
+.mx-table{width:100%;border-collapse:collapse;font-size:11px;}
+.mx-table thead th{
+  font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.5px;padding:5px 4px;border-bottom:1px solid var(--border);text-align:left;
+}
+.mx-table tbody td{padding:2px 2px;border-bottom:1px solid rgba(30,40,64,.5);}
+.mx-table tbody td input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  border-radius:3px;padding:5px 6px;color:var(--text);font-family:var(--mono);font-size:10px;
+}
+.mx-table tbody td input:focus{outline:none;border-color:var(--amber);}
+
+/* ── OMEGA HERO ──────────────────────────────────────── */
+.omega-card{
+  background:linear-gradient(135deg,#070a12,#0d1220);
+  border:1px solid var(--border);border-radius:10px;padding:24px;margin-bottom:16px;
+  position:relative;overflow:hidden;
+}
+.omega-card::before{content:'';position:absolute;top:-60px;right:-60px;
+  width:200px;height:200px;background:radial-gradient(circle,rgba(45,127,212,.08) 0%,transparent 70%);pointer-events:none;}
+.omega-row{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:16px;}
+.omega-num{font-family:var(--mono);font-size:56px;font-weight:600;line-height:1;letter-spacing:-2px;}
+.omega-num.stable{color:var(--green2);}
+.omega-num.stressed{color:var(--amber2);}
+.omega-num.critical{color:var(--red2);}
+.omega-state{font-family:var(--cond);font-size:20px;font-weight:800;letter-spacing:1px;margin-bottom:4px;}
+.omega-state.stable{color:var(--green2);}
+.omega-state.stressed{color:var(--amber2);}
+.omega-state.critical{color:var(--red2);}
+.omega-meaning{font-size:12px;color:var(--text2);line-height:1.65;max-width:500px;}
+.omega-bar{position:relative;height:12px;border-radius:6px;margin:8px 0 5px;
+  background:linear-gradient(90deg,var(--red) 0%,var(--amber) 32%,#606000 52%,var(--green) 78%);}
+.omega-marker{position:absolute;top:-4px;width:4px;height:20px;background:#fff;
+  border-radius:2px;transform:translateX(-50%);box-shadow:0 0 8px rgba(255,255,255,.5);transition:left .5s;}
+.crit-vline{position:absolute;left:var(--oc);top:-4px;height:20px;border-left:2px dashed rgba(220,70,70,.6);}
+.crit-tick{position:absolute;left:var(--oc);top:-14px;font-family:var(--mono);font-size:8px;
+           color:var(--red2);transform:translateX(-50%);white-space:nowrap;}
+.omega-labs{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--text3);}
+
+/* ── KPI GRID ────────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
+.kpi{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:12px 13px;}
+.kpi-lbl{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;}
+.kpi-val{font-family:var(--mono);font-size:20px;font-weight:500;line-height:1;}
+.kpi-val.g{color:var(--green2);} .kpi-val.w{color:var(--amber2);} .kpi-val.b{color:var(--red2);} .kpi-val.n{color:var(--blue2);}
+.kpi-sub{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px;}
+
+/* ── SECTION HEADINGS ────────────────────────────────── */
+.sh{font-family:var(--cond);font-size:11px;font-weight:700;text-transform:uppercase;
+    letter-spacing:2px;color:var(--blue);border-left:3px solid var(--blue);
+    padding-left:10px;margin:20px 0 12px;}
+.sh:first-child{margin-top:0;}
+
+/* ── SUB-SCORE ROW ───────────────────────────────────── */
+.ss-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}
+.ss{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:12px;text-align:center;}
+.ss-lbl{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;}
+.ss-val{font-family:var(--mono);font-size:22px;font-weight:500;}
+.ss-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.05);margin-top:6px;overflow:hidden;}
+.ss-fill{height:100%;border-radius:2px;transition:width .4s;}
+.ss-name{font-size:9px;color:var(--text3);margin-top:3px;}
+
+/* ── A/T BANNER ──────────────────────────────────────── */
+.at-banner{border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:16px;margin-bottom:16px;}
+.at-banner.ana{background:var(--green3);border:1px solid var(--green);}
+.at-banner.tha{background:var(--red3);border:1px solid var(--red);}
+.at-num{font-family:var(--mono);font-size:32px;font-weight:500;flex-shrink:0;}
+.at-banner.ana .at-num{color:var(--green2);}
+.at-banner.tha .at-num{color:var(--red2);}
+.at-lbl{font-family:var(--cond);font-size:16px;font-weight:700;margin-bottom:3px;}
+.at-banner.ana .at-lbl{color:var(--green2);}
+.at-banner.tha .at-lbl{color:var(--red2);}
+.at-desc{font-size:11px;color:var(--text2);line-height:1.5;}
+
+/* ── ALERTS ──────────────────────────────────────────── */
+.alert-list{display:flex;flex-direction:column;gap:10px;}
+.alert{border-radius:7px;padding:12px 14px;border-left:4px solid;display:flex;gap:12px;}
+.alert.critical{background:var(--red3);border-color:var(--red2);}
+.alert.warning{background:var(--amber3);border-color:var(--amber2);}
+.alert.ok{background:var(--green3);border-color:var(--green2);}
+.alert-ico{font-size:16px;flex-shrink:0;line-height:1.3;}
+.alert-title{font-family:var(--cond);font-size:13px;font-weight:700;letter-spacing:.3px;margin-bottom:3px;}
+.alert.critical .alert-title{color:var(--red2);}
+.alert.warning .alert-title{color:var(--amber2);}
+.alert.ok .alert-title{color:var(--green2);}
+.alert-detail{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:5px;}
+.alert-action{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:3px;display:inline-block;}
+.alert.critical .alert-action{background:rgba(240,112,112,.12);color:var(--red2);}
+.alert.warning .alert-action{background:rgba(245,184,48,.12);color:var(--amber2);}
+.alert.ok .alert-action{background:rgba(64,208,128,.12);color:var(--green2);}
+.alert-cat{font-family:var(--mono);font-size:8px;color:var(--text3);letter-spacing:.5px;margin-bottom:2px;}
+
+/* ── P&L PANEL ───────────────────────────────────────── */
+.pl-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.pl-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+.pl-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);}
+.pl-row:last-child{border-bottom:none;}
+.pl-lbl{font-size:11px;color:var(--text2);}
+.pl-val{font-family:var(--mono);font-size:12px;font-weight:500;}
+.pl-val.pos{color:var(--green2);} .pl-val.neg{color:var(--red2);} .pl-val.hi{color:var(--amber2);font-size:16px;}
+.pl-divider{height:1px;background:var(--border2);margin:6px 0;}
+.pl-total{display:flex;justify-content:space-between;align-items:center;padding:8px 0;}
+.pl-total-lbl{font-family:var(--cond);font-size:14px;font-weight:700;color:var(--text);}
+
+/* ── PIPELINE ────────────────────────────────────────── */
+.pipe-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.pipe-row{display:flex;align-items:center;gap:10px;}
+.pipe-lbl{font-family:var(--mono);font-size:10px;color:var(--text2);width:160px;flex-shrink:0;}
+.pipe-track{flex:1;height:7px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden;}
+.pipe-fill{height:100%;border-radius:4px;transition:width .4s;}
+.pipe-val{font-family:var(--mono);font-size:10px;color:var(--text2);width:50px;text-align:right;flex-shrink:0;}
+
+/* ── CHARTS ──────────────────────────────────────────── */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.chart-box{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:12px;}
+.chart-box canvas{width:100%;display:block;}
+@media(max-width:640px){.charts-row{grid-template-columns:1fr;}.pl-grid{grid-template-columns:1fr;}.ss-row{grid-template-columns:1fr;}}
+
+/* ── DIAGNOSTICS TABLE ───────────────────────────────── */
+.diag-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px;}
+.diag-table th{background:var(--bg3);color:var(--text3);font-family:var(--mono);font-size:8px;
+               text-transform:uppercase;letter-spacing:.6px;padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);}
+.diag-table td{padding:6px 10px;border-bottom:1px solid rgba(30,40,64,.5);font-family:var(--mono);font-size:11px;}
+
+/* ── PENALTY ROW ─────────────────────────────────────── */
+.pen-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.pen-lbl{font-size:11px;color:var(--text2);flex:1;}
+.pen-track{width:80px;height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;flex-shrink:0;}
+.pen-fill{height:100%;border-radius:3px;}
+.pen-val{font-family:var(--mono);font-size:10px;width:34px;text-align:right;flex-shrink:0;color:var(--text2);}
+
+/* ── EMPTY / LOADING ─────────────────────────────────── */
+.empty{text-align:center;padding:60px 20px;}
+.empty-icon{font-size:48px;opacity:.3;margin-bottom:14px;}
+.empty-text{font-size:13px;color:var(--text3);line-height:1.7;}
+.loading{text-align:center;padding:40px;font-family:var(--mono);font-size:11px;color:var(--blue2);animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:.4;}50%{opacity:1;}}
+.scroll-x{overflow-x:auto;}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div>
+    <div class="bar-logo">UEDP <em>PULSE</em></div>
+    <div class="bar-sub">BUSINESS COHERENCE ENGINE · G S RAMESH KUMAR · Ω_crit=1/e</div>
+  </div>
+  <div class="bar-date" id="barDate"></div>
+  <button class="compute-btn" id="computeBtn" onclick="compute()">▶ COMPUTE Ω</button>
+</div>
+
+<div class="page">
+
+  <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+  <div class="sidebar">
+
+    <!-- Workforce -->
+    <div class="sb-section">
+      <div class="sb-title">👥 Workforce</div>
+      <div class="grid2">
+        <div class="field"><label>Present</label><input type="number" id="empPresent" placeholder="18" min="0"></div>
+        <div class="field"><label>Total headcount</label><input type="number" id="empTotal" placeholder="22" min="1"></div>
+      </div>
+    </div>
+
+    <!-- Hourly productivity -->
+    <div class="sb-section">
+      <div class="sb-title">⏱ Hourly Output</div>
+      <div class="field">
+        <label>Unit of measure</label>
+        <input type="text" id="prodUnit" placeholder="units / tasks / kg" value="units">
+      </div>
+      <div class="scroll-x">
+        <table class="hr-table">
+          <thead><tr><th>Hour</th><th>Output</th><th>Target</th><th>Bar</th></tr></thead>
+          <tbody id="hrBody"></tbody>
+        </table>
+      </div>
+      <div class="hint">Enter each completed hour. Leave future hours blank.</div>
+    </div>
+
+    <!-- Financials -->
+    <div class="sb-section" style="margin-top:6px;">
+      <div class="sb-title">₹ Financials</div>
+      <div class="grid2">
+        <div class="field"><label>Running cost today ₹</label><input type="number" id="runCost" placeholder="45000" min="0"></div>
+        <div class="field"><label>Fixed overhead ₹/day</label><input type="number" id="fixedCost" placeholder="12000" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Output volume (units)</label><input type="number" id="outVol" placeholder="840" min="0"></div>
+        <div class="field"><label>Output value ₹</label><input type="number" id="outVal" placeholder="72000" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Daily revenue target ₹</label><input type="number" id="targetVal" placeholder="90000" min="0"></div>
+        <div class="field"><label>Capital deployed ₹</label><input type="number" id="capital" placeholder="200000" min="0"></div>
+      </div>
+    </div>
+
+    <!-- Product mix -->
+    <div class="sb-section" style="margin-top:6px;">
+      <div class="sb-title">📦 Product / Task Mix</div>
+      <div class="scroll-x">
+        <table class="mx-table">
+          <thead><tr><th>Name</th><th>Units</th><th>Unit ₹</th></tr></thead>
+          <tbody id="mxBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Orders & Sales -->
+    <div class="sb-section" style="margin-top:6px;">
+      <div class="sb-title">📋 Orders &amp; Sales</div>
+      <div class="grid2">
+        <div class="field"><label>Orders received</label><input type="number" id="ordRec" placeholder="5" min="0"></div>
+        <div class="field"><label>Orders confirmed</label><input type="number" id="ordCon" placeholder="3" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Time since received (hrs)</label><input type="number" id="timeRec" placeholder="4" min="0" step="0.5"></div>
+        <div class="field"><label>Avg time to confirm (hrs)</label><input type="number" id="timeCon" placeholder="1.5" min="0" step="0.5"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Payment lead time (days)</label><input type="number" id="payLead" placeholder="30" min="0"></div>
+        <div class="field"><label>Orders pending</label><input type="number" id="ordPend" placeholder="8" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Sales leads today</label><input type="number" id="saleLeads" placeholder="10" min="0"></div>
+        <div class="field"><label>Sales closed today</label><input type="number" id="saleClosed" placeholder="4" min="0"></div>
+      </div>
+    </div>
+
+    <!-- Hours elapsed -->
+    <div class="sb-section" style="margin-top:6px;padding-bottom:20px;">
+      <div class="sb-title">🕐 Hours Elapsed</div>
+      <div class="field">
+        <label>Working hours so far today</label>
+        <input type="range" id="hoursEl" min="1" max="10" value="8" oninput="updateHrsLabel()">
+        <div class="hint" id="hrsLabel">8 hours elapsed</div>
+      </div>
+    </div>
+
+  </div><!-- /sidebar -->
+
+  <!-- ═══════════════════ MAIN PANEL ═══════════════════ -->
+  <div class="panel" id="mainPanel">
+    <div class="empty">
+      <div class="empty-icon">⊕</div>
+      <div class="empty-text">Enter today's operational data in the sidebar<br>and press <strong style="color:var(--blue2)">▶ COMPUTE Ω</strong> to see:<br><br>
+        <span style="color:var(--green2)">①</span> UEDP Omega coherence score &nbsp;
+        <span style="color:var(--amber2)">②</span> P&amp;L snapshot &nbsp;
+        <span style="color:var(--blue2)">③</span> Profitability prediction &nbsp;
+        <span style="color:var(--red2)">④</span> Actionable alerts
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+'use strict';
+
+var OC = 1/Math.E;
+
+// ── Init ──────────────────────────────────────────────────────────────────
+var SLOTS = ['8–9am','9–10am','10–11am','11am–12pm','12–1pm','1–2pm','2–3pm','3–4pm','4–5pm','5–6pm'];
+
+window.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('barDate').textContent =
+    new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+
+  // Hourly table
+  var hrb = document.getElementById('hrBody');
+  SLOTS.forEach(function(s,i){
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="hr-slot">'+s+'</td>'+
+      '<td><input type="number" id="h'+i+'" min="0" placeholder="0" oninput="updateHBar('+i+')"></td>'+
+      '<td><input type="number" id="ht'+i+'" min="0" placeholder="—" style="width:48px;"></td>'+
+      '<td class="hr-bar"><div class="hr-bwrap"><div class="hr-bfill" id="hb'+i+'" style="width:0%"></div></div></td>';
+    hrb.appendChild(tr);
+  });
+
+  // Mix table
+  var mxb = document.getElementById('mxBody');
+  for(var i=0;i<6;i++){
+    var tr2=document.createElement('tr');
+    tr2.innerHTML=
+      '<td><input type="text" id="mn'+i+'" placeholder="Product '+(i+1)+'"></td>'+
+      '<td><input type="number" id="mv'+i+'" min="0" placeholder="0" style="width:54px;"></td>'+
+      '<td><input type="number" id="mp'+i+'" min="0" placeholder="0" step="0.01" style="width:56px;"></td>';
+    mxb.appendChild(tr2);
+  }
+  updateHrsLabel();
+});
+
+function updateHrsLabel(){
+  var h = document.getElementById('hoursEl').value;
+  document.getElementById('hrsLabel').textContent = h+' hour'+(h==1?'':'s')+' elapsed today';
+}
+
+function updateHBar(i){
+  var v=parseFloat(document.getElementById('h'+i).value)||0;
+  var t=parseFloat(document.getElementById('ht'+i).value)||0;
+  var el=document.getElementById('hb'+i); if(!el)return;
+  var p=t>0?Math.min(100,Math.round(v/t*100)):Math.min(100,v*5);
+  el.style.width=p+'%';
+  el.style.background=p>=90?'var(--green2)':p>=60?'var(--amber)':'var(--red2)';
+}
+
+// ── Collect ───────────────────────────────────────────────────────────────
+function collect(){
+  var hv=[],ht=[];
+  for(var i=0;i<SLOTS.length;i++){
+    var v=parseFloat(document.getElementById('h'+i).value);
+    var t=parseFloat(document.getElementById('ht'+i).value);
+    if(!isNaN(v)&&v>=0){hv.push(v); ht.push(isNaN(t)?0:t);}
+  }
+  var mix=[];
+  for(var j=0;j<6;j++){
+    var nm=(document.getElementById('mn'+j).value||'').trim();
+    var mv=parseFloat(document.getElementById('mv'+j).value)||0;
+    var mp=parseFloat(document.getElementById('mp'+j).value)||0;
+    if(nm&&mv>0)mix.push({name:nm,vol:mv,unitValue:mp});
+  }
+  return {
+    hourlyProd:hv, hourlyTargets:ht,
+    empPresent:parseFloat(document.getElementById('empPresent').value)||0,
+    empTotal:parseFloat(document.getElementById('empTotal').value)||1,
+    runningCost:parseFloat(document.getElementById('runCost').value)||0,
+    fixedCost:parseFloat(document.getElementById('fixedCost').value)||0,
+    capital:parseFloat(document.getElementById('capital').value)||0,
+    outputVol:parseFloat(document.getElementById('outVol').value)||0,
+    outputValue:parseFloat(document.getElementById('outVal').value)||0,
+    targetValue:parseFloat(document.getElementById('targetVal').value)||0,
+    ordersReceived:parseFloat(document.getElementById('ordRec').value)||0,
+    ordersConfirmed:parseFloat(document.getElementById('ordCon').value)||0,
+    timeToConfirmHrs:parseFloat(document.getElementById('timeCon').value)||2,
+    paymentLeadDays:parseFloat(document.getElementById('payLead').value)||30,
+    salesLeads:parseFloat(document.getElementById('saleLeads').value)||0,
+    salesClosed:parseFloat(document.getElementById('saleClosed').value)||0,
+    mixItems:mix,
+    hoursElapsed:parseFloat(document.getElementById('hoursEl').value)||8,
+    prodUnit:document.getElementById('prodUnit').value||'units',
+  };
+}
+
+// ── Compute ───────────────────────────────────────────────────────────────
+function compute(){
+  var btn=document.getElementById('computeBtn');
+  btn.disabled=true; btn.textContent='⏳ Computing…';
+  document.getElementById('mainPanel').innerHTML='<div class="loading">⏳ UEDP v5 protocol — BIC segmentation · Hybrinear · RSL modulation · Omega dynamics…</div>';
+
+  var data=collect();
+  if(!data.outputValue&&!data.runningCost&&!data.hourlyProd.length){
+    document.getElementById('mainPanel').innerHTML='<div class="empty"><div class="empty-icon">⊕</div><div class="empty-text">Please enter at least some data before computing.</div></div>';
+    btn.disabled=false; btn.textContent='▶ COMPUTE Ω'; return;
+  }
+
+  fetch('/api/compute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+  .then(function(r){
+    if(!r.ok)return r.json().then(function(e){throw new Error(e.error||'HTTP '+r.status);});
+    return r.json();
+  })
+  .then(function(resp){
+    btn.disabled=false; btn.textContent='▶ COMPUTE Ω';
+    if(resp.status!=='ok')throw new Error(resp.error||'Engine error');
+    render(resp.result, resp.alerts, data, resp.input_echo);
+  })
+  .catch(function(e){
+    btn.disabled=false; btn.textContent='▶ COMPUTE Ω';
+    document.getElementById('mainPanel').innerHTML=
+      '<div style="margin:20px;padding:16px;background:var(--red3);border:1px solid var(--red2);border-radius:7px;color:var(--red2);font-family:var(--mono);font-size:12px;">Error: '+esc(e.message)+'</div>';
+  });
+}
+
+// ── Render ────────────────────────────────────────────────────────────────
+function render(R, alerts, inp, echo){
+  var oc=R.omega>=0.65?'stable':R.omega>=OC?'stressed':'critical';
+  var stateLabel=R.omega>=0.70?'STABLE — Structured Dynamics':R.omega>=0.55?'STRESSED — Early Incoherence':R.omega>=OC?'NEAR-CRITICAL — Threshold Zone':'CRITICAL — Excessive Instability';
+  var meaning=R.omega>=0.70?'All operational systems coherent and self-organising above Ω_crit. Business in Structured Dynamics — generative mode.'
+    :R.omega>=0.55?'Early coordination loss detected. One or more operational dimensions are pulling Omega down. Monitor for progression.'
+    :R.omega>=OC?'Approaching Ω_crit = 1/e — the METP variational boundary. Any additional disruption may trigger a regime shift. Intervene now.'
+    :'System has crossed Ω_crit. The cost of waiting exceeds the cost of acting. Address the top alert immediately.';
+
+  var h='';
+
+  // ── 1. Omega Hero ────────────────────────────────────────────────────
+  h+='<div class="omega-card">';
+  h+='<div class="omega-row">';
+  h+='<div class="omega-num '+oc+'">'+R.omega+'</div>';
+  h+='<div><div class="omega-state '+oc+'">'+stateLabel+'</div>';
+  h+='<div class="omega-meaning">'+esc(meaning)+'</div></div>';
+  h+='</div>';
+  h+='<div class="omega-bar">';
+  h+='<div class="crit-tick">Ω_crit=1/e</div>';
+  h+='<div class="crit-vline"></div>';
+  h+='<div class="omega-marker" style="left:'+Math.round(R.omega*100)+'%"></div>';
+  h+='</div>';
+  h+='<div class="omega-labs"><span>0 — Chaos</span><span>0.368 (critical)</span><span>1.0 — Coherent</span></div>';
+  h+='</div>';
+
+  // ── KPIs ──────────────────────────────────────────────────────────────
+  h+='<div class="kpi-grid">';
+  h+=kpi('Ω_dynamics',R.omega,oc==='stable'?'g':oc==='stressed'?'w':'b','coherence score');
+  h+=kpi('Net Margin',R.netMargin+'%',R.netMargin>=15?'g':R.netMargin>=0?'w':'b','today so far');
+  h+=kpi('Net Profit','₹'+fmt(R.netProfit),R.netProfit>=0?'g':'b','after all costs');
+  h+=kpi('Attendance',R.attendance+'%',R.attendance>=85?'g':R.attendance>=70?'w':'b',inp.empPresent+' of '+inp.empTotal);
+  h+=kpi('Output Rate',R.ratePerHr!==null?R.ratePerHr+'/hr':'—','n',echo.prodUnit+' per hour');
+  h+=kpi('EOD Projection',R.projEOD!==null?R.projEOD+'':'—',R.projEOD&&R.projEOD>inp.outputVol?'g':'w',echo.prodUnit+' at this rate');
+  h+=kpi('A/T Ratio',R.AT>999?'>999':R.AT,R.isAnados?'g':'b',R.isAnados?'Anados ↑':'Thanatos ↓');
+  h+=kpi('I_seq',R.Iseq,R.Iseq<0.3?'g':R.Iseq<0.7?'w':'b','instability index');
+  h+='</div>';
+
+  // ── Sub-scores ────────────────────────────────────────────────────────
+  h+='<div class="ss-row">';
+  h+=ss('Workforce',R.wfScore,'Attendance + Throughput');
+  h+=ss('Financial',R.finScore,'Revenue vs Cost');
+  h+=ss('Order/Sales',R.ordScore,'Pipeline Health');
+  h+='</div>';
+
+  // ── A/T Banner ────────────────────────────────────────────────────────
+  h+='<div class="at-banner '+(R.isAnados?'ana':'tha')+'">';
+  h+='<div class="at-num">'+(R.AT>999?'>999':R.AT)+'</div>';
+  h+='<div><div class="at-lbl">'+(R.isAnados?'⬆ ANADOS — Generative Growth Mode':'⬇ THANATOS — Depletion / Collapse Risk')+'</div>';
+  h+='<div class="at-desc">'+esc(R.isAnados?'The ratio of constructive energy (Υ·Φ) to depleting forces (I_seq·Γ) is positive. Business dynamics are generative. Growth is the path of least resistance.':'Depleting forces exceed constructive energy. The system spends more coherence than it generates. Structural review needed.')+'</div>';
+  h+='</div></div>';
+
+  // ── Profitability Prediction ──────────────────────────────────────────
+  var predAlert = alerts.find(function(a){return a.category==='PREDICTION';});
+  if(predAlert){
+    h+='<div class="sh" style="margin-top:0;">③ Profitability Prediction</div>';
+    h+='<div class="alert '+predAlert.severity+'" style="margin-bottom:16px;">';
+    h+='<div class="alert-ico">'+(predAlert.severity==='ok'?'✅':predAlert.severity==='critical'?'❌':'⚠')+'</div>';
+    h+='<div><div class="alert-title">'+esc(predAlert.title)+'</div>';
+    h+='<div class="alert-detail">'+esc(predAlert.detail)+'</div>';
+    h+='<div class="alert-action">→ '+esc(predAlert.action)+'</div>';
+    h+='</div></div>';
+  }
+
+  // ── Charts ────────────────────────────────────────────────────────────
+  if(R.hv&&R.hv.length>=2){
+    h+='<div class="sh">Hourly Output · Omega Timeline</div>';
+    h+='<div class="charts-row">';
+    h+='<div class="chart-box"><canvas id="cvHour" height="160"></canvas></div>';
+    h+='<div class="chart-box"><canvas id="cvOmega" height="160"></canvas></div>';
+    h+='</div>';
+  }
+
+  // ── P&L ──────────────────────────────────────────────────────────────
+  h+='<div class="sh">② P&amp;L Snapshot</div>';
+  h+='<div class="pl-grid">';
+  // Left col: income statement
+  h+='<div class="pl-card">';
+  h+=plRow('Output Value (Revenue)','₹'+fmt(inp.outputValue),'pos');
+  h+=plRow('Variable Running Cost','−₹'+fmt(inp.runningCost),'neg');
+  h+='<div class="pl-divider"></div>';
+  h+=plRow('Gross Profit','₹'+fmt(R.grossProfit),R.grossProfit>=0?'pos':'neg');
+  h+=plRow('Gross Margin',R.grossMargin+'%',R.grossMargin>=20?'pos':R.grossMargin>=0?'':'neg');
+  h+=plRow('Fixed Overhead','−₹'+fmt(inp.fixedCost),'neg');
+  h+='<div class="pl-divider"></div>';
+  h+='<div class="pl-total">';
+  h+='<span class="pl-total-lbl">Net Profit (Today)</span>';
+  h+='<span class="pl-val '+(R.netProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(R.netProfit)+'</span>';
+  h+='</div>';
+  h+=plRow('Net Margin',R.netMargin+'%',R.netMargin>=10?'pos':R.netMargin>=0?'':'neg');
+  if(R.capReturn!==null) h+=plRow('Return on Capital',R.capReturn+'%',R.capReturn>=5?'pos':'');
+  h+='</div>';
+  // Right col: unit economics
+  h+='<div class="pl-card">';
+  if(R.costPerUnit!==null) h+=plRow('Cost per Unit','₹'+R.costPerUnit,'');
+  if(R.revPerUnit!==null)  h+=plRow('Revenue per Unit','₹'+R.revPerUnit,R.revPerUnit>R.costPerUnit?'pos':'neg');
+  if(R.ratePerHr!==null)   h+=plRow('Units per Hour',R.ratePerHr+' '+echo.prodUnit,'');
+  if(R.projEOD!==null)     h+=plRow('Projected EOD',R.projEOD+' '+echo.prodUnit,'');
+  if(R.targetGap!==null)   h+=plRow(R.targetGap>0?'Target Gap':'Exceeded Target by','₹'+fmt(Math.abs(R.targetGap)),R.targetGap<=0?'pos':'neg');
+  if(inp.capital>0)         h+=plRow('Capital Deployed','₹'+fmt(inp.capital),'');
+  h+='<div class="pl-divider"></div>';
+  h+=plRow('Break-even Revenue','₹'+fmt(R.breakEven),'');
+  // Mix revenue
+  if(echo.mixItems&&echo.mixItems.length){
+    h+='<div class="pl-divider"></div>';
+    echo.mixItems.forEach(function(m){
+      h+=plRow(m.name+' ('+m.vol+'u)','₹'+fmt(m.vol*m.unitValue),'');
+    });
+    h+=plRow('Mix Total','₹'+fmt(R.mixRevenue),R.mixRevenue>0?'pos':'');
+  }
+  h+='</div>';
+  h+='</div>';
+
+  // ── Order/Sales Pipeline ──────────────────────────────────────────────
+  if(inp.ordersReceived>0||inp.salesLeads>0){
+    h+='<div class="sh">Order &amp; Sales Pipeline</div>';
+    h+='<div class="pipe-list">';
+    if(inp.ordersReceived>0){
+      var cr=inp.ordersReceived>0?Math.round(inp.ordersConfirmed/inp.ordersReceived*100):100;
+      h+=pipeBar('Order Confirm Rate',cr,cr>=70?'var(--green2)':cr>=50?'var(--amber)':'var(--red2)',cr+'%');
+    }
+    if(inp.salesLeads>0){
+      var scr=Math.round(inp.salesClosed/inp.salesLeads*100);
+      h+=pipeBar('Sales Conversion',scr,scr>=50?'var(--green2)':scr>=30?'var(--amber)':'var(--red2)',scr+'%');
+    }
+    if(inp.paymentLeadDays>0){
+      var ps=Math.min(100,Math.round(30/inp.paymentLeadDays*100));
+      h+=pipeBar('Payment Speed (30d target)',ps,ps>=70?'var(--green2)':'var(--amber)',inp.paymentLeadDays+'d lead');
+    }
+    h+='</div>';
+    h+='<div class="kpi-grid">';
+    if(inp.ordersReceived>0){h+=kpi('Received',inp.ordersReceived,'n','orders today');h+=kpi('Confirmed',inp.ordersConfirmed,inp.ordersConfirmed===inp.ordersReceived?'g':'w','orders');}
+    if(inp.salesLeads>0){h+=kpi('Leads',inp.salesLeads,'n','today');h+=kpi('Closed',inp.salesClosed,inp.salesClosed>0?'g':'w','sales');}
+    if(inp.paymentLeadDays>0)h+=kpi('Pay Lead',inp.paymentLeadDays+'d',inp.paymentLeadDays<=30?'g':inp.paymentLeadDays<=60?'w':'b','expected');
+    h+='</div>';
+  }
+
+  // ── Alerts ────────────────────────────────────────────────────────────
+  var mainAlerts=alerts.filter(function(a){return a.category!=='PREDICTION';});
+  if(mainAlerts.length){
+    h+='<div class="sh">④ Actionable Alerts</div>';
+    h+='<div class="alert-list">';
+    mainAlerts.forEach(function(a){
+      var ico=a.severity==='critical'?'⚠':a.severity==='ok'?'✅':'⚡';
+      h+='<div class="alert '+a.severity+'">';
+      h+='<div class="alert-ico">'+ico+'</div>';
+      h+='<div><div class="alert-cat">'+esc(a.category)+'</div>';
+      h+='<div class="alert-title">'+esc(a.title)+'</div>';
+      h+='<div class="alert-detail">'+esc(a.detail)+'</div>';
+      h+='<div class="alert-action">→ '+esc(a.action)+'</div>';
+      h+='</div></div>';
+    });
+    h+='</div>';
+  }
+
+  // ── UEDP Diagnostics ─────────────────────────────────────────────────
+  h+='<div class="sh" style="margin-top:20px;">UEDP v5 Protocol Diagnostics</div>';
+  h+='<div class="kpi-grid">';
+  h+=kpi('Ω_dynamics',R.omega,R.omega>=OC?'g':'b','coherence');
+  h+=kpi('Ω_crit','0.3679','n','1/e · METP');
+  h+=kpi('I_seq',R.Iseq,R.Iseq<0.3?'g':R.Iseq<0.7?'w':'b','instability');
+  h+=kpi('Φ (tension)',R.Phi,R.Phi>0?'g':'b','emergence');
+  h+=kpi('Γ (burden)',R.Gamma,'n','cost index');
+  h+=kpi('Ψ (psi)',R.psi,'n','capability');
+  h+=kpi('R_mod',R.Rmod,R.Rmod>0?'g':'b','RSL direction');
+  h+=kpi('Penalty',R.penalty,R.penalty<0.3?'g':R.penalty<0.6?'w':'b','total weight');
+  h+='</div>';
+  // Penalty breakdown
+  h+='<div style="margin-top:10px;">';
+  R.penalties.forEach(function(p){
+    var raw=Math.round(p.raw*100);
+    var col=raw>60?'var(--red2)':raw>35?'var(--amber2)':'var(--green2)';
+    h+='<div class="pen-row">';
+    h+='<div class="pen-lbl">'+esc(p.label)+'</div>';
+    h+='<div class="pen-track"><div class="pen-fill" style="width:'+raw+'%;background:'+col+'"></div></div>';
+    h+='<div class="pen-val">'+raw+'%</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:10px;">UEDP v5 — G S Ramesh Kumar · DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4 · Ω_crit = 1/e ≈ 0.36788 (METP variational principle)</div>';
+
+  document.getElementById('mainPanel').innerHTML=h;
+
+  // Charts
+  setTimeout(function(){
+    if(R.hv&&R.hv.length>=2){
+      drawHour(R.hv,inp.hourlyTargets||[],echo.prodUnit);
+      drawOmega(R.hv);
+    }
+  },60);
+}
+
+// ── HTML helpers ──────────────────────────────────────────────────────────
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(v){
+  if(typeof v!=='number'||isNaN(v))return'—';
+  if(Math.abs(v)>=1e7)return(v/1e7).toFixed(2)+'Cr';
+  if(Math.abs(v)>=1e5)return(v/1e5).toFixed(2)+'L';
+  if(Math.abs(v)>=1e3)return(v/1e3).toFixed(1)+'K';
+  return Math.round(v)+'';
+}
+function kpi(lbl,val,cls,sub){
+  return'<div class="kpi"><div class="kpi-lbl">'+lbl+'</div>'+
+    '<div class="kpi-val '+(cls||'n')+'">'+val+'</div>'+
+    (sub?'<div class="kpi-sub">'+sub+'</div>':'')+
+    '</div>';
+}
+function ss(lbl,val,name){
+  var col=val>=70?'var(--green2)':val>=50?'var(--amber2)':'var(--red2)';
+  return'<div class="ss"><div class="ss-lbl">'+lbl+'</div>'+
+    '<div class="ss-val" style="color:'+col+'">'+val+'%</div>'+
+    '<div class="ss-bar"><div class="ss-fill" style="width:'+val+'%;background:'+col+'"></div></div>'+
+    '<div class="ss-name">'+name+'</div></div>';
+}
+function plRow(lbl,val,cls){
+  return'<div class="pl-row"><span class="pl-lbl">'+lbl+'</span><span class="pl-val '+(cls||'')+'">'+val+'</span></div>';
+}
+function pipeBar(lbl,pct,color,valLbl){
+  return'<div class="pipe-row">'+
+    '<div class="pipe-lbl">'+lbl+'</div>'+
+    '<div class="pipe-track"><div class="pipe-fill" style="width:'+Math.min(100,pct)+'%;background:'+color+'"></div></div>'+
+    '<div class="pipe-val">'+valLbl+'</div></div>';
+}
+
+// ── Canvas charts ─────────────────────────────────────────────────────────
+function drawHour(hv,ht,unit){
+  var cv=document.getElementById('cvHour');if(!cv)return;
+  var dpr=window.devicePixelRatio||1;
+  cv.width=cv.parentElement.clientWidth*dpr; cv.height=160*dpr; cv.style.height='160px';
+  var ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
+  var W=cv.parentElement.clientWidth, H=160;
+  ctx.fillStyle='#0d1018'; ctx.fillRect(0,0,W,H);
+  var pd={t:20,b:24,l:36,r:8}, cw=W-pd.l-pd.r, ch=H-pd.t-pd.b, N=hv.length;
+  var nonZeroT=ht.filter(function(t){return t>0;});
+  var mx=Math.max.apply(null,hv.concat(nonZeroT))||1;
+  function px(i){return pd.l+i*(cw/(N-1||1));}
+  function py(v){return pd.t+ch-(v/mx)*ch;}
+  // Grid
+  ctx.strokeStyle='#1e2840'; ctx.lineWidth=0.5;
+  [0.5,1].forEach(function(f){
+    ctx.beginPath();ctx.moveTo(pd.l,py(mx*f));ctx.lineTo(pd.l+cw,py(mx*f));ctx.stroke();
+    ctx.fillStyle='#2a3858';ctx.font='7px IBM Plex Mono';ctx.textAlign='right';
+    ctx.fillText(Math.round(mx*f),pd.l-3,py(mx*f)+3);
+  });
+  // Target line
+  if(nonZeroT.length){
+    var avgT=nonZeroT.reduce(function(s,v){return s+v;},0)/nonZeroT.length;
+    ctx.strokeStyle='rgba(212,144,10,.5)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(pd.l,py(avgT));ctx.lineTo(pd.l+cw,py(avgT));ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#d4900a';ctx.font='7px IBM Plex Mono';ctx.textAlign='left';
+    ctx.fillText('target',pd.l+3,py(avgT)-3);
+  }
+  // Bars
+  var bw=Math.max(4,cw/N-5);
+  hv.forEach(function(v,i){
+    var x=pd.l+i*(cw/(N-1||1))-bw/2, barH=(v/mx)*ch;
+    var tgt=nonZeroT[i]||0;
+    var col=tgt?v/tgt>=0.9?'rgba(26,136,80,.85)':v/tgt>=0.6?'rgba(212,144,10,.85)':'rgba(192,48,48,.85)':'rgba(45,127,212,.7)';
+    ctx.fillStyle=col;ctx.fillRect(x,py(v),bw,barH);
+  });
+  // Line
+  ctx.strokeStyle='#5aacf0';ctx.lineWidth=1.5;
+  ctx.beginPath();hv.forEach(function(v,i){i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});ctx.stroke();
+  hv.forEach(function(v,i){
+    ctx.beginPath();ctx.arc(px(i),py(v),3,0,2*Math.PI);
+    ctx.fillStyle='#2d7fd4';ctx.fill();
+    ctx.fillStyle='#5a7098';ctx.font='7px IBM Plex Mono';ctx.textAlign='center';
+    ctx.fillText(SLOTS[i].split('–')[0],px(i),H-4);
+  });
+  ctx.fillStyle='#2d7fd4';ctx.font='bold 8px IBM Plex Mono';ctx.textAlign='left';
+  ctx.fillText('Output per hour ('+unit+')',pd.l,pd.t-4);
+}
+
+function drawOmega(hv){
+  var cv=document.getElementById('cvOmega');if(!cv||hv.length<2)return;
+  var dpr=window.devicePixelRatio||1;
+  cv.width=cv.parentElement.clientWidth*dpr; cv.height=160*dpr; cv.style.height='160px';
+  var ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
+  var W=cv.parentElement.clientWidth,H=160;
+  ctx.fillStyle='#0d1018';ctx.fillRect(0,0,W,H);
+  var pd={t:20,b:24,l:40,r:8}, cw=W-pd.l-pd.r, ch=H-pd.t-pd.b, N=hv.length;
+  // Running omega at each prefix
+  var oms=[];
+  for(var t=1;t<=N;t++){
+    var sub=hv.slice(0,t), m=sub.reduce(function(s,v){return s+v;},0)/sub.length;
+    var vv=sub.reduce(function(s,v){return s+(v-m)*(v-m);},0)/sub.length;
+    var sp=0;for(var i=1;i<sub.length;i++)sp=Math.max(sp,Math.abs(sub[i]-sub[i-1]));
+    var nv=Math.min(1,vv/(m*m+1e-9)), ns=Math.min(1,m>0?sp/m/3:0);
+    var ps=Math.min(1,m/(m+1));
+    oms.push(Math.min(1,ps*Math.exp(-(nv*0.5+ns*0.5))));
+  }
+  function px(i){return pd.l+i*(cw/(N-1||1));}
+  function py(v){return pd.t+ch-v*ch;}
+  // Crit line
+  ctx.strokeStyle='rgba(192,48,48,.5)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(pd.l,py(OC));ctx.lineTo(pd.l+cw,py(OC));ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#c03030';ctx.font='7px IBM Plex Mono';ctx.textAlign='left';
+  ctx.fillText('Ω_crit=1/e',pd.l+3,py(OC)-3);
+  // Fill
+  ctx.beginPath();
+  oms.forEach(function(v,i){i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});
+  ctx.lineTo(px(N-1),py(0));ctx.lineTo(px(0),py(0));ctx.closePath();
+  ctx.fillStyle='rgba(45,127,212,.07)';ctx.fill();
+  // Curve
+  ctx.strokeStyle='#2d7fd4';ctx.lineWidth=2;
+  ctx.beginPath();oms.forEach(function(v,i){i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});ctx.stroke();
+  oms.forEach(function(v,i){
+    ctx.beginPath();ctx.arc(px(i),py(v),3,0,2*Math.PI);
+    ctx.fillStyle=v>=OC?'#1a8850':'#c03030';ctx.fill();
+    ctx.fillStyle='#5a7098';ctx.font='7px IBM Plex Mono';ctx.textAlign='center';
+    ctx.fillText(SLOTS[i].split('–')[0],px(i),H-4);
+  });
+  // Y axis
+  ctx.fillStyle='#2a3858';ctx.font='7px IBM Plex Mono';ctx.textAlign='right';
+  ctx.fillText('1.0',pd.l-3,pd.t+5);ctx.fillText('0',pd.l-3,pd.t+ch);
+  ctx.fillText(Math.round(OC*1000)/1000,pd.l-3,py(OC)+3);
+  ctx.fillStyle='#2d7fd4';ctx.font='bold 8px IBM Plex Mono';ctx.textAlign='left';
+  ctx.fillText('Running Ω timeline',pd.l,pd.t-4);
+}
+
+// Keyboard shortcut
+document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='Enter')compute();});
+</script>
+</body>
+</html>
