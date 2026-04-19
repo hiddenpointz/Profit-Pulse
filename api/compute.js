@@ -216,12 +216,22 @@ const computeOmegaCore = (inp, W) => {
   const omega=clamp(psi*Math.exp(-penalty));
 
   // ── UEDP derived ─────────────────────────────────────────────────────
+  // Iseq measures directional-reversal chaos in hourly production sequence.
+  // IMPORTANT — Iseq has TWO distinct roles in this engine:
+  //   Role A (production alert): Iseq > 1.0 triggers chaos warning.
+  //     Here it is an absolute threshold detector on the raw sequence.
+  //   Role B (AT coherence weight): Iseq appears in the AT denominator
+  //     (Upsilon*|Phi| / (Iseq*Gamma + EP)), suppressing AT when chaotic.
+  //     Here it acts as a coherence dampener on the UEDP momentum ratio.
+  //
+  // Iseq does NOT enter the penalty sum that drives omega — that is driven
+  // solely by nVar, nSpike, nDrift, nDir, nCost, nOrder. See production_signal_roles.
   const Iseq  =computeIseq(hv);
   const tau   =MA.OmegaRef-omega;
   const Rmag  =Math.abs(tau)/(MA.OmegaRef+EP);
   const Rmod  =(tau>0&&omega<OC)?-Rmag:Rmag;
   const dOmega=Math.max(OC-omega,EP);
-  const Icoh  =Math.max(0,1-Iseq);
+  const Icoh  =Math.max(0,1-Iseq);  // coherence = 1 - Iseq
   const Phi   =(Icoh*Rmod)/dOmega;
   const ODebt =Math.max(OC-omega,0);
   const Gamma =(ODebt*penalty+EP)/(Math.abs(Rmod)+EP);
@@ -265,6 +275,18 @@ const computeOmegaCore = (inp, W) => {
     willProfitable:np>0, breakEven:Math.round(tc), mixRevenue:Math.round(mixRev),
     nVar, nSpike, nDrift, nDir, nCost, nOrder,
     penalties:pens, hv,
+    // ── Explicit Iseq role documentation ──────────────────────────────
+    // Both fields carry the same numeric value but are named for their
+    // specific use so cross-engine comparisons are unambiguous.
+    Iseq_chaos_alert: Iseq,   // Role A: compared against 1.0 threshold to fire production chaos alert
+    Iseq_AT_weight:   Iseq,   // Role B: enters AT denominator as coherence dampener
+    // ── Production signal roles — which drive omega vs AT ─────────────
+    production_signal_roles: {
+      omega_penalty_drivers: ['nVar','nSpike','nDrift','nDir','nCost','nOrder'],
+      AT_coherence_driver:   'Iseq',
+      chaos_alert_driver:    'Iseq',
+      note: 'Iseq is NOT in the omega penalty sum. Omega is driven by the 6 penalty features above. Iseq acts separately as a coherence dampener on the AT momentum ratio and as a threshold detector for the production chaos alert.',
+    },
   };
 };
 
@@ -539,6 +561,12 @@ module.exports=(req,res)=>{
       // Core UEDP
       omega:    r4(raw.omega),   omega_confidence:'heuristic',
       Iseq:     r4(raw.Iseq),    Iseq_confidence:'mathematical',
+      // ── Iseq dual-role aliases — same value, explicitly labelled ──────
+      // Iseq_chaos_alert: compared against threshold 1.0 in generateAlerts()
+      // Iseq_AT_weight:   enters AT denominator as coherence dampener
+      // Iseq does NOT drive omega — omega is driven by the 6 penalty features.
+      Iseq_chaos_alert: r4(raw.Iseq),
+      Iseq_AT_weight:   r4(raw.Iseq),
       Rmod:     r4(raw.Rmod),
       Phi:      r4(raw.Phi),     Phi_confidence:'theoretical',
       Gamma:    r4(raw.Gamma),   Gamma_confidence:'theoretical',
@@ -572,6 +600,7 @@ module.exports=(req,res)=>{
       breakEven:   raw.breakEven,
       mixRevenue:  raw.mixRevenue,
       penalties: raw.penalties.map(p=>({...p,score:r4(p.score),raw:r4(p.raw)})),
+      production_signal_roles: raw.production_signal_roles,
       hv: raw.hv,
       weights_used: W,
       calibration:  calibInfo,
@@ -585,10 +614,17 @@ module.exports=(req,res)=>{
     // Model meta — full transparency to address "arbitrary" criticism
     const model_meta={
       system:'UEDP v5 Business Pulse — G S Ramesh Kumar',
-      version:'2.0.0',
+      version:'2.0.1',
       omega_crit:OC,
       omega_crit_source:'METP variational boundary (non-equilibrium dynamical systems theory)',
       classification:'Heuristic decision engine — not an empirically validated predictive model',
+      // ── Signal routing — which signals drive which outputs ─────────────
+      signal_routing:{
+        omega_drivers:      ['nVar (CV²)','nSpike (3σ)','nDrift (OLS slope)','nDir (alignment)','nCost (margin)','nOrder (pipeline)'],
+        AT_drivers:         ['Iseq (directional reversal chaos) — via Phi and AT denominator'],
+        chaos_alert_driver: ['Iseq > 1.0 threshold'],
+        iseq_clarification: 'Iseq is NOT in the omega penalty. It is used separately as a coherence dampener in AT and as a chaos alert trigger. The response includes Iseq_chaos_alert and Iseq_AT_weight as explicitly labelled aliases of the same value for cross-engine clarity.',
+      },
       validated_components:['Iseq (mathematical)','OLS drift slope (mathematical)',
                             'P&L accounting (deterministic)','Attendance ratio (deterministic)'],
       heuristic_components:['Omega weights','Phi/Gamma/AT composites','OmegaRef target',
