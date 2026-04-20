@@ -228,7 +228,10 @@ const computeOmegaCore = (inp, W) => {
   const nDrift  =clamp(Math.abs(dslope)/(mg+EP));
   const nDir    =clamp(1-dirMag);
   const marg    =tc>0?(oval-tc)/tc:0;
-  const nCost   =clamp(marg<0?1:Math.max(0,1-marg));
+  // [BUG-A FIX] When no cost data entered (tc===0), nCost=0 (neutral).
+  // Previous: marg=0 when tc=0 → nCost=clamp(1-0)=1.0 (maximum stress).
+  // That penalises Ω by 0.20 simply because the user has not typed costs yet.
+  const nCost   =tc===0 ? 0 : clamp(marg<0?1:Math.max(0,1-marg));
   const payPen  =clamp(pl>=MA.PAY_MAX?1:pl/MA.PAY_MAX)*0.3;
   const confPen =clamp(1-confR*0.6-convR*0.4);
   const nOrder  =clamp(confPen*0.7+payPen);
@@ -415,6 +418,22 @@ const generateAlerts = (result, inp, calibInfo) => {
       `Ω ${result.omega} — Stressed (approaching critical zone)`,
       `Primary drag: ${penalties[0]?.label} (${Math.round((penalties[0]?.raw||0)*100)}%). Secondary: ${penalties[1]?.label}. ${mcav}`,
       `Stabilise "${penalties[0]?.label}" before adding workload or cost.`,'MEDIUM');
+  }
+
+  // 1b. Data quality alert — hourly output > 5× its target (typo detector)
+  // [BUG-B FIX] e.g. 60 units entered against target 6 — likely a stray zero.
+  // Only fires when targets are present. Does not affect Ω calculation.
+  const inp_ht = inp.hourlyTargets||[];
+  const inp_hv = inp.hourlyProd||[];
+  const suspectHours=[];
+  for(let _i=0;_i<Math.min(inp_hv.length,inp_ht.length);_i++){
+    if(inp_ht[_i]>0 && inp_hv[_i]>inp_ht[_i]*5) suspectHours.push(_i+1);
+  }
+  if(suspectHours.length>0){
+    push('warning','DATA_QUALITY',
+      `Hour${suspectHours.length>1?'s':''} ${suspectHours.join(', ')}: output is >5× target — verify entry`,
+      `One or more hourly outputs are more than 5× their target. This may be a data entry error (e.g. extra zero) that inflates ISeq and distorts Ω.`,
+      `Check the hourly output figure${suspectHours.length>1?'s':''} for hour${suspectHours.length>1?'s':''} ${suspectHours.join(', ')}. If correct, dismiss. If a typo, correct before re-computing.`,'HIGH');
   }
 
   // 2. Instability alert (ISeq)
