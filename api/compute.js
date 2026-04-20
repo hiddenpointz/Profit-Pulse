@@ -685,6 +685,8 @@ module.exports=(req,res)=>{
         hoursElapsed:inp.hoursElapsed||8,
         mixItems:inp.mixItems||[],
         mode,
+        empPresent:inp.empPresent||0,
+        empTotal:inp.empTotal||1,
       },
     });
 
