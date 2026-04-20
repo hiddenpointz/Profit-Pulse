@@ -489,12 +489,13 @@ function render(R, alerts, inp, echo){
   // ── KPIs ──────────────────────────────────────────────────────────────
   h+='<div class="kpi-grid">';
   h+=kpi('Ω_dynamics',R.omega,oc==='stable'?'g':oc==='stressed'?'w':'b','coherence score');
-  h+=kpi('Net Margin',R.netMargin+'%',R.netMargin>=15?'g':R.netMargin>=0?'w':'b','today so far');
+  h+=kpi('Net Margin',R.netMargin!==null?R.netMargin+'%':'N/A',R.netMargin===null?'w':R.netMargin>=15?'g':R.netMargin>=0?'w':'b','today so far');
   h+=kpi('Net Profit','₹'+fmt(R.netProfit),R.netProfit>=0?'g':'b','after all costs');
-  h+=kpi('Attendance',R.attendance+'%',R.attendance>=85?'g':R.attendance>=70?'w':'b',inp.empPresent+' of '+inp.empTotal);
+  // ── FIX: use echo.empPresent / echo.empTotal so headcount always matches what engine computed ──
+  h+=kpi('Attendance',R.attendance+'%',R.attendance>=85?'g':R.attendance>=70?'w':'b',echo.empPresent+' of '+echo.empTotal);
   h+=kpi('Output Rate',R.ratePerHr!==null?R.ratePerHr+'/hr':'—','n',echo.prodUnit+' per hour');
   h+=kpi('EOD Projection',R.projEOD!==null?R.projEOD+'':'—',R.projEOD&&R.projEOD>inp.outputVol?'g':'w',echo.prodUnit+' at this rate');
-  h+=kpi('A/T Ratio',R.AT>999?'>999':R.AT,R.isAnados?'g':'b',R.isAnados?'Anados ↑':'Thanatos ↓');
+  h+=kpi('A/T Ratio',R.AT!==null?R.AT:'—',R.isAnados===true?'g':R.isAnados===false?'b':'n',R.isAnados===true?'Anados ↑':R.isAnados===false?'Thanatos ↓':'monotone');
   h+=kpi('I_seq',R.Iseq,R.Iseq<0.3?'g':R.Iseq<0.7?'w':'b','instability index');
   h+='</div>';
 
@@ -506,10 +507,11 @@ function render(R, alerts, inp, echo){
   h+='</div>';
 
   // ── A/T Banner ────────────────────────────────────────────────────────
-  h+='<div class="at-banner '+(R.isAnados?'ana':'tha')+'">';
-  h+='<div class="at-num">'+(R.AT>999?'>999':R.AT)+'</div>';
-  h+='<div><div class="at-lbl">'+(R.isAnados?'⬆ ANADOS — Generative Growth Mode':'⬇ THANATOS — Depletion / Collapse Risk')+'</div>';
-  h+='<div class="at-desc">'+esc(R.isAnados?'The ratio of constructive energy (Υ·Φ) to depleting forces (I_seq·Γ) is positive. Business dynamics are generative. Growth is the path of least resistance.':'Depleting forces exceed constructive energy. The system spends more coherence than it generates. Structural review needed.')+'</div>';
+  var atAna = R.isAnados===true;
+  h+='<div class="at-banner '+(atAna?'ana':'tha')+'">';
+  h+='<div class="at-num">'+(R.AT!==null?R.AT:'—')+'</div>';
+  h+='<div><div class="at-lbl">'+(atAna?'⬆ ANADOS — Generative Growth Mode':R.isAnados===false?'⬇ THANATOS — Depletion / Collapse Risk':'◼ A/T UNDEFINED — Monotone Production')+'</div>';
+  h+='<div class="at-desc">'+esc(atAna?'The ratio of constructive energy (Υ·Φ) to depleting forces (I_seq·Γ) is positive. Business dynamics are generative. Growth is the path of least resistance.':R.isAnados===false?'Depleting forces exceed constructive energy. The system spends more coherence than it generates. Structural review needed.':'Production sequence is perfectly monotone (ISeq < 0.01). A/T ratio is undefined at this boundary — no directional chaos to measure.')+'</div>';
   h+='</div></div>';
 
   // ── Profitability Prediction ──────────────────────────────────────────
@@ -542,14 +544,14 @@ function render(R, alerts, inp, echo){
   h+=plRow('Variable Running Cost','−₹'+fmt(inp.runningCost),'neg');
   h+='<div class="pl-divider"></div>';
   h+=plRow('Gross Profit','₹'+fmt(R.grossProfit),R.grossProfit>=0?'pos':'neg');
-  h+=plRow('Gross Margin',R.grossMargin+'%',R.grossMargin>=20?'pos':R.grossMargin>=0?'':'neg');
+  h+=plRow('Gross Margin',R.grossMargin!==null?R.grossMargin+'%':'N/A',R.grossMargin===null?'':R.grossMargin>=20?'pos':R.grossMargin>=0?'':'neg');
   h+=plRow('Fixed Overhead','−₹'+fmt(inp.fixedCost),'neg');
   h+='<div class="pl-divider"></div>';
   h+='<div class="pl-total">';
   h+='<span class="pl-total-lbl">Net Profit (Today)</span>';
   h+='<span class="pl-val '+(R.netProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(R.netProfit)+'</span>';
   h+='</div>';
-  h+=plRow('Net Margin',R.netMargin+'%',R.netMargin>=10?'pos':R.netMargin>=0?'':'neg');
+  h+=plRow('Net Margin',R.netMargin!==null?R.netMargin+'%':'N/A',R.netMargin===null?'':R.netMargin>=10?'pos':R.netMargin>=0?'':'neg');
   if(R.capReturn!==null) h+=plRow('Return on Capital',R.capReturn+'%',R.capReturn>=5?'pos':'');
   h+='</div>';
   // Right col: unit economics
