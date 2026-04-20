@@ -20,7 +20,7 @@
                      regardless of actual operational state. At early hours
                      (hoursElapsed < 3) a legitimate business has no booked
                      revenue yet — returning omega=0 is practically nonsensical.
-           Fix:      When hoursElapsed < 3 AND outputValue=0, psi uses an
+           Fix:      When hoursElapsed < PRE_REV_HRS AND outputValue=0, psi uses an
                      operational capacity floor: max(mag2/(mag2+1), att*prodEf)
                      so the coherence ceiling reflects actual workforce capacity,
                      not only revenue. Protocol allows ψ ≤ 1 as a domain-defined
@@ -91,15 +91,15 @@ const OC = MA.OC;
 // ─────────────────────────────────────────────────────────────────────────────
 // SIGNAL PRIMITIVES — unchanged
 // ─────────────────────────────────────────────────────────────────────────────
-const mean = (x: number[]): number => x.length ? x.reduce((s,v)=>s+v,0)/x.length : 0;
+const mean = (x) => x.length ? x.reduce((s,v)=>s+v,0)/x.length : 0;
 
-const variance = (x: number[]): number => {
+const variance = (x) => {
   if (x.length < 2) return 0;
   const m = mean(x);
   return x.reduce((s,v)=>s+(v-m)**2,0)/x.length;
 };
 
-const spikeIndex = (x: number[]): number => {
+const spikeIndex = (x) => {
   if (x.length < 2) return 0;
   const m = mean(x) || 1;
   let mx = 0;
@@ -107,7 +107,7 @@ const spikeIndex = (x: number[]): number => {
   return mx/m;
 };
 
-const driftSlope = (x: number[]): number => {
+const driftSlope = (x) => {
   // OLS slope — mathematically exact, no magic numbers
   if (x.length < 2) return 0;
   const n = x.length;
@@ -117,9 +117,9 @@ const driftSlope = (x: number[]): number => {
   return d===0 ? 0 : (n*sxy-sx*sy)/d;
 };
 
-const clamp = (v: number, lo=0, hi=1): number => Math.min(hi,Math.max(lo,v));
+const clamp = (v, lo=0, hi=1) => Math.min(hi,Math.max(lo,v));
 
-const pearson = (x: number[], y: number[]): number => {
+const pearson = (x, y) => {
   if (x.length!==y.length||x.length<2) return 0;
   const mx=mean(x),my=mean(y);
   const num=x.reduce((s,v,i)=>s+(v-mx)*(y[i]-my),0);
@@ -131,9 +131,9 @@ const pearson = (x: number[], y: number[]): number => {
 // INSTABILITY INDEX  I_seq ∈ [0, 2] — unchanged, correct per protocol
 // B = mean(1 − cosθⱼ), C = S/(S+1), ISeq = min(2, B/dirs.length + C)
 // ─────────────────────────────────────────────────────────────────────────────
-const computeIseq = (seq: number[]): number => {
+const computeIseq = (seq) => {
   if (seq.length<3) return 0;
-  const dirs: number[]=[];
+  const dirs =[];
   for(let i=1;i<seq.length;i++) dirs.push(seq[i]>seq[i-1]?1:seq[i]<seq[i-1]?-1:0);
   let B=0,S=0;
   for(let i=1;i<dirs.length;i++){
@@ -147,19 +147,19 @@ const computeIseq = (seq: number[]): number => {
 // ─────────────────────────────────────────────────────────────────────────────
 // WEIGHT CALIBRATION via OLS — unchanged
 // ─────────────────────────────────────────────────────────────────────────────
-const tuneWeights = (history: any[], defaultW: Record<string,number>) => {
+const tuneWeights = (history, defaultW) => {
   if (!history||history.length<5) return {W:defaultW,calibrated:false,n:history?.length||0};
   const EP=1e-9;
-  const rows=history.map((h: any)=>{
-    const hv=(h.inputs.hourlyProd||[]).filter((v: number)=>!isNaN(v)&&v>=0);
-    const ht=(h.inputs.hourlyTargets||[]).filter((v: number)=>!isNaN(v)&&v>0);
+  const rows=history.map((h)=>{
+    const hv=(h.inputs.hourlyProd||[]).filter((v)=>!isNaN(v)&&v>=0);
+    const ht=(h.inputs.hourlyTargets||[]).filter((v)=>!isNaN(v)&&v>0);
     const tc=(h.inputs.runningCost||0)+(h.inputs.fixedCost||0);
     const ov=h.inputs.outputValue||0;
     const tv=h.inputs.targetValue||0;
     const att=clamp((h.inputs.empPresent||0)/Math.max(h.inputs.empTotal||1,1));
     const pe=(hv.length&&ht.length)?clamp(mean(hv)/(mean(ht)||1)):0.5;
     const re=tv>0?clamp(ov/tv):0.5;
-    const dir=clamp(Math.sqrt(([att,pe,re].reduce((s: number,v: number)=>s+v*v,0))/3));
+    const dir=clamp(Math.sqrt(([att,pe,re].reduce((s,v)=>s+v*v,0))/3));
     const mg=mean(hv)||1;
     return {
       normVar:   clamp(hv.length>=2?variance(hv)/(mg**2+EP):0),
@@ -172,22 +172,22 @@ const tuneWeights = (history: any[], defaultW: Record<string,number>) => {
     };
   });
   const keys=['normVar','normSpike','normDrift','normDir','normCost','normOrder'];
-  const actual=rows.map((r: any)=>r.actual);
-  const wMap: Record<string,string>={normVar:'var',normSpike:'spike',normDrift:'drift',normDir:'dir',normCost:'cost',normOrder:'order'};
-  const corrs: Record<string,number>={};
+  const actual=rows.map((r)=>r.actual);
+  const wMap ={normVar:'var',normSpike:'spike',normDrift:'drift',normDir:'dir',normCost:'cost',normOrder:'order'};
+  const corrs ={};
   let totAbs=0;
   for(const k of keys){
-    corrs[k]=Math.abs(pearson(rows.map((r: any)=>r[k]),actual));
+    corrs[k]=Math.abs(pearson(rows.map((r)=>r[k]),actual));
     totAbs+=corrs[k];
   }
   if(totAbs<1e-6) return {W:defaultW,calibrated:false,n:history.length};
   const BLEND=Math.min(0.60,(history.length-4)/20);
-  const W: Record<string,number>={};
+  const W ={};
   for(const k of keys){
     const dw=corrs[k]/totAbs;
     W[wMap[k]]=clamp(BLEND*dw+(1-BLEND)*defaultW[wMap[k]],0.05,0.40);
   }
-  const s=Object.values(W).reduce((a: number,v: number)=>a+v,0);
+  const s=Object.values(W).reduce((a,v)=>a+v,0);
   for(const k of Object.keys(W)) W[k]=Math.round(W[k]/s*10000)/10000;
   return {W,calibrated:true,n:history.length,blend:Math.round(BLEND*100)/100};
 };
@@ -195,9 +195,9 @@ const tuneWeights = (history: any[], defaultW: Record<string,number>) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // CORE OMEGA ENGINE (pure function — testable, deterministic)
 // ─────────────────────────────────────────────────────────────────────────────
-const computeOmegaCore = (inp: any, W: Record<string,number>) => {
+const computeOmegaCore = (inp, W) => {
   const EP=1e-9;
-  const hprod: number[]=inp.hourlyProd||[], htarg: number[]=inp.hourlyTargets||[];
+  const hprod =inp.hourlyProd||[], htarg =inp.hourlyTargets||[];
   const ep=Math.max(inp.empPresent||0,0), et=Math.max(inp.empTotal||1,1);
   const rc=inp.runningCost||0, fc=inp.fixedCost||0, cap=inp.capital||0;
   const ov=inp.outputVol||0, oval=inp.outputValue||0, tv=inp.targetValue||0;
@@ -205,11 +205,11 @@ const computeOmegaCore = (inp: any, W: Record<string,number>) => {
   const pl=inp.paymentLeadDays||30;
   const sl=inp.salesLeads||0, sc2=inp.salesClosed||0;
   const he=inp.hoursElapsed||8;
-  const mix: any[]=inp.mixItems||[];
+  const mix =inp.mixItems||[];
 
   const tc=rc+fc;
-  const hv=hprod.filter((v: number)=>!isNaN(v)&&v>=0);
-  const ht=htarg.filter((v: number)=>!isNaN(v)&&v>0);
+  const hv=hprod.filter((v)=>!isNaN(v)&&v>=0);
+  const ht=htarg.filter((v)=>!isNaN(v)&&v>0);
   const avgT=ht.length?mean(ht):0;
 
   // ── Sub-scores — unchanged ─────────────────────────────────────────────────
@@ -251,26 +251,14 @@ const computeOmegaCore = (inp: any, W: Record<string,number>) => {
   const omega   = clamp(psi*Math.exp(-penalty));
 
   // ── UEDP derived — FIX-P2, FIX-P3, FIX-P5 applied ───────────────────────
-  // ISeq: directional-reversal chaos in hourly production. Unchanged.
-  // Role A: chaos alert trigger (> 1.0)
-  // Role B: coherence dampener in AT denominator
-  // ISeq does NOT enter the penalty sum that drives omega.
   const Iseq  = computeIseq(hv);
 
   const tau   = MA.OmegaRef-omega;
   const Rmag  = Math.abs(tau)/(MA.OmegaRef+EP);
   const Rmod  = (tau>0&&omega<OC)?-Rmag:Rmag;
 
-  // [FIX-P2] Icoh: coherent complement of ISeq, normalised to full [0,2] range.
-  // Previous: max(0, 1−ISeq) → zero for all ISeq ≥ 1 (half scale dead).
-  // Fixed:    max(0, 1−ISeq/2) → ISeq=1 gives Icoh=0.5, ISeq=2 gives Icoh=0.
-  // Protocol Step 17: Φ = (ISeq_coherent × R_mod) / δΩ must be informative
-  // across the full instability range.
   const Icoh  = Math.max(0, 1 - Iseq/2);
 
-  // [FIX-P3] dOmega: distance from OmegaRef, not from OC.
-  // Protocol: δΩ = |Ω − Ω_ref|. Previous used max(OC−omega, EP) which
-  // inflated Phi to near-infinity whenever omega ≥ OC.
   const dOmega = Math.max(Math.abs(omega - MA.OmegaRef), EP);
 
   const Phi   = (Icoh*Rmod)/dOmega;
@@ -278,21 +266,14 @@ const computeOmegaCore = (inp: any, W: Record<string,number>) => {
   const Gamma = (ODebt*penalty+EP)/(Math.abs(Rmod)+EP);
   const Upsilon = Math.abs(Rmod);
 
-  // [FIX-P5] AT ratio: bounded and null-safe.
-  // When ISeq < 0.01 (perfectly monotone production) the denominator → EP
-  // making AT arbitrarily large (measured: 148M+). Protocol does not define
-  // AT at the ISeq=0 boundary. Return null. Otherwise cap at 10.
   const AT_raw = (Upsilon*Math.abs(Phi))/(Iseq*Gamma+EP);
-  const AT: number|null = Iseq < 0.01 ? null : clamp(AT_raw, 0, 10);
+  const AT = Iseq < 0.01 ? null : clamp(AT_raw, 0, 10);
 
   // ── P&L — FIX-P4 applied ──────────────────────────────────────────────────
   const gp = oval-rc;
   const np = oval-tc;
-  // [FIX-P4] grossMargin / netMargin: return null when no revenue.
-  // 0% implies breakeven; actual state when oval=0 is a pure cost-outflow loss.
-  // The ₹ profit figures (gp, np) always reflect reality correctly.
-  const gm: number|null = oval>0 ? gp/oval*100 : null;
-  const nm: number|null = oval>0 ? np/oval*100 : null;
+  const gm = oval>0 ? gp/oval*100 : null;
+  const nm = oval>0 ? np/oval*100 : null;
   const cr = cap>0 ? np/cap*100 : null;
   const cpu = ov>0 ? tc/ov : null;
   const rpu = ov>0 ? oval/ov : null;
@@ -315,7 +296,7 @@ const computeOmegaCore = (inp: any, W: Record<string,number>) => {
     {key:'order_pipeline',   score:W.order*nOrder, raw:nOrder,  label:'Order/Sales Pipeline Health',   validated:'industry-ref', assumption:`${MA.PAY_MAX}d lead = stress max`},
   ].sort((a,b)=>b.score-a.score);
 
-  const mixRev=mix.reduce((s: number,m: any)=>s+(m.vol||0)*(m.unitValue||0),0);
+  const mixRev=mix.reduce((s,m)=>s+(m.vol||0)*(m.unitValue||0),0);
 
   return {
     omega, Iseq, Rmod, Phi, Gamma, AT, isAnados: AT!==null ? AT>1 : null,
@@ -342,14 +323,14 @@ const computeOmegaCore = (inp: any, W: Record<string,number>) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // SENSITIVITY ANALYSIS — unchanged
 // ─────────────────────────────────────────────────────────────────────────────
-const computeSensitivity = (inp: any, W: Record<string,number>) => {
+const computeSensitivity = (inp, W) => {
   const DELTA=0.10;
   const keys=['outputValue','runningCost','fixedCost','empPresent','paymentLeadDays'];
   const base=computeOmegaCore(inp,W).omega;
   let maxSwing=0;
-  const swings: Record<string,number>={};
+  const swings ={};
   for(const k of keys){
-    const bv=(inp as any)[k]||0;
+    const bv=inp[k]||0;
     if(bv===0) continue;
     const hi=computeOmegaCore({...inp,[k]:bv*(1+DELTA)},W).omega;
     const lo=computeOmegaCore({...inp,[k]:bv*(1-DELTA)},W).omega;
@@ -372,17 +353,17 @@ const computeSensitivity = (inp: any, W: Record<string,number>) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // BACKTEST ENGINE — unchanged
 // ─────────────────────────────────────────────────────────────────────────────
-const runBacktest = (history: any[], W: Record<string,number>) => {
+const runBacktest = (history, W) => {
   if(!history||history.length<2) return {error:'Need ≥2 historical records'};
   let hits=0, marginErr=0, margN=0;
-  const details=history.map((h: any)=>{
+  const details=history.map((h)=>{
     const r=computeOmegaCore(h.inputs,W);
     const pred=r.willProfitable;
     const act=h.actual_profitable;
     const ok=pred===act;
     if(ok) hits++;
     if(typeof h.actual_net_margin==='number'&&r.netMargin!==null){
-      marginErr+=Math.abs((r.netMargin as number)-h.actual_net_margin);
+      marginErr+=Math.abs(r.netMargin-h.actual_net_margin);
       margN++;
     }
     return{date:h.date||null,omega:Math.round(r.omega*10000)/10000,
@@ -403,8 +384,8 @@ const runBacktest = (history: any[], W: Record<string,number>) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // ALERT ENGINE — updated for null-safe AT and preRevMode
 // ─────────────────────────────────────────────────────────────────────────────
-const generateAlerts = (result: any, inp: any, calibInfo: any) => {
-  const alerts: any[]=[];
+const generateAlerts = (result, inp, calibInfo) => {
+  const alerts =[];
   const{omega,Iseq,AT,isAnados,netMargin,netProfit,projEOD,targetGap,
         attendance,confirmRate,salesConvRate,penalties,drift,projMargin,
         willProfitable,hv,revEff,preRevMode}=result;
@@ -412,9 +393,9 @@ const generateAlerts = (result: any, inp: any, calibInfo: any) => {
         outputValue=0,ordersReceived=0,ordersConfirmed=0,paymentLeadDays=30,
         salesLeads=0,salesClosed=0,hoursElapsed=8,prodUnit='units'}=inp;
   const tc=runningCost+fixedCost;
-  const push=(sev: string,cat: string,title: string,detail: string,action: string,conf='HIGH')=>
+  const push=(sev,cat,title,detail,action,conf='HIGH')=>
     alerts.push({severity:sev,category:cat,title,detail,action,confidence:conf});
-  const INR=(v: number)=>Math.round(v).toLocaleString('en-IN');
+  const INR=(v)=>Math.round(v).toLocaleString('en-IN');
   const mcav=calibInfo?.calibrated
     ?`(Calibrated on ${calibInfo.n} days)`
     :'(Heuristic model — cross-validate with your records)';
@@ -447,7 +428,7 @@ const generateAlerts = (result: any, inp: any, calibInfo: any) => {
   // 3. Profitability forecast
   const predConf=hoursElapsed>=6?'HIGH':hoursElapsed>=4?'MEDIUM':'LOW';
   push(
-    willProfitable&&netMargin!==null&&(netMargin as number)>=10?'ok':willProfitable?'warning':'critical','PREDICTION',
+    willProfitable&&netMargin!==null&&netMargin>=10?'ok':willProfitable?'warning':'critical','PREDICTION',
     `Profitability forecast (${predConf} data confidence): ${willProfitable?'PROFITABLE':'LOSS'} day`,
     willProfitable
       ?`Projected net margin ${projMargin!==null?projMargin:netMargin}% on ₹${INR(outputValue)} revenue. ${isAnados===true?'A/T>1 — constructive momentum.':isAnados===false?'A/T<1 — monitor closely.':'A/T undefined (stable monotone production).'}`
@@ -464,7 +445,7 @@ const generateAlerts = (result: any, inp: any, calibInfo: any) => {
       `Output ₹${INR(outputValue)} vs cost ₹${INR(tc)}.`,
       projEOD?`EOD projection: ${projEOD} ${prodUnit} at current rate. Need ₹${INR(tc)} revenue to break even.`
              :`Raise output volume or cut variable cost immediately.`);
-  } else if(netMargin!==null&&(netMargin as number)<8){
+  } else if(netMargin!==null&&netMargin<8){
     push('warning','P&L',
       `Thin margin ${netMargin}% — target >15%`,
       `₹${INR(netProfit)} net on ₹${INR(outputValue)} revenue. One cost spike tips into loss.`,
@@ -541,7 +522,7 @@ const generateAlerts = (result: any, inp: any, calibInfo: any) => {
       `Review pricing adherence, output quality, and order mix.`);
   }
 
-  const rank: Record<string,number>={critical:0,warning:1,ok:2};
+  const rank ={critical:0,warning:1,ok:2};
   alerts.sort((a,b)=>(rank[a.severity]||3)-(rank[b.severity]||3));
   return alerts.slice(0,10);
 };
@@ -549,7 +530,7 @@ const generateAlerts = (result: any, inp: any, calibInfo: any) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // ROUTE HANDLER — unchanged structure
 // ─────────────────────────────────────────────────────────────────────────────
-module.exports=(req: any,res: any)=>{
+module.exports=(req,res)=>{
   res.setHeader('Access-Control-Allow-Origin','*');
   res.setHeader('Access-Control-Allow-Methods','POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers','Content-Type');
@@ -563,20 +544,20 @@ module.exports=(req: any,res: any)=>{
 
   try{
     // ── Resolve weights ─────────────────────────────────────────────────
-    const defaultW: Record<string,number>={};
-    for(const[k,v] of Object.entries(MA.W)) defaultW[k]=(v as any).v;
+    const defaultW ={};
+    for(const[k,v] of Object.entries(MA.W)) defaultW[k]=v.v;
 
-    let W=defaultW, calibInfo: any={source:'default',calibrated:false};
+    let W=defaultW, calibInfo ={source:'default',calibrated:false};
 
     if(inp.calibration&&typeof inp.calibration==='object'){
       const ow={...defaultW,...inp.calibration};
-      const s=Object.values(ow).reduce((a: number,v: any)=>a+(v as number),0) as number;
-      for(const k of Object.keys(ow)) (ow as any)[k]=(ow as any)[k]/s;
+      const s=Object.values(ow).reduce((a,v)=>a+v,0);
+      for(const k of Object.keys(ow)) ow[k]=ow[k]/s;
       W=ow; calibInfo={source:'caller_override',calibrated:true};
     } else if(inp.history&&inp.history.length>=5){
       const t=tuneWeights(inp.history,defaultW);
-      W=t.W; calibInfo={source:(t as any).calibrated?'data_tuned':'default',
-                         calibrated:(t as any).calibrated,n:(t as any).n,blend:(t as any).blend};
+      W=t.W; calibInfo={source:t.calibrated?'data_tuned':'default',
+                         calibrated:t.calibrated,n:t.n,blend:t.blend};
     }
 
     // ── Mode routing ────────────────────────────────────────────────────
@@ -605,13 +586,12 @@ module.exports=(req: any,res: any)=>{
     // ── Standard compute ────────────────────────────────────────────────
     const raw=computeOmegaCore(inp,W);
 
-    const r4=(v: any)=>typeof v==='number'?Math.round(v*10000)/10000:v;
-    const r2=(v: any)=>typeof v==='number'?Math.round(v*100)/100:v;
-    const r0=(v: any)=>typeof v==='number'?Math.round(v):v;
-    const rp=(v: any)=>v!==null&&typeof v==='number'?r2(v):v;  // null-safe
+    const r4=(v)=>typeof v==='number'?Math.round(v*10000)/10000:v;
+    const r2=(v)=>typeof v==='number'?Math.round(v*100)/100:v;
+    const r0=(v)=>typeof v==='number'?Math.round(v):v;
+    const rp=(v)=>v!==null&&typeof v==='number'?r2(v):v;
 
     const result={
-      // Core UEDP
       omega:    r4(raw.omega),   omega_confidence:'heuristic',
       Iseq:     r4(raw.Iseq),    Iseq_confidence:'mathematical',
       Iseq_chaos_alert: r4(raw.Iseq),
@@ -619,14 +599,13 @@ module.exports=(req: any,res: any)=>{
       Rmod:     r4(raw.Rmod),
       Phi:      r4(raw.Phi),     Phi_confidence:'theoretical',
       Gamma:    r4(raw.Gamma),   Gamma_confidence:'theoretical',
-      AT:       raw.AT!==null?r2(raw.AT):null,  // null when Iseq<0.01
+      AT:       raw.AT!==null?r2(raw.AT):null,
       AT_confidence:'theoretical',
       isAnados: raw.isAnados,
       psi:      r4(raw.psi),
-      preRevMode: raw.preRevMode,  // [FIX-P1] flag for UI display
+      preRevMode: raw.preRevMode,
       penalty:  r4(raw.penalty),
       drift:    r2(raw.drift),
-      // Operational
       attendance:    Math.round(raw.attendance*100),
       prodEff:       Math.round(raw.prodEff*100),
       revEff:        Math.round(raw.revEff*100),
@@ -635,7 +614,6 @@ module.exports=(req: any,res: any)=>{
       wfScore:  raw.wfScore,
       finScore: raw.finScore,
       ordScore: raw.ordScore,
-      // P&L — [FIX-P4]: margins are null when no revenue, ₹ figures always present
       grossProfit: r0(raw.grossProfit),
       netProfit:   r0(raw.netProfit),
       grossMargin: raw.grossMargin!==null?r2(raw.grossMargin):null,
@@ -650,7 +628,7 @@ module.exports=(req: any,res: any)=>{
       willProfitable: raw.willProfitable,
       breakEven:   raw.breakEven,
       mixRevenue:  raw.mixRevenue,
-      penalties: raw.penalties.map((p: any)=>({...p,score:r4(p.score),raw:r4(p.raw)})),
+      penalties: raw.penalties.map((p)=>({...p,score:r4(p.score),raw:r4(p.raw)})),
       production_signal_roles: raw.production_signal_roles,
       hv: raw.hv,
       weights_used: W,
@@ -690,7 +668,7 @@ module.exports=(req: any,res: any)=>{
         Object.entries(MA).filter(([k])=>k!=='W').map(([k,v])=>[k,v])
       ),
       weight_justifications: Object.fromEntries(
-        Object.entries(MA.W).map(([k,v])=>[k,{value:(v as any).v,rationale:(v as any).why}])
+        Object.entries(MA.W).map(([k,v])=>[k,{value:v.v,rationale:v.why}])
       ),
     };
 
@@ -710,7 +688,7 @@ module.exports=(req: any,res: any)=>{
       },
     });
 
-  } catch(e: any){
+  } catch(e){
     return res.status(500).json({error:e.message, stack:e.stack});
   }
 };
