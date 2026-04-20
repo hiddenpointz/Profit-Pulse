@@ -486,6 +486,50 @@ function render(R, alerts, inp, echo){
   h+='<div class="omega-labs"><span>0 — Chaos</span><span>0.368 (critical)</span><span>1.0 — Coherent</span></div>';
   h+='</div>';
 
+  // ── Live P&L Status Banner ───────────────────────────────────────────
+  // Shows current margin/profit and EOD projection prominently at the top.
+  var plBannerCol = R.netProfit>=0 ? 'var(--green)' : 'var(--red)';
+  var plBannerBg  = R.netProfit>=0 ? 'var(--green3)' : 'var(--red3)';
+  var projProfitEOD = (R.projEOD!==null && R.costPerUnit!==null && R.revPerUnit!==null)
+    ? Math.round(R.projEOD * (R.revPerUnit - R.costPerUnit) - (inp.fixedCost||0))
+    : null;
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:16px;">';
+  // Current net P/L
+  h+='<div style="background:'+plBannerBg+';border:1px solid '+plBannerCol+';border-radius:8px;padding:14px 16px;">';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Net P/L — Now</div>';
+  h+='<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:'+(R.netProfit>=0?'var(--green2)':'var(--red2)')+'">₹'+fmt(R.netProfit)+'</div>';
+  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+(R.netProfit>=0?'Profit so far':'Loss so far')+' · '+echo.hoursElapsed+'h elapsed</div>';
+  h+='</div>';
+  // Current margin %
+  h+='<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Margin — Now</div>';
+  h+='<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:'+(R.netMargin===null?'var(--text2)':R.netMargin>=15?'var(--green2)':R.netMargin>=0?'var(--amber2)':'var(--red2)')+'">'+( R.netMargin!==null ? R.netMargin+'%' : 'N/A')+'</div>';
+  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+(R.netMargin===null?'Enter revenue to calculate':'of revenue as net margin')+'</div>';
+  h+='</div>';
+  // EOD projected P/L
+  h+='<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px 16px;">';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Projected EOD P/L</div>';
+  if(projProfitEOD!==null){
+    h+='<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:'+(projProfitEOD>=0?'var(--green2)':'var(--red2)')+'">₹'+fmt(projProfitEOD)+'</div>';
+    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">at '+R.projEOD+' '+echo.prodUnit+' projected</div>';
+  } else {
+    h+='<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:var(--text2)">—</div>';
+    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">Enter costs + revenue to project</div>';
+  }
+  h+='</div>';
+  // EOD projected margin %
+  h+='<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px 16px;">';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Projected Margin</div>';
+  if(R.projMargin!==null){
+    h+='<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:'+(R.projMargin>=15?'var(--green2)':R.projMargin>=0?'var(--amber2)':'var(--red2)')+'">'+R.projMargin+'%</div>';
+    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">if today\'s rate holds to EOD</div>';
+  } else {
+    h+='<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:var(--text2)">—</div>';
+    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">Enter costs + output vol to project</div>';
+  }
+  h+='</div>';
+  h+='</div>';
+
   // ── KPIs ──────────────────────────────────────────────────────────────
   h+='<div class="kpi-grid">';
   h+=kpi('Ω_dynamics',R.omega,oc==='stable'?'g':oc==='stressed'?'w':'b','coherence score');
