@@ -686,7 +686,18 @@ function render(R, alerts, inp, echo){
   });
   h+='</div>';
   h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:10px;">UEDP v5 — G S Ramesh Kumar · DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4 · Ω_crit = 1/e ≈ 0.36788 (METP variational principle)</div>';
-
+  h += '<div style="margin-top:22px;text-align:center;">';
+h += '<a href="https://www.configurationalmodeling.com/turnaround" target="_blank" ' +
+     'style="display:inline-block;background:linear-gradient(135deg,#0a2a50,#2d7fd4);' +
+     'color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;' +
+     'font-family:var(--cond);font-size:13px;font-weight:700;letter-spacing:1px;' +
+     'box-shadow:0 4px 18px rgba(45,127,212,.35);">';
+h += '⚡ Run Turnaround Analysis';
+h += '</a>';
+h += '<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:6px;">';
+h += 'Paste Profit Pulse scores → get structured turnaround actions';
+h += '</div>';
+h += '</div>';
   document.getElementById('mainPanel').innerHTML=h;
 
   // Charts
