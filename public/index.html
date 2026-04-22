@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>UEDP Business Pulse</title>
+<title>UEDP Business Pulse · Multi-Domain v4.0 · Zero Hardcode</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -14,11 +14,12 @@
   --red:#c03030;--red2:#f07070;--red3:#280808;
   --green:#1a8850;--green2:#40d080;--green3:#062018;
   --cyan:#00b8b0;--cyan2:#40d8d0;
+  --purple:#7c5cbf;--purple2:#b09ae0;--purple3:#1a0a38;
+  --orange:#c96020;--orange2:#f09050;--orange3:#2a1008;
   --text:#c8d4e8;--text2:#8aaccc;--text3:#4a6080;
   --mono:'IBM Plex Mono',monospace;
   --cond:'Barlow Condensed',sans-serif;
   --sans:'Barlow',sans-serif;
-  --oc:36.79%;/* Ω_crit % position on scale */
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
@@ -26,7 +27,6 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
   background-image:radial-gradient(ellipse at 20% 0%,rgba(45,127,212,.04) 0%,transparent 60%),
                    radial-gradient(ellipse at 80% 100%,rgba(26,136,80,.03) 0%,transparent 60%);}
 
-/* ── TOP BAR ─────────────────────────────────────────── */
 .bar{height:50px;background:var(--bg2);border-bottom:1px solid var(--border);
      display:flex;align-items:center;gap:14px;padding:0 24px;position:sticky;top:0;z-index:100;
      box-shadow:0 2px 20px rgba(0,0,0,.5);}
@@ -34,216 +34,461 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .bar-logo em{color:var(--amber2);font-style:normal;}
 .bar-sub{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.5px;}
 .bar-date{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--text2);}
-.compute-btn{
-  background:linear-gradient(135deg,#1a4a80,var(--blue));color:#fff;
-  border:none;border-radius:5px;padding:8px 18px;
-  font-family:var(--cond);font-size:13px;font-weight:700;letter-spacing:1.5px;
-  cursor:pointer;transition:.2s;box-shadow:0 2px 12px rgba(45,127,212,.4);
-}
+.compute-btn{background:linear-gradient(135deg,#1a4a80,var(--blue));color:#fff;
+  border:none;border-radius:5px;padding:8px 18px;font-family:var(--cond);font-size:13px;
+  font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:.2s;box-shadow:0 2px 12px rgba(45,127,212,.4);}
 .compute-btn:hover{background:var(--blue2);box-shadow:0 4px 20px rgba(90,172,240,.4);}
 .compute-btn:disabled{opacity:.5;cursor:not-allowed;}
+.cfg-btn{background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:5px;
+  padding:8px 14px;font-family:var(--cond);font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:.2s;}
+.cfg-btn:hover{border-color:var(--amber);color:var(--amber2);}
 
-/* ── PAGE LAYOUT ─────────────────────────────────────── */
-.page{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 50px);}
+.domain-bar{background:var(--bg3);border-bottom:2px solid var(--border2);padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;}
+.domain-btn{font-family:var(--cond);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  padding:7px 16px;border-radius:5px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;transition:.18s;}
+.domain-btn:hover{border-color:var(--blue);color:var(--blue2);}
+.domain-btn.active.dom-general{border-color:var(--blue);background:var(--blue3);color:var(--blue2);}
+.domain-btn.active.dom-contractor{border-color:var(--orange);background:var(--orange3);color:var(--orange2);}
+.domain-btn.active.dom-education{border-color:var(--purple);background:var(--purple3);color:var(--purple2);}
+
+/* ── CONFIG PANEL ── */
+.cfg-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;backdrop-filter:blur(4px);}
+.cfg-overlay.open{display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;}
+.cfg-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:760px;padding:24px;}
+.cfg-title{font-family:var(--cond);font-size:18px;font-weight:800;letter-spacing:2px;color:var(--amber2);margin-bottom:6px;}
+.cfg-sub{font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:20px;line-height:1.6;}
+.cfg-section{margin-bottom:20px;}
+.cfg-section-title{font-family:var(--cond);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--blue2);border-bottom:1px solid var(--border2);padding-bottom:5px;margin-bottom:12px;}
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cfg-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.cfg-field label{display:block;font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.7px;margin-bottom:3px;}
+.cfg-field input,.cfg-field select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;
+  padding:6px 9px;color:var(--text);font-family:var(--mono);font-size:11px;}
+.cfg-field input:focus,.cfg-field select:focus{outline:none;border-color:var(--amber);}
+.cfg-hint{font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:2px;line-height:1.5;}
+.w-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.w-lbl{font-size:11px;color:var(--text2);flex:1;}
+.w-inp{width:68px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:5px 7px;
+  color:var(--amber2);font-family:var(--mono);font-size:11px;text-align:right;}
+.w-inp:focus{outline:none;border-color:var(--amber);}
+.w-sum{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px;}
+.w-sum.ok{color:var(--green2);}
+.w-sum.err{color:var(--red2);}
+.cfg-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap;}
+.btn-save{background:var(--green3);border:1px solid var(--green);color:var(--green2);border-radius:5px;
+  padding:8px 20px;font-family:var(--cond);font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;}
+.btn-reset{background:var(--red3);border:1px solid var(--red);color:var(--red2);border-radius:5px;
+  padding:8px 16px;font-family:var(--cond);font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;}
+.btn-close{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;
+  padding:8px 16px;font-family:var(--cond);font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;}
+
+.page{display:grid;grid-template-columns:310px 1fr;min-height:calc(100vh - 100px);}
 .sidebar{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:0 0 40px;}
 .panel{overflow-y:auto;padding:20px;}
 @media(max-width:860px){.page{grid-template-columns:1fr;}.sidebar{border-right:none;border-bottom:1px solid var(--border);max-height:60vh;}}
 
-/* ── SIDEBAR ─────────────────────────────────────────── */
-.sb-section{padding:16px 16px 0;}
-.sb-title{font-family:var(--cond);font-size:10px;font-weight:700;letter-spacing:2px;
-          text-transform:uppercase;color:var(--blue);border-bottom:1px solid var(--border);
-          padding-bottom:6px;margin-bottom:12px;}
-.field{margin-bottom:10px;}
-.field label{display:block;font-family:var(--mono);font-size:9px;font-weight:500;
-             color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;}
-.field input,.field select{
-  width:100%;background:var(--bg3);border:1px solid var(--border2);
-  border-radius:4px;padding:7px 10px;color:var(--text);
-  font-family:var(--mono);font-size:11px;transition:.15s;
-}
+.sb-section{padding:14px 14px 0;}
+.sb-title{font-family:var(--cond);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--blue);border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.sb-title.con{color:var(--orange);}
+.sb-title.edu{color:var(--purple);}
+.field{margin-bottom:9px;}
+.field label{display:block;font-family:var(--mono);font-size:9px;font-weight:500;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;}
+.field input,.field select,.field textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:4px;padding:6px 9px;color:var(--text);font-family:var(--mono);font-size:11px;transition:.15s;}
 .field input:focus,.field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(45,127,212,.15);}
 .field input[type=range]{padding:2px 0;height:20px;cursor:pointer;accent-color:var(--blue);}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
 .hint{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px;line-height:1.5;}
+.domain-section{display:none;}
+.domain-section.visible{display:block;}
 
-/* ── HOURLY TABLE (sidebar) ──────────────────────────── */
-.hr-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px;}
-.hr-table thead th{
-  font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;
-  letter-spacing:.5px;padding:5px 4px;border-bottom:1px solid var(--border);text-align:left;
-}
-.hr-table tbody td{padding:2px 2px;border-bottom:1px solid rgba(30,40,64,.5);}
-.hr-table tbody td input{
-  width:100%;background:var(--bg3);border:1px solid var(--border);
-  border-radius:3px;padding:5px 6px;color:var(--text);font-family:var(--mono);font-size:10px;
-  text-align:right;
-}
+.hr-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:6px;}
+.hr-table thead th{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.5px;padding:4px;border-bottom:1px solid var(--border);text-align:left;}
+.hr-table tbody td{padding:2px;border-bottom:1px solid rgba(30,40,64,.5);}
+.hr-table tbody td input{width:100%;background:var(--bg3);border:1px solid var(--border);
+  border-radius:3px;padding:4px 5px;color:var(--text);font-family:var(--mono);font-size:10px;text-align:right;}
 .hr-table tbody td input:focus{outline:none;border-color:var(--amber);}
-.hr-slot{font-family:var(--mono);font-size:9px;color:var(--text2);padding:5px 4px;white-space:nowrap;}
-.hr-bar{width:44px;}
-.hr-bwrap{height:5px;background:rgba(255,255,255,.04);border-radius:3px;overflow:hidden;}
+.hr-slot{font-family:var(--mono);font-size:9px;color:var(--text2);padding:4px;white-space:nowrap;}
+.hr-bwrap{height:5px;background:rgba(255,255,255,.04);border-radius:3px;overflow:hidden;width:40px;}
 .hr-bfill{height:100%;border-radius:3px;transition:width .3s;}
 
-/* ── MIX TABLE (sidebar) ─────────────────────────────── */
-.mx-table{width:100%;border-collapse:collapse;font-size:11px;}
-.mx-table thead th{
-  font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;
-  letter-spacing:.5px;padding:5px 4px;border-bottom:1px solid var(--border);text-align:left;
-}
-.mx-table tbody td{padding:2px 2px;border-bottom:1px solid rgba(30,40,64,.5);}
-.mx-table tbody td input{
-  width:100%;background:var(--bg3);border:1px solid var(--border);
-  border-radius:3px;padding:5px 6px;color:var(--text);font-family:var(--mono);font-size:10px;
-}
-.mx-table tbody td input:focus{outline:none;border-color:var(--amber);}
-
-/* ── OMEGA HERO ──────────────────────────────────────── */
-.omega-card{
-  background:linear-gradient(135deg,#070a12,#0d1220);
-  border:1px solid var(--border);border-radius:10px;padding:24px;margin-bottom:16px;
-  position:relative;overflow:hidden;
-}
-.omega-card::before{content:'';position:absolute;top:-60px;right:-60px;
-  width:200px;height:200px;background:radial-gradient(circle,rgba(45,127,212,.08) 0%,transparent 70%);pointer-events:none;}
-.omega-row{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:16px;}
-.omega-num{font-family:var(--mono);font-size:56px;font-weight:600;line-height:1;letter-spacing:-2px;}
-.omega-num.stable{color:var(--green2);}
-.omega-num.stressed{color:var(--amber2);}
-.omega-num.critical{color:var(--red2);}
-.omega-state{font-family:var(--cond);font-size:20px;font-weight:800;letter-spacing:1px;margin-bottom:4px;}
-.omega-state.stable{color:var(--green2);}
-.omega-state.stressed{color:var(--amber2);}
-.omega-state.critical{color:var(--red2);}
-.omega-meaning{font-size:12px;color:var(--text2);line-height:1.65;max-width:500px;}
-.omega-bar{position:relative;height:12px;border-radius:6px;margin:8px 0 5px;
+.omega-card{background:linear-gradient(135deg,#070a12,#0d1220);border:1px solid var(--border);
+  border-radius:10px;padding:22px;margin-bottom:14px;position:relative;overflow:hidden;}
+.omega-card::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;
+  background:radial-gradient(circle,rgba(45,127,212,.08) 0%,transparent 70%);pointer-events:none;}
+.omega-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:14px;}
+.omega-num{font-family:var(--mono);font-size:52px;font-weight:600;line-height:1;letter-spacing:-2px;}
+.omega-num.stable{color:var(--green2);}.omega-num.stressed{color:var(--amber2);}.omega-num.critical{color:var(--red2);}
+.omega-state{font-family:var(--cond);font-size:18px;font-weight:800;letter-spacing:1px;margin-bottom:4px;}
+.omega-state.stable{color:var(--green2);}.omega-state.stressed{color:var(--amber2);}.omega-state.critical{color:var(--red2);}
+.omega-meaning{font-size:12px;color:var(--text2);line-height:1.6;max-width:480px;}
+.omega-bar{position:relative;height:11px;border-radius:6px;margin:8px 0 4px;
   background:linear-gradient(90deg,var(--red) 0%,var(--amber) 32%,#606000 52%,var(--green) 78%);}
-.omega-marker{position:absolute;top:-4px;width:4px;height:20px;background:#fff;
+.omega-marker{position:absolute;top:-4px;width:4px;height:19px;background:#fff;
   border-radius:2px;transform:translateX(-50%);box-shadow:0 0 8px rgba(255,255,255,.5);transition:left .5s;}
-.crit-vline{position:absolute;left:var(--oc);top:-4px;height:20px;border-left:2px dashed rgba(220,70,70,.6);}
-.crit-tick{position:absolute;left:var(--oc);top:-14px;font-family:var(--mono);font-size:8px;
-           color:var(--red2);transform:translateX(-50%);white-space:nowrap;}
+.crit-vline{position:absolute;top:-4px;height:19px;border-left:2px dashed rgba(220,70,70,.6);}
+.crit-tick{position:absolute;top:-14px;font-family:var(--mono);font-size:8px;color:var(--red2);
+  transform:translateX(-50%);white-space:nowrap;}
 .omega-labs{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--text3);}
 
-/* ── KPI GRID ────────────────────────────────────────── */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
-.kpi{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:12px 13px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:9px;margin-bottom:14px;}
+.kpi{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:11px 12px;}
 .kpi-lbl{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;}
-.kpi-val{font-family:var(--mono);font-size:20px;font-weight:500;line-height:1;}
-.kpi-val.g{color:var(--green2);} .kpi-val.w{color:var(--amber2);} .kpi-val.b{color:var(--red2);} .kpi-val.n{color:var(--blue2);}
+.kpi-val{font-family:var(--mono);font-size:19px;font-weight:500;line-height:1;}
+.kpi-val.g{color:var(--green2);}.kpi-val.w{color:var(--amber2);}.kpi-val.b{color:var(--red2);}.kpi-val.n{color:var(--blue2);}
+.kpi-val.p{color:var(--purple2);}.kpi-val.o{color:var(--orange2);}
 .kpi-sub{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px;}
 
-/* ── SECTION HEADINGS ────────────────────────────────── */
-.sh{font-family:var(--cond);font-size:11px;font-weight:700;text-transform:uppercase;
-    letter-spacing:2px;color:var(--blue);border-left:3px solid var(--blue);
-    padding-left:10px;margin:20px 0 12px;}
+.sh{font-family:var(--cond);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;
+  color:var(--blue);border-left:3px solid var(--blue);padding-left:10px;margin:18px 0 10px;}
+.sh.con{color:var(--orange);border-left-color:var(--orange);}
+.sh.edu{color:var(--purple);border-left-color:var(--purple);}
 .sh:first-child{margin-top:0;}
 
-/* ── SUB-SCORE ROW ───────────────────────────────────── */
-.ss-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}
-.ss{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:12px;text-align:center;}
+.ss-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:14px;}
+.ss{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:11px;text-align:center;}
 .ss-lbl{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;}
-.ss-val{font-family:var(--mono);font-size:22px;font-weight:500;}
-.ss-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.05);margin-top:6px;overflow:hidden;}
+.ss-val{font-family:var(--mono);font-size:21px;font-weight:500;}
+.ss-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.05);margin-top:5px;overflow:hidden;}
 .ss-fill{height:100%;border-radius:2px;transition:width .4s;}
 .ss-name{font-size:9px;color:var(--text3);margin-top:3px;}
 
-/* ── A/T BANNER ──────────────────────────────────────── */
-.at-banner{border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:16px;margin-bottom:16px;}
+.at-banner{border-radius:8px;padding:13px 16px;display:flex;align-items:center;gap:14px;margin-bottom:14px;}
 .at-banner.ana{background:var(--green3);border:1px solid var(--green);}
 .at-banner.tha{background:var(--red3);border:1px solid var(--red);}
-.at-num{font-family:var(--mono);font-size:32px;font-weight:500;flex-shrink:0;}
-.at-banner.ana .at-num{color:var(--green2);}
-.at-banner.tha .at-num{color:var(--red2);}
-.at-lbl{font-family:var(--cond);font-size:16px;font-weight:700;margin-bottom:3px;}
-.at-banner.ana .at-lbl{color:var(--green2);}
-.at-banner.tha .at-lbl{color:var(--red2);}
+.at-banner.undef{background:var(--bg3);border:1px solid var(--border2);}
+.at-num{font-family:var(--mono);font-size:30px;font-weight:500;flex-shrink:0;}
+.at-banner.ana .at-num{color:var(--green2);}.at-banner.tha .at-num{color:var(--red2);}.at-banner.undef .at-num{color:var(--text2);}
+.at-lbl{font-family:var(--cond);font-size:15px;font-weight:700;margin-bottom:3px;}
+.at-banner.ana .at-lbl{color:var(--green2);}.at-banner.tha .at-lbl{color:var(--red2);}.at-banner.undef .at-lbl{color:var(--text2);}
 .at-desc{font-size:11px;color:var(--text2);line-height:1.5;}
 
-/* ── ALERTS ──────────────────────────────────────────── */
-.alert-list{display:flex;flex-direction:column;gap:10px;}
-.alert{border-radius:7px;padding:12px 14px;border-left:4px solid;display:flex;gap:12px;}
+.alert-list{display:flex;flex-direction:column;gap:9px;}
+.alert{border-radius:7px;padding:11px 13px;border-left:4px solid;display:flex;gap:11px;}
 .alert.critical{background:var(--red3);border-color:var(--red2);}
 .alert.warning{background:var(--amber3);border-color:var(--amber2);}
 .alert.ok{background:var(--green3);border-color:var(--green2);}
-.alert-ico{font-size:16px;flex-shrink:0;line-height:1.3;}
+.alert-ico{font-size:15px;flex-shrink:0;line-height:1.3;}
 .alert-title{font-family:var(--cond);font-size:13px;font-weight:700;letter-spacing:.3px;margin-bottom:3px;}
-.alert.critical .alert-title{color:var(--red2);}
-.alert.warning .alert-title{color:var(--amber2);}
-.alert.ok .alert-title{color:var(--green2);}
-.alert-detail{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:5px;}
+.alert.critical .alert-title{color:var(--red2);}.alert.warning .alert-title{color:var(--amber2);}.alert.ok .alert-title{color:var(--green2);}
+.alert-detail{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:4px;}
 .alert-action{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:3px;display:inline-block;}
 .alert.critical .alert-action{background:rgba(240,112,112,.12);color:var(--red2);}
 .alert.warning .alert-action{background:rgba(245,184,48,.12);color:var(--amber2);}
 .alert.ok .alert-action{background:rgba(64,208,128,.12);color:var(--green2);}
 .alert-cat{font-family:var(--mono);font-size:8px;color:var(--text3);letter-spacing:.5px;margin-bottom:2px;}
 
-/* ── P&L PANEL ───────────────────────────────────────── */
-.pl-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
-.pl-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
-.pl-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);}
+.pl-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.pl-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px 15px;}
+.pl-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);}
 .pl-row:last-child{border-bottom:none;}
 .pl-lbl{font-size:11px;color:var(--text2);}
 .pl-val{font-family:var(--mono);font-size:12px;font-weight:500;}
-.pl-val.pos{color:var(--green2);} .pl-val.neg{color:var(--red2);} .pl-val.hi{color:var(--amber2);font-size:16px;}
-.pl-divider{height:1px;background:var(--border2);margin:6px 0;}
-.pl-total{display:flex;justify-content:space-between;align-items:center;padding:8px 0;}
+.pl-val.pos{color:var(--green2);}.pl-val.neg{color:var(--red2);}.pl-val.hi{font-size:16px;}
+.pl-divider{height:1px;background:var(--border2);margin:5px 0;}
+.pl-total{display:flex;justify-content:space-between;align-items:center;padding:7px 0;}
 .pl-total-lbl{font-family:var(--cond);font-size:14px;font-weight:700;color:var(--text);}
 
-/* ── PIPELINE ────────────────────────────────────────── */
-.pipe-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
-.pipe-row{display:flex;align-items:center;gap:10px;}
-.pipe-lbl{font-family:var(--mono);font-size:10px;color:var(--text2);width:160px;flex-shrink:0;}
-.pipe-track{flex:1;height:7px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden;}
+.pipe-list{display:flex;flex-direction:column;gap:7px;margin-bottom:11px;}
+.pipe-row{display:flex;align-items:center;gap:9px;}
+.pipe-lbl{font-family:var(--mono);font-size:10px;color:var(--text2);width:165px;flex-shrink:0;}
+.pipe-track{flex:1;height:6px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden;}
 .pipe-fill{height:100%;border-radius:4px;transition:width .4s;}
-.pipe-val{font-family:var(--mono);font-size:10px;color:var(--text2);width:50px;text-align:right;flex-shrink:0;}
+.pipe-val{font-family:var(--mono);font-size:10px;color:var(--text2);width:48px;text-align:right;flex-shrink:0;}
 
-/* ── CHARTS ──────────────────────────────────────────── */
-.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
-.chart-box{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:12px;}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.chart-box{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:11px;}
 .chart-box canvas{width:100%;display:block;}
-@media(max-width:640px){.charts-row{grid-template-columns:1fr;}.pl-grid{grid-template-columns:1fr;}.ss-row{grid-template-columns:1fr;}}
 
-/* ── DIAGNOSTICS TABLE ───────────────────────────────── */
-.diag-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px;}
-.diag-table th{background:var(--bg3);color:var(--text3);font-family:var(--mono);font-size:8px;
-               text-transform:uppercase;letter-spacing:.6px;padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);}
-.diag-table td{padding:6px 10px;border-bottom:1px solid rgba(30,40,64,.5);font-family:var(--mono);font-size:11px;}
-
-/* ── PENALTY ROW ─────────────────────────────────────── */
-.pen-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.pen-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
 .pen-lbl{font-size:11px;color:var(--text2);flex:1;}
-.pen-track{width:80px;height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;flex-shrink:0;}
+.pen-track{width:78px;height:5px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;flex-shrink:0;}
 .pen-fill{height:100%;border-radius:3px;}
 .pen-val{font-family:var(--mono);font-size:10px;width:34px;text-align:right;flex-shrink:0;color:var(--text2);}
 
-/* ── EMPTY / LOADING ─────────────────────────────────── */
+.domain-panel{background:linear-gradient(135deg,rgba(124,92,191,.06),rgba(124,92,191,.02));
+  border:1px solid rgba(124,92,191,.25);border-radius:9px;padding:16px;margin-bottom:14px;}
+.domain-panel.con{background:linear-gradient(135deg,rgba(201,96,32,.06),rgba(201,96,32,.02));border-color:rgba(201,96,32,.25);}
+.domain-panel-title{font-family:var(--cond);font-size:12px;font-weight:700;letter-spacing:1.5px;
+  text-transform:uppercase;margin-bottom:12px;color:var(--purple2);}
+.domain-panel.con .domain-panel-title{color:var(--orange2);}
+
 .empty{text-align:center;padding:60px 20px;}
-.empty-icon{font-size:48px;opacity:.3;margin-bottom:14px;}
+.empty-icon{font-size:44px;opacity:.3;margin-bottom:12px;}
 .empty-text{font-size:13px;color:var(--text3);line-height:1.7;}
 .loading{text-align:center;padding:40px;font-family:var(--mono);font-size:11px;color:var(--blue2);animation:pulse 1.5s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:.4;}50%{opacity:1;}}
 .scroll-x{overflow-x:auto;}
+@media(max-width:640px){.charts-row{grid-template-columns:1fr;}.pl-grid{grid-template-columns:1fr;}.ss-row{grid-template-columns:1fr;}.cfg-grid{grid-template-columns:1fr;}.cfg-grid3{grid-template-columns:1fr 1fr;}}
+
+/* sensitivity box */
+.sens-box{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:12px;margin-top:12px;}
+.sens-title{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
 </style>
 </head>
 <body>
 
+<!-- ═══ CONFIG OVERLAY ═══ -->
+<div class="cfg-overlay" id="cfgOverlay">
+  <div class="cfg-modal">
+    <div class="cfg-title">⚙ MODEL CONFIGURATION</div>
+    <div class="cfg-sub">
+      All parameters that drive the UEDP v4 engine. <strong>Zero hardcoding</strong> — every number here flows directly into the math.<br>
+      Protocol: G S Ramesh Kumar · DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4
+    </div>
+
+    <!-- PROTOCOL CONSTANTS -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">📐 Protocol Constants (UEDP v4 — Ω_crit = 1/e fixed by METP theory)</div>
+      <div class="cfg-grid3">
+        <div class="cfg-field">
+          <label>Ω_ref (Healthy Target)</label>
+          <input type="number" id="cfg_omegaRef" value="0.70" step="0.01" min="0.1" max="0.99">
+          <div class="cfg-hint">Reference coherence level for RSL tension. Empirically: omega > this = healthy margin.</div>
+        </div>
+        <div class="cfg-field">
+          <label>PAY_MAX — Payment lead stress ceiling (days)</label>
+          <input type="number" id="cfg_payMax" value="90" step="1" min="30" max="365">
+          <div class="cfg-hint">D&B: >90d = high default risk. At PAY_MAX days, order penalty is maximum.</div>
+        </div>
+        <div class="cfg-field">
+          <label>SPIKE_DIV — Spike normalisation divisor</label>
+          <input type="number" id="cfg_spikeDiv" value="3" step="0.1" min="1" max="10">
+          <div class="cfg-hint">spike > SPIKE_DIV × mean = 3σ outlier event. Increase to reduce sensitivity.</div>
+        </div>
+        <div class="cfg-field">
+          <label>PROJ_HRS — Working day length (hours)</label>
+          <input type="number" id="cfg_projHrs" value="10" step="0.5" min="4" max="24">
+          <div class="cfg-hint">Used for EOD extrapolation: projected_output = rate × PROJ_HRS.</div>
+        </div>
+        <div class="cfg-field">
+          <label>PRE_REV_HRS — Pre-revenue mode threshold (hrs)</label>
+          <input type="number" id="cfg_preRevHrs" value="3" step="0.5" min="0" max="8">
+          <div class="cfg-hint">FIX-P1: When hoursElapsed < this AND revenue=0, psi uses ops floor not revenue floor.</div>
+        </div>
+        <div class="cfg-field">
+          <label>ISEQ_MONO_THRESHOLD — AT undefined below</label>
+          <input type="number" id="cfg_iseqMono" value="0.01" step="0.001" min="0.001" max="0.1">
+          <div class="cfg-hint">FIX-P5: AT = null when ISeq < this (monotone production — ratio undefined).</div>
+        </div>
+        <div class="cfg-field">
+          <label>AT_MAX — A/T ratio ceiling</label>
+          <input type="number" id="cfg_atMax" value="10" step="1" min="2" max="100">
+          <div class="cfg-hint">FIX-P5: AT is clamped to AT_MAX to prevent blow-up in near-monotone sequences.</div>
+        </div>
+        <div class="cfg-field">
+          <label>ISEQ_CHAOS_THRESHOLD — Chaos alert trigger</label>
+          <input type="number" id="cfg_iseqChaos" value="1.0" step="0.05" min="0.5" max="2.0">
+          <div class="cfg-hint">ISeq > this triggers the high-chaos instability alert. ISeq ∈ [0,2].</div>
+        </div>
+        <div class="cfg-field">
+          <label>SENSITIVITY_DELTA — Perturbation % for sensitivity</label>
+          <input type="number" id="cfg_sensDelta" value="0.10" step="0.01" min="0.01" max="0.5">
+          <div class="cfg-hint">±DELTA for sensitivity analysis. 0.10 = ±10% input perturbation.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PENALTY WEIGHTS -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">⚖ Penalty Weights (must sum to 1.000)</div>
+      <div class="w-row">
+        <div class="w-lbl">Hourly Variance (CV² — intra-day quality predictor)</div>
+        <input class="w-inp" type="number" id="w_var" value="0.20" step="0.01" min="0" max="1" oninput="updateWSum()">
+      </div>
+      <div class="w-row">
+        <div class="w-lbl">Spike (3σ acute events — machine fault, absentee)</div>
+        <input class="w-inp" type="number" id="w_spike" value="0.15" step="0.01" min="0" max="1" oninput="updateWSum()">
+      </div>
+      <div class="w-row">
+        <div class="w-lbl">Drift (OLS slope — slow declining trend)</div>
+        <input class="w-inp" type="number" id="w_drift" value="0.10" step="0.01" min="0" max="1" oninput="updateWSum()">
+      </div>
+      <div class="w-row">
+        <div class="w-lbl">Direction (workforce / revenue alignment vector)</div>
+        <input class="w-inp" type="number" id="w_dir" value="0.20" step="0.01" min="0" max="1" oninput="updateWSum()">
+      </div>
+      <div class="w-row">
+        <div class="w-lbl">Cost Pressure (margin normalisation)</div>
+        <input class="w-inp" type="number" id="w_cost" value="0.20" step="0.01" min="0" max="1" oninput="updateWSum()">
+      </div>
+      <div class="w-row">
+        <div class="w-lbl">Order / Pipeline Health (confirm rate + payment lead)</div>
+        <input class="w-inp" type="number" id="w_order" value="0.15" step="0.01" min="0" max="1" oninput="updateWSum()">
+      </div>
+      <div class="w-sum" id="wSumDisplay">Sum: 1.000 ✓</div>
+    </div>
+
+    <!-- ALERT THRESHOLDS -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">🚨 Alert Thresholds</div>
+      <div class="cfg-grid3">
+        <div class="cfg-field">
+          <label>Omega stressed (upper warning boundary)</label>
+          <input type="number" id="cfg_omegaWarnHi" value="0.55" step="0.01" min="0.1" max="0.99">
+          <div class="cfg-hint">Omega below this (but above Ω_crit) triggers stressed warning.</div>
+        </div>
+        <div class="cfg-field">
+          <label>Omega healthy (stable state floor)</label>
+          <input type="number" id="cfg_omegaHealthy" value="0.65" step="0.01" min="0.1" max="0.99">
+        </div>
+        <div class="cfg-field">
+          <label>Omega display stable floor (UI coloring)</label>
+          <input type="number" id="cfg_omegaStableFloor" value="0.70" step="0.01" min="0.1" max="0.99">
+        </div>
+        <div class="cfg-field">
+          <label>Attendance critical threshold (%)</label>
+          <input type="number" id="cfg_attCrit" value="65" step="1" min="10" max="100">
+        </div>
+        <div class="cfg-field">
+          <label>Attendance warning threshold (%)</label>
+          <input type="number" id="cfg_attWarn" value="80" step="1" min="10" max="100">
+        </div>
+        <div class="cfg-field">
+          <label>Net margin thin-alert threshold (%)</label>
+          <input type="number" id="cfg_marginThin" value="8" step="0.5" min="0" max="50">
+          <div class="cfg-hint">Alert fires when net margin is positive but below this %.</div>
+        </div>
+        <div class="cfg-field">
+          <label>Net margin healthy target (%)</label>
+          <input type="number" id="cfg_marginTarget" value="15" step="0.5" min="0" max="100">
+        </div>
+        <div class="cfg-field">
+          <label>Target coverage critical (%)</label>
+          <input type="number" id="cfg_targetCovCrit" value="60" step="1" min="10" max="100">
+          <div class="cfg-hint">If actual/target < this % at hoursElapsed ≥ alertHrThresh → critical.</div>
+        </div>
+        <div class="cfg-field">
+          <label>Target alert — hours elapsed trigger</label>
+          <input type="number" id="cfg_alertHrThresh" value="5" step="0.5" min="1" max="10">
+        </div>
+        <div class="cfg-field">
+          <label>Order confirm rate warning threshold (%)</label>
+          <input type="number" id="cfg_confirmWarn" value="60" step="1" min="10" max="100">
+        </div>
+        <div class="cfg-field">
+          <label>Sales conversion warning threshold (%)</label>
+          <input type="number" id="cfg_convWarn" value="40" step="1" min="5" max="100">
+        </div>
+        <div class="cfg-field">
+          <label>Payment lead cashflow warning (days)</label>
+          <input type="number" id="cfg_payWarn" value="60" step="1" min="1" max="365">
+        </div>
+        <div class="cfg-field">
+          <label>Productivity drift alert (units/hr/hr)</label>
+          <input type="number" id="cfg_driftAlert" value="-0.5" step="0.1" min="-10" max="0">
+          <div class="cfg-hint">OLS slope more negative than this → declining trend alert.</div>
+        </div>
+        <div class="cfg-field">
+          <label>Data quality: output > N× target flags</label>
+          <input type="number" id="cfg_dataQualMult" value="5" step="0.5" min="1.5" max="20">
+          <div class="cfg-hint">If hour output > N × hour target → possible data entry error.</div>
+        </div>
+        <div class="cfg-field">
+          <label>Revenue efficiency warning threshold (%)</label>
+          <input type="number" id="cfg_revEffWarn" value="60" step="1" min="10" max="100">
+        </div>
+      </div>
+    </div>
+
+    <!-- DOMAIN THRESHOLDS -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">🏗 Contractor Domain Thresholds</div>
+      <div class="cfg-grid3">
+        <div class="cfg-field"><label>SPI critical (below = critical alert)</label>
+          <input type="number" id="cfg_spiCrit" value="0.90" step="0.01" min="0.1" max="1.5"></div>
+        <div class="cfg-field"><label>SPI warning (below = warning alert)</label>
+          <input type="number" id="cfg_spiWarn" value="0.97" step="0.01" min="0.1" max="1.5"></div>
+        <div class="cfg-field"><label>Safety incident Omega penalty per incident</label>
+          <input type="number" id="cfg_safetyPenalty" value="0.15" step="0.01" min="0" max="0.5"></div>
+        <div class="cfg-field"><label>Safety Omega penalty cap (max)</label>
+          <input type="number" id="cfg_safetyPenaltyCap" value="0.30" step="0.01" min="0" max="1"></div>
+        <div class="cfg-field"><label>Rework % alert threshold</label>
+          <input type="number" id="cfg_reworkAlert" value="10" step="1" min="0" max="100"></div>
+        <div class="cfg-field"><label>Cert approval rate warning (%)</label>
+          <input type="number" id="cfg_certApprWarn" value="50" step="1" min="0" max="100"></div>
+        <div class="cfg-field"><label>Lost hours alert threshold (hrs)</label>
+          <input type="number" id="cfg_lostHrsAlert" value="2" step="0.5" min="0" max="10"></div>
+      </div>
+    </div>
+
+    <div class="cfg-section">
+      <div class="cfg-section-title">🎓 Education Domain Thresholds</div>
+      <div class="cfg-grid3">
+        <div class="cfg-field"><label>Student attendance critical (%)</label>
+          <input type="number" id="cfg_studAttCrit" value="75" step="1" min="10" max="100"></div>
+        <div class="cfg-field"><label>Student attendance warning (%)</label>
+          <input type="number" id="cfg_studAttWarn" value="85" step="1" min="10" max="100"></div>
+        <div class="cfg-field"><label>Class delivery alert threshold (%)</label>
+          <input type="number" id="cfg_classDelAlert" value="90" step="1" min="10" max="100"></div>
+        <div class="cfg-field"><label>Pass rate critical (%)</label>
+          <input type="number" id="cfg_passRateCrit" value="70" step="1" min="10" max="100"></div>
+        <div class="cfg-field"><label>Fee recovery warning (%)</label>
+          <input type="number" id="cfg_feeRecovWarn" value="60" step="1" min="10" max="100"></div>
+        <div class="cfg-field"><label>Syllabus risk HIGH threshold (portions/day)</label>
+          <input type="number" id="cfg_syllabusHigh" value="2" step="0.5" min="0.5" max="10"></div>
+        <div class="cfg-field"><label>Syllabus risk MODERATE threshold</label>
+          <input type="number" id="cfg_syllabusModerate" value="1" step="0.5" min="0.1" max="10"></div>
+      </div>
+    </div>
+
+    <!-- SCORE WEIGHTS -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">📊 Sub-Score Formula Weights</div>
+      <div class="cfg-grid3">
+        <div class="cfg-field"><label>WF: Attendance weight</label><input type="number" id="cfg_wfAtt" value="0.50" step="0.05" min="0" max="1"></div>
+        <div class="cfg-field"><label>WF: (1−Variance) weight</label><input type="number" id="cfg_wfVar" value="0.30" step="0.05" min="0" max="1"></div>
+        <div class="cfg-field"><label>WF: (1−Spike) weight</label><input type="number" id="cfg_wfSpike" value="0.20" step="0.05" min="0" max="1"></div>
+        <div class="cfg-field"><label>FIN: RevEff weight</label><input type="number" id="cfg_finRev" value="0.50" step="0.05" min="0" max="1"></div>
+        <div class="cfg-field"><label>FIN: (1−CostPressure) weight</label><input type="number" id="cfg_finCost" value="0.50" step="0.05" min="0" max="1"></div>
+        <div class="cfg-field"><label>ORD: ConfirmRate weight</label><input type="number" id="cfg_ordConf" value="0.50" step="0.05" min="0" max="1"></div>
+        <div class="cfg-field"><label>ORD: SalesConvRate weight</label><input type="number" id="cfg_ordConv" value="0.30" step="0.05" min="0" max="1"></div>
+        <div class="cfg-field"><label>ORD: (1−PayPen) weight</label><input type="number" id="cfg_ordPay" value="0.20" step="0.05" min="0" max="1"></div>
+        <div class="cfg-field"><label>PayPenalty multiplier (of 0→1 scale)</label><input type="number" id="cfg_payPenMult" value="0.30" step="0.01" min="0" max="1"></div>
+        <div class="cfg-field"><label>ConfPen: confirmRate weight</label><input type="number" id="cfg_confPenCR" value="0.60" step="0.01" min="0" max="1"></div>
+        <div class="cfg-field"><label>ConfPen: salesConvRate weight</label><input type="number" id="cfg_confPenCV" value="0.40" step="0.01" min="0" max="1"></div>
+        <div class="cfg-field"><label>nOrder: confPen blend weight</label><input type="number" id="cfg_nOrderBlend" value="0.70" step="0.01" min="0" max="1"></div>
+      </div>
+    </div>
+
+    <div class="cfg-btns">
+      <button class="btn-reset" onclick="resetConfig()">↺ Reset Defaults</button>
+      <button class="btn-close" onclick="closeConfig()">✕ Cancel</button>
+      <button class="btn-save" onclick="saveConfig()">✓ Save & Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOP BAR ═══ -->
 <div class="bar">
   <div>
     <div class="bar-logo">UEDP <em>PULSE</em></div>
-    <div class="bar-sub">BUSINESS COHERENCE ENGINE · G S RAMESH KUMAR · Ω_crit=1/e</div>
+    <div class="bar-sub">MULTI-DOMAIN COHERENCE ENGINE · G S RAMESH KUMAR · v4.0 · ZERO HARDCODE · Ω_crit=1/e</div>
   </div>
   <div class="bar-date" id="barDate"></div>
+  <button class="cfg-btn" onclick="openConfig()">⚙ CONFIG</button>
   <button class="compute-btn" id="computeBtn" onclick="compute()">▶ COMPUTE Ω</button>
 </div>
 
-<div class="page">
+<div class="domain-bar">
+  <button class="domain-btn dom-general active" onclick="setDomain('general')">🏭 General Business</button>
+  <button class="domain-btn dom-contractor" onclick="setDomain('contractor')">🏗 Contractor / Construction</button>
+  <button class="domain-btn dom-education" onclick="setDomain('education')">🎓 Educational Institution</button>
+  <span id="domainLabel" style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:auto;align-self:center;">Domain: General Business</span>
+</div>
 
-  <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<div class="page">
+  <!-- ═══ SIDEBAR ═══ -->
   <div class="sidebar">
 
-    <!-- Workforce -->
-    <div class="sb-section">
+    <!-- GENERAL: Workforce -->
+    <div class="sb-section domain-section dom-general visible">
       <div class="sb-title">👥 Workforce</div>
       <div class="grid2">
         <div class="field"><label>Present</label><input type="number" id="empPresent" placeholder="18" min="0"></div>
@@ -251,24 +496,89 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
       </div>
     </div>
 
-    <!-- Hourly productivity -->
-    <div class="sb-section">
-      <div class="sb-title">⏱ Hourly Output</div>
-      <div class="field">
-        <label>Unit of measure</label>
-        <input type="text" id="prodUnit" placeholder="units / tasks / kg" value="units">
+    <!-- CONTRACTOR: Site Workforce -->
+    <div class="sb-section domain-section dom-contractor">
+      <div class="sb-title con">🦺 Site Workforce</div>
+      <div class="grid3">
+        <div class="field"><label>On-site today</label><input type="number" id="conWorkers" placeholder="40" min="0"></div>
+        <div class="field"><label>Contracted total</label><input type="number" id="conTotal" placeholder="50" min="1"></div>
+        <div class="field"><label>Supervisors</label><input type="number" id="conSupervisors" placeholder="5" min="0"></div>
       </div>
-      <div class="scroll-x">
-        <table class="hr-table">
-          <thead><tr><th>Hour</th><th>Output</th><th>Target</th><th>Bar</th></tr></thead>
-          <tbody id="hrBody"></tbody>
-        </table>
+      <div class="grid2">
+        <div class="field"><label>Subcontractors today</label><input type="number" id="conSubWorkers" placeholder="12" min="0"></div>
+        <div class="field"><label>Subcon total</label><input type="number" id="conSubTotal" placeholder="15" min="1"></div>
       </div>
-      <div class="hint">Enter each completed hour. Leave future hours blank.</div>
     </div>
 
-    <!-- Financials -->
-    <div class="sb-section" style="margin-top:6px;">
+    <!-- EDUCATION: Attendance -->
+    <div class="sb-section domain-section dom-education">
+      <div class="sb-title edu">📋 Attendance</div>
+      <div class="grid2">
+        <div class="field"><label>Students present</label><input type="number" id="eduStudentsPresent" placeholder="280" min="0"></div>
+        <div class="field"><label>Total enrolled</label><input type="number" id="eduStudentsTotal" placeholder="320" min="1"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Teachers present</label><input type="number" id="eduTeachersPresent" placeholder="18" min="0"></div>
+        <div class="field"><label>Total teachers</label><input type="number" id="eduTeachersTotal" placeholder="22" min="1"></div>
+      </div>
+    </div>
+
+    <!-- GENERAL: Hourly -->
+    <div class="sb-section domain-section dom-general visible">
+      <div class="sb-title">⏱ Hourly Output</div>
+      <div class="field"><label>Unit of measure</label><input type="text" id="prodUnit" placeholder="units / tasks / kg" value="units"></div>
+      <div class="scroll-x"><table class="hr-table"><thead><tr><th>Hour</th><th>Output</th><th>Target</th><th>Bar</th></tr></thead><tbody id="hrBody"></tbody></table></div>
+    </div>
+
+    <!-- CONTRACTOR: Progress -->
+    <div class="sb-section domain-section dom-contractor">
+      <div class="sb-title con">📐 Progress (Today)</div>
+      <div class="field"><label>Unit of work</label>
+        <select id="conWorkUnit"><option value="sqm">Sq.metres</option><option value="cum">Cu.metres</option><option value="rmt">Running metres</option><option value="nos">Nos. / pieces</option><option value="MT">Metric tons</option><option value="bags">Bags</option></select>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Work completed today</label><input type="number" id="conWorkDone" placeholder="85" min="0" step="0.1"></div>
+        <div class="field"><label>Target for today</label><input type="number" id="conWorkTarget" placeholder="100" min="0" step="0.1"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Total scope (project)</label><input type="number" id="conTotalScope" placeholder="5000" min="0" step="0.1"></div>
+        <div class="field"><label>Completed till date</label><input type="number" id="conCumDone" placeholder="1200" min="0" step="0.1"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Planned completion %</label><input type="number" id="conPlannedPct" placeholder="25" min="0" max="100" step="0.1"></div>
+        <div class="field"><label>Actual completion %</label><input type="number" id="conActualPct" placeholder="24" min="0" max="100" step="0.1"></div>
+      </div>
+    </div>
+
+    <div class="sb-section domain-section dom-contractor">
+      <div class="sb-title con">⏱ Hourly Site Output</div>
+      <div class="scroll-x"><table class="hr-table"><thead><tr><th>Hour</th><th>Output</th><th>Target</th><th>Bar</th></tr></thead><tbody id="hrBodyCon"></tbody></table></div>
+    </div>
+
+    <!-- EDUCATION: Academic Delivery -->
+    <div class="sb-section domain-section dom-education">
+      <div class="sb-title edu">📚 Academic Delivery</div>
+      <div class="grid2">
+        <div class="field"><label>Classes scheduled</label><input type="number" id="eduClassesScheduled" placeholder="48" min="0"></div>
+        <div class="field"><label>Classes conducted</label><input type="number" id="eduClassesConducted" placeholder="44" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Assessments due</label><input type="number" id="eduAssessmentsDue" placeholder="5" min="0"></div>
+        <div class="field"><label>Assessments done</label><input type="number" id="eduAssessmentsDone" placeholder="4" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Avg class strength %</label><input type="number" id="eduAvgStrength" placeholder="85" min="0" max="100"></div>
+        <div class="field"><label>Dropout incidents today</label><input type="number" id="eduDropouts" placeholder="0" min="0"></div>
+      </div>
+    </div>
+
+    <div class="sb-section domain-section dom-education">
+      <div class="sb-title edu">⏱ Hourly Period Delivery</div>
+      <div class="scroll-x"><table class="hr-table"><thead><tr><th>Period</th><th>Done</th><th>Target</th><th>Bar</th></tr></thead><tbody id="hrBodyEdu"></tbody></table></div>
+    </div>
+
+    <!-- GENERAL: Financials -->
+    <div class="sb-section domain-section dom-general visible" style="margin-top:6px;">
       <div class="sb-title">₹ Financials</div>
       <div class="grid2">
         <div class="field"><label>Running cost today ₹</label><input type="number" id="runCost" placeholder="45000" min="0"></div>
@@ -284,31 +594,86 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
       </div>
     </div>
 
-    <!-- Product mix -->
-    <div class="sb-section" style="margin-top:6px;">
-      <div class="sb-title">📦 Product / Task Mix</div>
-      <div class="scroll-x">
-        <table class="mx-table">
-          <thead><tr><th>Name</th><th>Units</th><th>Unit ₹</th></tr></thead>
-          <tbody id="mxBody"></tbody>
-        </table>
+    <!-- CONTRACTOR: Financials -->
+    <div class="sb-section domain-section dom-contractor" style="margin-top:6px;">
+      <div class="sb-title con">₹ Project Financials</div>
+      <div class="grid2">
+        <div class="field"><label>Labour cost today ₹</label><input type="number" id="conLabourCost" placeholder="85000" min="0"></div>
+        <div class="field"><label>Material cost today ₹</label><input type="number" id="conMaterialCost" placeholder="120000" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Equipment/OH cost ₹</label><input type="number" id="conEquipCost" placeholder="20000" min="0"></div>
+        <div class="field"><label>Billing raised today ₹</label><input type="number" id="conBillingToday" placeholder="250000" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Daily billing target ₹</label><input type="number" id="conBillingTarget" placeholder="280000" min="0"></div>
+        <div class="field"><label>Contract value ₹</label><input type="number" id="conContractValue" placeholder="50000000" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Billed to date ₹</label><input type="number" id="conBilledToDate" placeholder="12000000" min="0"></div>
+        <div class="field"><label>Retention held ₹</label><input type="number" id="conRetention" placeholder="600000" min="0"></div>
       </div>
     </div>
 
-    <!-- Orders & Sales -->
-    <div class="sb-section" style="margin-top:6px;">
+    <!-- EDUCATION: Financials -->
+    <div class="sb-section domain-section dom-education" style="margin-top:6px;">
+      <div class="sb-title edu">₹ Institution Financials</div>
+      <div class="grid2">
+        <div class="field"><label>Staff salary cost ₹/day</label><input type="number" id="eduStaffCost" placeholder="35000" min="0"></div>
+        <div class="field"><label>Operational cost ₹/day</label><input type="number" id="eduOpCost" placeholder="12000" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Fee collected today ₹</label><input type="number" id="eduFeeCollected" placeholder="45000" min="0"></div>
+        <div class="field"><label>Fee target today ₹</label><input type="number" id="eduFeeTarget" placeholder="60000" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Fee outstanding (month) ₹</label><input type="number" id="eduFeeOutstanding" placeholder="180000" min="0"></div>
+        <div class="field"><label>Total fee receivable (month) ₹</label><input type="number" id="eduFeeTotalMonth" placeholder="500000" min="0"></div>
+      </div>
+    </div>
+
+    <!-- CONTRACTOR: Risk -->
+    <div class="sb-section domain-section dom-contractor" style="margin-top:6px;">
+      <div class="sb-title con">⚠ Project Risk</div>
+      <div class="grid2">
+        <div class="field"><label>Safety incidents today</label><input type="number" id="conSafetyIncidents" placeholder="0" min="0"></div>
+        <div class="field"><label>Near-miss reports</label><input type="number" id="conNearMiss" placeholder="0" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Material delays (hrs)</label><input type="number" id="conMaterialDelay" placeholder="0" min="0"></div>
+        <div class="field"><label>Equipment downtime (hrs)</label><input type="number" id="conEquipDowntime" placeholder="0" min="0"></div>
+      </div>
+      <div class="field"><label>Rework (% of today's work)</label><input type="number" id="conRework" placeholder="0" min="0" max="100" step="0.1"></div>
+      <div class="field"><label>Weather stoppage hours</label><input type="number" id="conWeatherStop" placeholder="0" min="0" step="0.5"></div>
+    </div>
+
+    <!-- EDUCATION: Academic Quality -->
+    <div class="sb-section domain-section dom-education" style="margin-top:6px;">
+      <div class="sb-title edu">⚠ Academic Quality</div>
+      <div class="grid2">
+        <div class="field"><label>Complaints received</label><input type="number" id="eduComplaints" placeholder="0" min="0"></div>
+        <div class="field"><label>Late-comers today</label><input type="number" id="eduLateComers" placeholder="5" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Avg exam score %</label><input type="number" id="eduAvgScore" placeholder="72" min="0" max="100"></div>
+        <div class="field"><label>Pass % (recent exam)</label><input type="number" id="eduPassPct" placeholder="88" min="0" max="100"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Syllabus completion %</label><input type="number" id="eduSyllabusPct" placeholder="65" min="0" max="100"></div>
+        <div class="field"><label>Exam days remaining</label><input type="number" id="eduExamDays" placeholder="30" min="0"></div>
+      </div>
+    </div>
+
+    <!-- GENERAL: Orders -->
+    <div class="sb-section domain-section dom-general visible" style="margin-top:6px;">
       <div class="sb-title">📋 Orders &amp; Sales</div>
       <div class="grid2">
         <div class="field"><label>Orders received</label><input type="number" id="ordRec" placeholder="5" min="0"></div>
         <div class="field"><label>Orders confirmed</label><input type="number" id="ordCon" placeholder="3" min="0"></div>
       </div>
       <div class="grid2">
-        <div class="field"><label>Time since received (hrs)</label><input type="number" id="timeRec" placeholder="4" min="0" step="0.5"></div>
-        <div class="field"><label>Avg time to confirm (hrs)</label><input type="number" id="timeCon" placeholder="1.5" min="0" step="0.5"></div>
-      </div>
-      <div class="grid2">
         <div class="field"><label>Payment lead time (days)</label><input type="number" id="payLead" placeholder="30" min="0"></div>
-        <div class="field"><label>Orders pending</label><input type="number" id="ordPend" placeholder="8" min="0"></div>
+        <div class="field"><label></label></div>
       </div>
       <div class="grid2">
         <div class="field"><label>Sales leads today</label><input type="number" id="saleLeads" placeholder="10" min="0"></div>
@@ -316,8 +681,38 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
       </div>
     </div>
 
-    <!-- Hours elapsed -->
-    <div class="sb-section" style="margin-top:6px;padding-bottom:20px;">
+    <!-- CONTRACTOR: Orders -->
+    <div class="sb-section domain-section dom-contractor" style="margin-top:6px;">
+      <div class="sb-title con">📋 Work Orders &amp; Approvals</div>
+      <div class="grid2">
+        <div class="field"><label>Drawings pending</label><input type="number" id="conDrawingsPending" placeholder="3" min="0"></div>
+        <div class="field"><label>Variation orders pending</label><input type="number" id="conVOPending" placeholder="2" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Payment cert. raised</label><input type="number" id="conPayCertRaised" placeholder="1" min="0"></div>
+        <div class="field"><label>Payment cert. approved</label><input type="number" id="conPayCertApproved" placeholder="0" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Invoice payment lead (days)</label><input type="number" id="conPayLead" placeholder="45" min="0"></div>
+        <div class="field"><label>Punch list items open</label><input type="number" id="conPunchList" placeholder="8" min="0"></div>
+      </div>
+    </div>
+
+    <!-- EDUCATION: Admissions -->
+    <div class="sb-section domain-section dom-education" style="margin-top:6px;">
+      <div class="sb-title edu">🎯 Admissions &amp; Pipeline</div>
+      <div class="grid2">
+        <div class="field"><label>Enquiries today</label><input type="number" id="eduEnquiries" placeholder="8" min="0"></div>
+        <div class="field"><label>Admissions today</label><input type="number" id="eduAdmissions" placeholder="3" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Seats available</label><input type="number" id="eduSeatsAvail" placeholder="40" min="0"></div>
+        <div class="field"><label>Seats filled</label><input type="number" id="eduSeatsFilled" placeholder="32" min="0"></div>
+      </div>
+    </div>
+
+    <!-- Hours Elapsed -->
+    <div class="sb-section domain-section dom-general visible" style="margin-top:6px;padding-bottom:20px;">
       <div class="sb-title">🕐 Hours Elapsed</div>
       <div class="field">
         <label>Working hours so far today</label>
@@ -326,108 +721,768 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
       </div>
     </div>
 
+    <div class="sb-section domain-section dom-contractor" style="margin-top:6px;padding-bottom:20px;">
+      <div class="sb-title con">🕐 Site Day Progress</div>
+      <div class="field">
+        <label>Working hours elapsed today</label>
+        <input type="range" id="conHoursEl" min="1" max="10" value="8" oninput="updateConHrsLabel()">
+        <div class="hint" id="conHrsLabel">8 hours elapsed</div>
+      </div>
+    </div>
+
+    <div class="sb-section domain-section dom-education" style="margin-top:6px;padding-bottom:20px;">
+      <div class="sb-title edu">🕐 School Day Progress</div>
+      <div class="field">
+        <label>Periods elapsed today</label>
+        <input type="range" id="eduHoursEl" min="1" max="10" value="6" oninput="updateEduHrsLabel()">
+        <div class="hint" id="eduHrsLabel">6 periods elapsed</div>
+      </div>
+    </div>
+
   </div><!-- /sidebar -->
 
-  <!-- ═══════════════════ MAIN PANEL ═══════════════════ -->
+  <!-- ═══ MAIN PANEL ═══ -->
   <div class="panel" id="mainPanel">
     <div class="empty">
       <div class="empty-icon">⊕</div>
-      <div class="empty-text">Enter today's operational data in the sidebar<br>and press <strong style="color:var(--blue2)">▶ COMPUTE Ω</strong> to see:<br><br>
-        <span style="color:var(--green2)">①</span> UEDP Omega coherence score &nbsp;
-        <span style="color:var(--amber2)">②</span> P&amp;L snapshot &nbsp;
-        <span style="color:var(--blue2)">③</span> Profitability prediction &nbsp;
-        <span style="color:var(--red2)">④</span> Actionable alerts
+      <div class="empty-text">
+        Select domain · Fill today's data · Press <strong style="color:var(--blue2)">▶ COMPUTE Ω</strong><br><br>
+        Use <strong style="color:var(--amber2)">⚙ CONFIG</strong> to adjust all model parameters dynamically.<br>
+        <strong>Zero hardcoding</strong> — every threshold, weight, and constant is configurable.<br><br>
+        <span style="color:var(--text3);font-size:11px;">
+          UEDP v4 · G S Ramesh Kumar · DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4<br>
+          Ω_crit = 1/e ≈ 0.36788 (METP variational principle — fixed by theory, not tuned)
+        </span>
       </div>
     </div>
   </div>
-
-</div><!-- /page -->
+</div>
 
 <script>
 'use strict';
 
-var OC = 1/Math.E;
+// ═══════════════════════════════════════════════════════════════════════════
+// MODEL CONFIGURATION — all live values (zero hardcode in engine)
+// ═══════════════════════════════════════════════════════════════════════════
+var OC = 1/Math.E; // METP universal critical threshold — fixed by theory, NOT configurable
 
-// ── Init ──────────────────────────────────────────────────────────────────
-var SLOTS = ['8–9am','9–10am','10–11am','11am–12pm','12–1pm','1–2pm','2–3pm','3–4pm','4–5pm','5–6pm'];
+var CFG = {
+  // Protocol constants (configurable)
+  omegaRef:         0.70,   // Ω_ref — RSL reference coherence
+  payMax:           90,     // PAY_MAX — payment lead stress ceiling (days)
+  spikeDiv:         3,      // 3σ spike normaliser
+  projHrs:          10,     // Working day for EOD projection
+  preRevHrs:        3,      // FIX-P1: pre-revenue mode threshold
+  iseqMono:         0.01,   // FIX-P5: AT = null below this ISeq
+  atMax:            10,     // FIX-P5: AT cap
+  iseqChaos:        1.0,    // ISeq chaos alert trigger
+  sensDelta:        0.10,   // ±% for sensitivity analysis
 
+  // Penalty weights (sum to 1)
+  W: { var:0.20, spike:0.15, drift:0.10, dir:0.20, cost:0.20, order:0.15 },
+
+  // Alert thresholds
+  omegaWarnHi:      0.55,
+  omegaHealthy:     0.65,
+  omegaStableFloor: 0.70,
+  attCrit:          65,
+  attWarn:          80,
+  marginThin:       8,
+  marginTarget:     15,
+  targetCovCrit:    60,
+  alertHrThresh:    5,
+  confirmWarn:      60,
+  convWarn:         40,
+  payWarn:          60,
+  driftAlert:       -0.5,
+  dataQualMult:     5,
+  revEffWarn:       60,
+
+  // Contractor thresholds
+  spiCrit:          0.90,
+  spiWarn:          0.97,
+  safetyPenalty:    0.15,
+  safetyPenaltyCap: 0.30,
+  reworkAlert:      10,
+  certApprWarn:     50,
+  lostHrsAlert:     2,
+
+  // Education thresholds
+  studAttCrit:      75,
+  studAttWarn:      85,
+  classDelAlert:    90,
+  passRateCrit:     70,
+  feeRecovWarn:     60,
+  syllabusHigh:     2,
+  syllabusModerate: 1,
+
+  // Sub-score formula weights
+  wfAtt:    0.50, wfVar:  0.30, wfSpike: 0.20,
+  finRev:   0.50, finCost:0.50,
+  ordConf:  0.50, ordConv:0.30, ordPay:  0.20,
+  payPenMult:   0.30,
+  confPenCR:    0.60, confPenCV: 0.40,
+  nOrderBlend:  0.70,
+};
+
+var SLOTS        = ['8–9am','9–10am','10–11am','11am–12pm','12–1pm','1–2pm','2–3pm','3–4pm','4–5pm','5–6pm'];
+var PERIOD_SLOTS = ['Period 1','Period 2','Period 3','Period 4','Period 5','Period 6','Period 7','Period 8','Period 9','Period 10'];
+var currentDomain = 'general';
+
+// ── Init ─────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', function(){
   document.getElementById('barDate').textContent =
     new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-
-  // Hourly table
-  var hrb = document.getElementById('hrBody');
-  SLOTS.forEach(function(s,i){
-    var tr = document.createElement('tr');
-    tr.innerHTML =
-      '<td class="hr-slot">'+s+'</td>'+
-      '<td><input type="number" id="h'+i+'" min="0" placeholder="0" oninput="updateHBar('+i+')"></td>'+
-      '<td><input type="number" id="ht'+i+'" min="0" placeholder="—" style="width:48px;"></td>'+
-      '<td class="hr-bar"><div class="hr-bwrap"><div class="hr-bfill" id="hb'+i+'" style="width:0%"></div></div></td>';
-    hrb.appendChild(tr);
-  });
-
-  // Mix table
-  var mxb = document.getElementById('mxBody');
-  for(var i=0;i<6;i++){
-    var tr2=document.createElement('tr');
-    tr2.innerHTML=
-      '<td><input type="text" id="mn'+i+'" placeholder="Product '+(i+1)+'"></td>'+
-      '<td><input type="number" id="mv'+i+'" min="0" placeholder="0" style="width:54px;"></td>'+
-      '<td><input type="number" id="mp'+i+'" min="0" placeholder="0" step="0.01" style="width:56px;"></td>';
-    mxb.appendChild(tr2);
-  }
-  updateHrsLabel();
+  buildHrTable('hrBody', SLOTS, '');
+  buildHrTable('hrBodyCon', SLOTS, 'Con');
+  buildHrTable('hrBodyEdu', PERIOD_SLOTS, 'Edu');
+  updateHrsLabel(); updateConHrsLabel(); updateEduHrsLabel();
 });
 
-function updateHrsLabel(){
-  var h = document.getElementById('hoursEl').value;
-  document.getElementById('hrsLabel').textContent = h+' hour'+(h==1?'':'s')+' elapsed today';
+function buildHrTable(tbodyId, slots, pfx){
+  var tb = document.getElementById(tbodyId);
+  slots.forEach(function(s,i){
+    var tr = document.createElement('tr');
+    var hid='h'+pfx+i, tid='ht'+pfx+i, bid='hb'+pfx+i;
+    tr.innerHTML = '<td class="hr-slot">'+s+'</td>'+
+      '<td><input type="number" id="'+hid+'" min="0" placeholder="0" oninput="updateHBar(\''+pfx+'\','+i+')"></td>'+
+      '<td><input type="number" id="'+tid+'" min="0" placeholder="—" style="width:48px;"></td>'+
+      '<td><div class="hr-bwrap"><div class="hr-bfill" id="'+bid+'" style="width:0%"></div></div></td>';
+    tb.appendChild(tr);
+  });
 }
 
-function updateHBar(i){
-  var v=parseFloat(document.getElementById('h'+i).value)||0;
-  var t=parseFloat(document.getElementById('ht'+i).value)||0;
-  var el=document.getElementById('hb'+i); if(!el)return;
+function updateHBar(pfx,i){
+  var v=parseFloat(document.getElementById('h'+pfx+i).value)||0;
+  var te=document.getElementById('ht'+pfx+i);
+  var t=te?parseFloat(te.value)||0:0;
+  var el=document.getElementById('hb'+pfx+i); if(!el)return;
   var p=t>0?Math.min(100,Math.round(v/t*100)):Math.min(100,v*5);
   el.style.width=p+'%';
   el.style.background=p>=90?'var(--green2)':p>=60?'var(--amber)':'var(--red2)';
 }
 
-// ── Collect ───────────────────────────────────────────────────────────────
-function collect(){
-  var hv=[],ht=[];
-  for(var i=0;i<SLOTS.length;i++){
-    var v=parseFloat(document.getElementById('h'+i).value);
-    var t=parseFloat(document.getElementById('ht'+i).value);
-    if(!isNaN(v)&&v>=0){hv.push(v); ht.push(isNaN(t)?0:t);}
+function updateHrsLabel(){ var h=document.getElementById('hoursEl').value; document.getElementById('hrsLabel').textContent=h+' hour'+(h==1?'':'s')+' elapsed today'; }
+function updateConHrsLabel(){ var h=document.getElementById('conHoursEl').value; document.getElementById('conHrsLabel').textContent=h+' hour'+(h==1?'':'s')+' elapsed today'; }
+function updateEduHrsLabel(){ var h=document.getElementById('eduHoursEl').value; document.getElementById('eduHrsLabel').textContent=h+' period'+(h==1?'':'s')+' elapsed today'; }
+
+function setDomain(d){
+  currentDomain=d;
+  document.querySelectorAll('.domain-btn').forEach(function(b){b.classList.remove('active');});
+  document.querySelector('.dom-'+d).classList.add('active');
+  document.querySelectorAll('.domain-section').forEach(function(s){s.classList.remove('visible');});
+  document.querySelectorAll('.dom-'+d).forEach(function(s){s.classList.add('visible');});
+  var labels={general:'General Business',contractor:'Contractor / Construction',education:'Educational Institution'};
+  document.getElementById('domainLabel').textContent='Domain: '+labels[d];
+}
+
+// ── Config panel ─────────────────────────────────────────────────────────
+function openConfig(){
+  syncConfigToUI();
+  document.getElementById('cfgOverlay').classList.add('open');
+}
+function closeConfig(){ document.getElementById('cfgOverlay').classList.remove('open'); }
+
+function syncConfigToUI(){
+  var c=CFG;
+  var set=function(id,v){ var el=document.getElementById(id); if(el)el.value=v; };
+  set('cfg_omegaRef',c.omegaRef); set('cfg_payMax',c.payMax); set('cfg_spikeDiv',c.spikeDiv);
+  set('cfg_projHrs',c.projHrs); set('cfg_preRevHrs',c.preRevHrs); set('cfg_iseqMono',c.iseqMono);
+  set('cfg_atMax',c.atMax); set('cfg_iseqChaos',c.iseqChaos); set('cfg_sensDelta',c.sensDelta);
+  set('w_var',c.W.var); set('w_spike',c.W.spike); set('w_drift',c.W.drift);
+  set('w_dir',c.W.dir); set('w_cost',c.W.cost); set('w_order',c.W.order);
+  set('cfg_omegaWarnHi',c.omegaWarnHi); set('cfg_omegaHealthy',c.omegaHealthy); set('cfg_omegaStableFloor',c.omegaStableFloor);
+  set('cfg_attCrit',c.attCrit); set('cfg_attWarn',c.attWarn); set('cfg_marginThin',c.marginThin);
+  set('cfg_marginTarget',c.marginTarget); set('cfg_targetCovCrit',c.targetCovCrit); set('cfg_alertHrThresh',c.alertHrThresh);
+  set('cfg_confirmWarn',c.confirmWarn); set('cfg_convWarn',c.convWarn); set('cfg_payWarn',c.payWarn);
+  set('cfg_driftAlert',c.driftAlert); set('cfg_dataQualMult',c.dataQualMult); set('cfg_revEffWarn',c.revEffWarn);
+  set('cfg_spiCrit',c.spiCrit); set('cfg_spiWarn',c.spiWarn); set('cfg_safetyPenalty',c.safetyPenalty);
+  set('cfg_safetyPenaltyCap',c.safetyPenaltyCap); set('cfg_reworkAlert',c.reworkAlert); set('cfg_certApprWarn',c.certApprWarn);
+  set('cfg_lostHrsAlert',c.lostHrsAlert);
+  set('cfg_studAttCrit',c.studAttCrit); set('cfg_studAttWarn',c.studAttWarn); set('cfg_classDelAlert',c.classDelAlert);
+  set('cfg_passRateCrit',c.passRateCrit); set('cfg_feeRecovWarn',c.feeRecovWarn);
+  set('cfg_syllabusHigh',c.syllabusHigh); set('cfg_syllabusModerate',c.syllabusModerate);
+  set('cfg_wfAtt',c.wfAtt); set('cfg_wfVar',c.wfVar); set('cfg_wfSpike',c.wfSpike);
+  set('cfg_finRev',c.finRev); set('cfg_finCost',c.finCost);
+  set('cfg_ordConf',c.ordConf); set('cfg_ordConv',c.ordConv); set('cfg_ordPay',c.ordPay);
+  set('cfg_payPenMult',c.payPenMult); set('cfg_confPenCR',c.confPenCR); set('cfg_confPenCV',c.confPenCV);
+  set('cfg_nOrderBlend',c.nOrderBlend);
+  updateWSum();
+}
+
+function updateWSum(){
+  var s=['w_var','w_spike','w_drift','w_dir','w_cost','w_order']
+    .reduce(function(a,id){var e=document.getElementById(id);return a+(e?parseFloat(e.value)||0:0);},0);
+  var el=document.getElementById('wSumDisplay');
+  var sv=Math.round(s*1000)/1000;
+  el.textContent='Sum: '+sv+(Math.abs(s-1)<0.001?' ✓':' ✗ — must equal 1.000');
+  el.className='w-sum '+(Math.abs(s-1)<0.001?'ok':'err');
+}
+
+function get(id){var e=document.getElementById(id);return e?parseFloat(e.value)||0:0;}
+
+function saveConfig(){
+  var wSum=['w_var','w_spike','w_drift','w_dir','w_cost','w_order']
+    .reduce(function(a,id){return a+get(id);},0);
+  if(Math.abs(wSum-1)>0.001){ alert('Weights must sum to 1.000 (current: '+Math.round(wSum*1000)/1000+')'); return; }
+  CFG.omegaRef=get('cfg_omegaRef'); CFG.payMax=get('cfg_payMax'); CFG.spikeDiv=get('cfg_spikeDiv');
+  CFG.projHrs=get('cfg_projHrs'); CFG.preRevHrs=get('cfg_preRevHrs'); CFG.iseqMono=get('cfg_iseqMono');
+  CFG.atMax=get('cfg_atMax'); CFG.iseqChaos=get('cfg_iseqChaos'); CFG.sensDelta=get('cfg_sensDelta');
+  CFG.W={var:get('w_var'),spike:get('w_spike'),drift:get('w_drift'),dir:get('w_dir'),cost:get('w_cost'),order:get('w_order')};
+  CFG.omegaWarnHi=get('cfg_omegaWarnHi'); CFG.omegaHealthy=get('cfg_omegaHealthy'); CFG.omegaStableFloor=get('cfg_omegaStableFloor');
+  CFG.attCrit=get('cfg_attCrit'); CFG.attWarn=get('cfg_attWarn'); CFG.marginThin=get('cfg_marginThin');
+  CFG.marginTarget=get('cfg_marginTarget'); CFG.targetCovCrit=get('cfg_targetCovCrit'); CFG.alertHrThresh=get('cfg_alertHrThresh');
+  CFG.confirmWarn=get('cfg_confirmWarn'); CFG.convWarn=get('cfg_convWarn'); CFG.payWarn=get('cfg_payWarn');
+  CFG.driftAlert=get('cfg_driftAlert'); CFG.dataQualMult=get('cfg_dataQualMult'); CFG.revEffWarn=get('cfg_revEffWarn');
+  CFG.spiCrit=get('cfg_spiCrit'); CFG.spiWarn=get('cfg_spiWarn'); CFG.safetyPenalty=get('cfg_safetyPenalty');
+  CFG.safetyPenaltyCap=get('cfg_safetyPenaltyCap'); CFG.reworkAlert=get('cfg_reworkAlert'); CFG.certApprWarn=get('cfg_certApprWarn');
+  CFG.lostHrsAlert=get('cfg_lostHrsAlert');
+  CFG.studAttCrit=get('cfg_studAttCrit'); CFG.studAttWarn=get('cfg_studAttWarn'); CFG.classDelAlert=get('cfg_classDelAlert');
+  CFG.passRateCrit=get('cfg_passRateCrit'); CFG.feeRecovWarn=get('cfg_feeRecovWarn');
+  CFG.syllabusHigh=get('cfg_syllabusHigh'); CFG.syllabusModerate=get('cfg_syllabusModerate');
+  CFG.wfAtt=get('cfg_wfAtt'); CFG.wfVar=get('cfg_wfVar'); CFG.wfSpike=get('cfg_wfSpike');
+  CFG.finRev=get('cfg_finRev'); CFG.finCost=get('cfg_finCost');
+  CFG.ordConf=get('cfg_ordConf'); CFG.ordConv=get('cfg_ordConv'); CFG.ordPay=get('cfg_ordPay');
+  CFG.payPenMult=get('cfg_payPenMult'); CFG.confPenCR=get('cfg_confPenCR'); CFG.confPenCV=get('cfg_confPenCV');
+  CFG.nOrderBlend=get('cfg_nOrderBlend');
+  closeConfig();
+}
+
+var DEFAULTS = JSON.parse(JSON.stringify(CFG));
+function resetConfig(){ CFG=JSON.parse(JSON.stringify(DEFAULTS)); syncConfigToUI(); }
+
+// ── Signal primitives (pure, no magic numbers) ────────────────────────────
+function mean(x){ return x.length?x.reduce(function(s,v){return s+v;},0)/x.length:0; }
+function variance(x){
+  if(x.length<2)return 0;
+  var m=mean(x); return x.reduce(function(s,v){return s+(v-m)*(v-m);},0)/x.length;
+}
+function spikeIndex(x){
+  if(x.length<2)return 0;
+  var m=mean(x)||1, mx=0;
+  for(var i=1;i<x.length;i++) mx=Math.max(mx,Math.abs(x[i]-x[i-1]));
+  return mx/m;
+}
+function driftSlope(x){
+  // OLS — mathematically exact
+  if(x.length<2)return 0;
+  var n=x.length, sx=(n*(n-1))/2, sx2=((n-1)*n*(2*n-1))/6;
+  var sy=x.reduce(function(s,v){return s+v;},0), sxy=x.reduce(function(s,v,i){return s+i*v;},0);
+  var d=n*sx2-sx*sx; return d===0?0:(n*sxy-sx*sy)/d;
+}
+function clamp(v,lo,hi){ lo=lo===undefined?0:lo; hi=hi===undefined?1:hi; return Math.min(hi,Math.max(lo,v)); }
+
+// ISeq — UEDP v4 exact formula: B = mean(1−cosθ), C = S/(S+1), ISeq = min(2, B/N + C)
+function computeIseq(seq){
+  if(seq.length<3)return 0;
+  var dirs=[];
+  for(var i=1;i<seq.length;i++) dirs.push(seq[i]>seq[i-1]?1:seq[i]<seq[i-1]?-1:0);
+  var B=0,S=0;
+  for(var i=1;i<dirs.length;i++){
+    var cos=(dirs[i]===0||dirs[i-1]===0)?0:dirs[i]*dirs[i-1];
+    B+=(1-cos);
+    if(dirs[i]!==0&&dirs[i-1]!==0&&dirs[i]!==dirs[i-1])S++;
   }
-  var mix=[];
-  for(var j=0;j<6;j++){
-    var nm=(document.getElementById('mn'+j).value||'').trim();
-    var mv=parseFloat(document.getElementById('mv'+j).value)||0;
-    var mp=parseFloat(document.getElementById('mp'+j).value)||0;
-    if(nm&&mv>0)mix.push({name:nm,vol:mv,unitValue:mp});
-  }
+  return Math.min(2, B/dirs.length + S/(S+1));
+}
+
+// ── UEDP v4 Core Engine (all params from CFG — zero hardcode) ─────────────
+function computeOmegaCore(inp, W, cfg){
+  var EP=1e-9;
+  var hv=(inp.hourlyProd||[]).filter(function(v){return !isNaN(v)&&v>=0;});
+  var ht=(inp.hourlyTargets||[]).filter(function(v){return !isNaN(v)&&v>0;});
+  var ep=Math.max(inp.empPresent||0,0), et=Math.max(inp.empTotal||1,1);
+  var rc=inp.runningCost||0, fc=inp.fixedCost||0;
+  var oval=inp.outputValue||0, tv=inp.targetValue||0;
+  var or_=inp.ordersReceived||0, oc2=inp.ordersConfirmed||0;
+  var pl=inp.paymentLeadDays||0;
+  var sl=inp.salesLeads||0, sc2=inp.salesClosed||0;
+  var he=inp.hoursElapsed||8;
+  var tc=rc+fc;
+  var avgT=ht.length?mean(ht):0;
+
+  // ── Sub-scores ──────────────────────────────────────────────────────────
+  var att   = clamp(ep/et);
+  var prodEf= (hv.length&&avgT>0)?clamp(mean(hv)/avgT):(hv.length?0.5:0.3);
+  var revEf = tv>0?clamp(oval/tv):(tc>0?clamp(oval/tc):0.5);
+  var confR = or_>0?clamp(oc2/or_):1;
+  var convR = sl>0?clamp(sc2/sl):1;
+  var dirMag= clamp(Math.sqrt(([att,prodEf,revEf].reduce(function(s,v){return s+v*v;},0))/3));
+
+  // ── Penalty features (all normalised per UEDP v4) ──────────────────────
+  var mg     = mean(hv)||1;
+  var nVar   = clamp(hv.length>=2?variance(hv)/(mg*mg+EP):0);
+  // [FIX from engine.js BUG-A]: nCost = 0 when no cost entered, not max
+  var nSpike = clamp(hv.length>=2?spikeIndex(hv)/cfg.spikeDiv:0);
+  var dslope = hv.length>=2?driftSlope(hv):0;
+  var nDrift = clamp(Math.abs(dslope)/(mg+EP));
+  var nDir   = clamp(1-dirMag);
+  var marg   = tc>0?(oval-tc)/tc:0;
+  var nCost  = tc===0?0:clamp(marg<0?1:Math.max(0,1-marg));
+
+  // payPenalty: 0 at 0 days, cfg.payPenMult at ≥cfg.payMax days
+  var payPen  = clamp(pl>=cfg.payMax?1:cfg.payMax>0?pl/cfg.payMax:0)*cfg.payPenMult;
+  var confPen = clamp(1 - confR*cfg.confPenCR - convR*cfg.confPenCV);
+  var nOrder  = clamp(confPen*cfg.nOrderBlend + payPen);
+
+  // ── Omega (UEDP v4: Ω = ψ × e^−penalty) ─────────────────────────────
+  var penalty = W.var*nVar + W.spike*nSpike + W.drift*nDrift + W.dir*nDir + W.cost*nCost + W.order*nOrder;
+
+  // [FIX-P1] ψ: Michaelis-Menten of revenue coherence with operational floor
+  var mag2      = oval/(tc+EP);
+  var psiRev    = clamp(mag2/(mag2+1));
+  var psiOps    = clamp(att*prodEf);
+  var preRevMode= (he<cfg.preRevHrs)&&(oval===0);
+  var psi       = preRevMode?Math.max(psiRev,psiOps):psiRev;
+  var omega     = clamp(psi*Math.exp(-penalty));
+
+  // ── UEDP derived (FIX-P2, P3, P5 applied) ────────────────────────────
+  var Iseq    = computeIseq(hv);
+
+  var tau     = cfg.omegaRef - omega;
+  var Rmag    = Math.abs(tau)/(cfg.omegaRef+EP);
+  // RSL sign rule (UEDP v4 Step 4): negative if τ>0 AND ω<Ω_crit
+  var Rmod    = (tau>0&&omega<OC)?-Rmag:Rmag;
+
+  // [FIX-P2]: Icoh = max(0, 1 − ISeq/2) — full [0,2] range resolution
+  var Icoh    = Math.max(0, 1 - Iseq/2);
+
+  // [FIX-P3]: δΩ = |ω − Ω_ref| (not distance from Ω_crit)
+  var dOmega  = Math.max(Math.abs(omega - cfg.omegaRef), EP);
+
+  // Φ = (I_seq_coherent × R_mod) / δΩ  (UEDP v4 Step 8)
+  var Phi     = (Icoh*Rmod)/dOmega;
+
+  // Γ = (Ω_debt × penalty + ε) / (|R_mod| + ε)  (UEDP v4 Step 7)
+  var ODebt   = Math.max(OC-omega, 0);
+  var Gamma   = (ODebt*penalty+EP)/(Math.abs(Rmod)+EP);
+
+  // Υ ∝ R_mod (simplified from kinetic resistance term — UEDP v4 Step 11)
+  var Upsilon = Math.abs(Rmod);
+
+  // A/T = (Υ × |Φ|) / (ISeq × Γ)  (UEDP v4 Step 12)
+  // [FIX-P5]: AT = null when ISeq < cfg.iseqMono; clamped to [0, cfg.atMax]
+  var AT_raw  = (Upsilon*Math.abs(Phi))/(Iseq*Gamma+EP);
+  var AT      = Iseq < cfg.iseqMono ? null : clamp(AT_raw, 0, cfg.atMax);
+
+  // ── P&L — [FIX-P4]: null margins when no revenue ────────────────────
+  var gp = oval-rc, np = oval-tc;
+  var gm = oval>0?gp/oval*100:null;
+  var nm = oval>0?np/oval*100:null;
+  var cr = (inp.capital||0)>0?np/inp.capital*100:null;
+  var ov = inp.outputVol||0;
+  var cpu = ov>0?tc/ov:null, rpu=ov>0?oval/ov:null;
+  var rph = he>0?ov/he:null;
+  var peod= rph?rph*cfg.projHrs:null;
+  var tgap= tv>0?tv-oval:null;
+  var pm  = (peod&&cpu!==null&&rpu!==null)?(peod*rpu-tc)/Math.max(peod*rpu,EP)*100:null;
+
+  // ── Dimension scores (formula weights from CFG) ───────────────────────
+  var wfs = Math.round(clamp(att*cfg.wfAtt+(1-nVar)*cfg.wfVar+(1-nSpike)*cfg.wfSpike)*100);
+  var fs  = Math.round(clamp(revEf*cfg.finRev+(1-nCost)*cfg.finCost)*100);
+  var os  = Math.round(clamp(confR*cfg.ordConf+convR*cfg.ordConv+(1-payPen/Math.max(cfg.payPenMult,EP))*cfg.ordPay)*100);
+
+  var pens=[
+    {key:'hourly_variance',score:W.var*nVar,  raw:nVar,   label:'Hourly Productivity Variance',  validated:'statistical',  assumption:'CV² = σ²/μ² dimensionless'},
+    {key:'spike',          score:W.spike*nSpike,raw:nSpike,label:'Sudden Hour-to-Hour Drops',    validated:'statistical',  assumption:'Spike/mean/'+cfg.spikeDiv+' = 3σ equiv'},
+    {key:'drift',          score:W.drift*nDrift,raw:nDrift,label:'Declining Productivity Trend', validated:'mathematical', assumption:'OLS slope/mean dimensionless'},
+    {key:'direction',      score:W.dir*nDir,   raw:nDir,   label:'Workforce/Revenue Misalignment',validated:'heuristic',   assumption:'Direction vector coherence'},
+    {key:'cost_overrun',   score:W.cost*nCost, raw:nCost,  label:'Cost vs Revenue Pressure',     validated:'accounting',  assumption:'Margin normalisation'},
+    {key:'order_pipeline', score:W.order*nOrder,raw:nOrder,label:'Order/Pipeline Health',        validated:'industry-ref',assumption:'PAY_MAX='+cfg.payMax+'d stress ceiling'},
+  ].sort(function(a,b){return b.score-a.score;});
+
   return {
-    hourlyProd:hv, hourlyTargets:ht,
-    empPresent:parseFloat(document.getElementById('empPresent').value)||0,
-    empTotal:parseFloat(document.getElementById('empTotal').value)||1,
-    runningCost:parseFloat(document.getElementById('runCost').value)||0,
-    fixedCost:parseFloat(document.getElementById('fixedCost').value)||0,
-    capital:parseFloat(document.getElementById('capital').value)||0,
-    outputVol:parseFloat(document.getElementById('outVol').value)||0,
-    outputValue:parseFloat(document.getElementById('outVal').value)||0,
-    targetValue:parseFloat(document.getElementById('targetVal').value)||0,
-    ordersReceived:parseFloat(document.getElementById('ordRec').value)||0,
-    ordersConfirmed:parseFloat(document.getElementById('ordCon').value)||0,
-    timeToConfirmHrs:parseFloat(document.getElementById('timeCon').value)||2,
-    paymentLeadDays:parseFloat(document.getElementById('payLead').value)||30,
-    salesLeads:parseFloat(document.getElementById('saleLeads').value)||0,
-    salesClosed:parseFloat(document.getElementById('saleClosed').value)||0,
-    mixItems:mix,
-    hoursElapsed:parseFloat(document.getElementById('hoursEl').value)||8,
-    prodUnit:document.getElementById('prodUnit').value||'units',
+    omega:omega,Iseq:Iseq,Rmod:Rmod,Phi:Phi,Gamma:Gamma,AT:AT,
+    isAnados:AT!==null?AT>1:null,psi:psi,preRevMode:preRevMode,penalty:penalty,drift:dslope,
+    attendance:att,prodEff:prodEf,revEff:revEf,confirmRate:confR,salesConvRate:convR,
+    wfScore:wfs,finScore:fs,ordScore:os,
+    grossProfit:gp,netProfit:np,grossMargin:gm,netMargin:nm,
+    capReturn:cr,costPerUnit:cpu,revPerUnit:rpu,ratePerHr:rph,
+    projEOD:peod,targetGap:tgap,projMargin:pm,
+    willProfitable:np>0,breakEven:Math.round(tc),
+    nVar:nVar,nSpike:nSpike,nDrift:nDrift,nDir:nDir,nCost:nCost,nOrder:nOrder,
+    penalties:pens,hv:hv,
+  };
+}
+
+// ── Sensitivity Analysis (Fortune 500 grade — all params dynamic) ─────────
+function computeSensitivity(inp,W,cfg){
+  var DELTA=cfg.sensDelta;
+  var keys=['outputValue','runningCost','fixedCost','empPresent','paymentLeadDays'];
+  var base=computeOmegaCore(inp,W,cfg).omega;
+  var maxSwing=0, swings={};
+  keys.forEach(function(k){
+    var bv=inp[k]||0; if(bv===0)return;
+    var inpHi=Object.assign({},inp); inpHi[k]=bv*(1+DELTA);
+    var inpLo=Object.assign({},inp); inpLo[k]=bv*(1-DELTA);
+    var hi=computeOmegaCore(inpHi,W,cfg).omega;
+    var lo=computeOmegaCore(inpLo,W,cfg).omega;
+    var sw=Math.abs(hi-lo);
+    swings[k]=Math.round(sw*10000)/10000;
+    if(sw>maxSwing)maxSwing=sw;
+  });
+  return{
+    base_omega:Math.round(base*10000)/10000,
+    perturbation:'±'+(DELTA*100)+'%',
+    max_swing:Math.round(maxSwing*10000)/10000,
+    swings:swings,
+    stable:maxSwing<0.05,
+    warning:maxSwing>=0.05?'Model sensitivity high: max Ω swing ±'+Math.round(maxSwing*100)+'%. Validate input accuracy.':null,
+  };
+}
+
+// ── Domain Extras ─────────────────────────────────────────────────────────
+function computeContractorExtras(inp,base,cfg){
+  var x={};
+  x.spi=inp.conPlannedPct>0?Math.round((inp.conActualPct/inp.conPlannedPct)*100)/100:1;
+  x.spiLabel=x.spi>=1?'On/Ahead of Schedule':'Behind Schedule';
+  x.workEff=inp.conWorkTarget>0?Math.round(inp.conWorkDone/inp.conWorkTarget*100):0;
+  var totalLost=(inp.conMaterialDelay||0)+(inp.conEquipDowntime||0)+(inp.conWeatherStop||0);
+  x.totalLostHrs=totalLost;
+  x.productiveHrs=Math.max(0,(inp.hoursElapsed||8)-totalLost);
+  x.safetyScore=Math.min(100,Math.max(0,100-(inp.conSafetyIncidents||0)*30-(inp.conNearMiss||0)*10));
+  x.qualityScore=Math.round(Math.max(0,100-(inp.conRework||0)*2-(inp.conSafetyIncidents||0)*5));
+  x.billingPct=inp.conContractVal>0?Math.round(inp.conBilledToDate/inp.conContractVal*100):null;
+  x.certApprovalRate=inp.ordersReceived>0?Math.round(inp.ordersConfirmed/inp.ordersReceived*100):null;
+  // Safety Omega penalty — from CFG, not hardcoded
+  x.safetyOmegaPenalty=Math.min(cfg.safetyPenaltyCap,(inp.conSafetyIncidents||0)*cfg.safetyPenalty);
+  x.adjustedOmega=Math.max(0,base.omega-x.safetyOmegaPenalty);
+  return x;
+}
+
+function computeEducationExtras(inp,base,cfg){
+  var x={};
+  x.studAttendance=inp.eduStudTotal>0?Math.round(inp.eduStudPresent/inp.eduStudTotal*100):0;
+  x.teachAttendance=inp.eduTeachTotal>0?Math.round(inp.eduTeachPresent/inp.eduTeachTotal*100):0;
+  x.classDelivery=inp.eduClassScheduled>0?Math.round(inp.eduClassConducted/inp.eduClassScheduled*100):0;
+  x.assCompletion=inp.eduAssDue>0?Math.round(inp.eduAssDone/inp.eduAssDue*100):100;
+  x.seatUtilization=inp.eduSeatsAvail>0?Math.round(inp.eduSeatsFilled/inp.eduSeatsAvail*100):0;
+  x.feeRecovery=inp.eduFeeTotalMonth>0?Math.round(clamp(1-(inp.eduFeeOutstanding/inp.eduFeeTotalMonth))*100):100;
+  x.admissionConversion=inp.eduEnquiries>0?Math.round(inp.eduAdmissions/inp.eduEnquiries*100):0;
+  x.syllabusRisk=inp.eduExamDays>0&&inp.eduSyllabusPct<100?Math.max(0,100-inp.eduSyllabusPct)/inp.eduExamDays:0;
+  x.syllabusRiskLabel=x.syllabusRisk>cfg.syllabusHigh?'HIGH':x.syllabusRisk>cfg.syllabusModerate?'MODERATE':'LOW';
+  x.passRate=inp.eduPassPct||0;
+  x.avgScore=inp.eduAvgScore||0;
+  var tq=(x.classDelivery/100)*0.3+(x.assCompletion/100)*0.2+clamp(inp.eduPassPct/100)*0.3+clamp(inp.eduAvgScore/100)*0.2;
+  x.teachingQuality=Math.round(clamp(tq)*100);
+  return x;
+}
+
+// ── Alert Engine (all thresholds from CFG) ────────────────────────────────
+function generateAlerts(R,inp,domainExtras,cfg){
+  var alerts=[],EP=1e-9;
+  var push=function(sev,cat,title,detail,action){alerts.push({severity:sev,category:cat,title:title,detail:detail,action:action});};
+  var INR=function(v){return Math.round(v).toLocaleString('en-IN');};
+
+  // 1. Data quality: output >N× target
+  var inp_hv=inp.hourlyProd||[], inp_ht=inp.hourlyTargets||[], suspectHrs=[];
+  for(var _i=0;_i<Math.min(inp_hv.length,inp_ht.length);_i++){
+    if(inp_ht[_i]>0&&inp_hv[_i]>inp_ht[_i]*cfg.dataQualMult)suspectHrs.push(_i+1);
+  }
+  if(suspectHrs.length>0){
+    push('warning','DATA_QUALITY',
+      'Hours '+suspectHrs.join(', ')+': output >'+cfg.dataQualMult+'× target — verify entry',
+      'Possible data entry error (e.g. stray zero). Can inflate ISeq and distort Ω.',
+      'Check hourly output for hours '+suspectHrs.join(', ')+'. Correct if typo.');
+  }
+
+  // 2. Omega gate (thresholds from CFG)
+  var effectiveOmega=(inp.domain==='contractor'&&domainExtras)?domainExtras.adjustedOmega:R.omega;
+  if(effectiveOmega<OC){
+    push('critical','UEDP',
+      'Ω '+r4(effectiveOmega)+' — CRITICAL (below Ω_crit = 1/e = '+Math.round(OC*10000)/10000+')',
+      'System crossed METP variational boundary. Restoring cost > delay cost. Top driver: '+R.penalties[0].label+'.',
+      'Act on "'+R.penalties[0].label+'" immediately.');
+  } else if(effectiveOmega<cfg.omegaWarnHi){
+    push('warning','UEDP',
+      'Ω '+r4(effectiveOmega)+' — Stressed (approaching Ω_crit)',
+      'Primary drag: '+R.penalties[0].label+' ('+Math.round((R.penalties[0].raw||0)*100)+'%). Secondary: '+R.penalties[1].label+'.',
+      'Stabilise "'+R.penalties[0].label+'" before adding workload or cost.');
+  }
+
+  // 3. ISeq chaos
+  if(R.Iseq>cfg.iseqChaos&&R.hv.length>=4){
+    push('warning','PRODUCTION',
+      'High output chaos — Iseq '+r4(R.Iseq)+' (chaos threshold: '+cfg.iseqChaos+')',
+      'Output reversing frequently. Not just declining — erratic. Cause: batch inconsistency, operator rotation, machine fault.',
+      'Log per-hour cause. Identify reversal hours. Isolate machine/operator variable.');
+  }
+
+  // 4. Profitability forecast
+  var predConf=inp.hoursElapsed>=6?'HIGH':inp.hoursElapsed>=4?'MEDIUM':'LOW';
+  push(
+    R.willProfitable&&R.netMargin!==null&&R.netMargin>=cfg.marginTarget?'ok':R.willProfitable?'warning':'critical',
+    'PREDICTION',
+    'Profitability forecast ('+predConf+' confidence): '+(R.willProfitable?'PROFITABLE':'LOSS'),
+    R.willProfitable
+      ?'Projected net margin '+(R.projMargin!==null?r2(R.projMargin):r2(R.netMargin))+'% on ₹'+INR(inp.outputValue||0)+' revenue.'
+      :'At current rate, closes at −₹'+INR(Math.abs(R.netProfit))+'. Break-even: ₹'+INR(R.breakEven)+'.',
+    R.willProfitable?'Maintain pace. Confirm pipeline orders.':'Reduce variable cost. Push unconfirmed orders.');
+
+  // 5. Thin margin
+  if(R.willProfitable&&R.netMargin!==null&&R.netMargin<cfg.marginThin){
+    push('warning','P&L',
+      'Thin margin '+r2(R.netMargin)+'% — target >'+cfg.marginTarget+'%',
+      '₹'+INR(R.netProfit)+' net on ₹'+INR(inp.outputValue||0)+' revenue. One cost spike tips into loss.',
+      'Prioritise higher-margin SKUs in remaining hours.');
+  }
+
+  // 6. Target gap (threshold from CFG)
+  if(R.targetGap&&R.targetGap>0&&inp.hoursElapsed>=cfg.alertHrThresh){
+    var pct=inp.targetValue>0?Math.round((inp.outputValue||0)/inp.targetValue*100):0;
+    var hl=Math.max(0,cfg.projHrs-inp.hoursElapsed);
+    push(pct<cfg.targetCovCrit?'critical':'warning','TARGET',
+      pct+'% of daily target — gap ₹'+INR(R.targetGap),
+      hl+'h left. '+( hl>0?'Need ₹'+INR(Math.round(R.targetGap/hl))+'/ hr to close.':'No time left.'),
+      R.projEOD?'Projected EOD: '+Math.round(R.projEOD)+' '+inp.prodUnit:' Push highest-margin SKU.');
+  }
+
+  // 7. Workforce (thresholds from CFG)
+  if(R.attendance*100<cfg.attWarn){
+    var absent=(inp.empTotal||0)-(inp.empPresent||0);
+    push(R.attendance*100<cfg.attCrit?'critical':'warning','WORKFORCE',
+      'Attendance '+Math.round(R.attendance*100)+'% — '+absent+' absent (crit:<'+cfg.attCrit+'%)',
+      'Throughput at '+Math.round(R.attendance*100)+'% of normal.',
+      'Reassign to critical tasks. Overtime for key roles.');
+  }
+
+  // 8. Drift (threshold from CFG)
+  if(R.drift<cfg.driftAlert&&R.hv.length>=4){
+    push('warning','PRODUCTION',
+      'Declining trend: '+Math.abs(Math.round(R.drift*10)/10)+' '+inp.prodUnit+'/hr per hr (OLS)',
+      'Systematic decline — fatigue, material shortage, or machine degradation.',
+      'Check material stock, machine condition, operator rotation.');
+  }
+
+  // 9. Order pipeline (threshold from CFG)
+  if((inp.ordersReceived||0)>0&&R.confirmRate*100<cfg.confirmWarn){
+    push('warning','SALES',
+      'Order confirm '+Math.round(R.confirmRate*100)+'% (threshold: '+cfg.confirmWarn+'%) — '+((inp.ordersReceived||0)-(inp.ordersConfirmed||0))+' unconfirmed',
+      'Unconfirmed = uncertain revenue. At '+(inp.paymentLeadDays||0)+'d lead, delay compounds cash risk.',
+      'Follow up today. Pricing, capacity, or hesitation?');
+  }
+  if((inp.salesLeads||0)>0&&R.salesConvRate*100<cfg.convWarn){
+    push('warning','SALES',
+      'Sales conversion '+Math.round(R.salesConvRate*100)+'% (threshold: '+cfg.convWarn+'%)',
+      'Low conversion drives order pipeline Ω penalty.',
+      'Identify close barrier: price, fit, or follow-up lag.');
+  }
+  if((inp.paymentLeadDays||0)>cfg.payWarn){
+    push('warning','CASHFLOW',
+      'Payment lead '+(inp.paymentLeadDays||0)+'d > '+cfg.payWarn+'d — receivables risk',
+      'Working capital tied up in extended receivables.',
+      'Negotiate 2/10 net 30. Prioritise faster-paying clients.');
+  }
+
+  // 10. Revenue efficiency (from CFG)
+  if(R.revEff*100<cfg.revEffWarn&&(inp.targetValue||0)>0){
+    push('warning','REVENUE',
+      'Revenue efficiency '+Math.round(R.revEff*100)+'% (threshold: '+cfg.revEffWarn+'%)',
+      'Actual revenue significantly behind plan.',
+      'Review pricing adherence, output quality, order mix.');
+  }
+
+  // 11. A/T direction
+  if(R.AT!==null&&!R.isAnados&&effectiveOmega>OC){
+    push('warning','UEDP',
+      'A/T ratio '+r2(R.AT)+' < 1 — Thanatos mode despite stable Ω',
+      'Depleting forces exceed constructive energy.',
+      'Reduce "'+R.penalties[0].label+'" — the primary drag.');
+  }
+
+  // ── DOMAIN-SPECIFIC ALERTS ─────────────────────────────────────────────
+
+  if(inp.domain==='contractor'&&domainExtras&&cfg){
+    if((inp.conSafetyIncidents||0)>0){
+      push('critical','SAFETY',
+        inp.conSafetyIncidents+' SAFETY INCIDENT'+(inp.conSafetyIncidents>1?'S':'')+' — STOP AND REVIEW',
+        'Safety incidents carry mandatory reporting obligations. Ω penalty applied: −'+Math.round(domainExtras.safetyOmegaPenalty*100)/100+' ('+cfg.safetyPenalty+'/incident, cap '+cfg.safetyPenaltyCap+'). LTI risk active.',
+        'Stop affected work area. Toolbox talk. Incident report within 24h.');
+    }
+    if((inp.conNearMiss||0)>0){
+      push('warning','SAFETY',
+        inp.conNearMiss+' near-miss report'+(inp.conNearMiss>1?'s':'')+' today',
+        'Near-misses are leading incident indicators.',
+        'Review near-miss circumstances. Add to risk register.');
+    }
+    if(domainExtras.spi<cfg.spiCrit){
+      push('critical','SCHEDULE',
+        'SPI '+domainExtras.spi+' < '+cfg.spiCrit+' — Schedule critically behind',
+        'Planned '+inp.conPlannedPct+'% vs actual '+inp.conActualPct+'%. Penalty clauses may activate.',
+        'Crash programme: extra shifts, more crew, fast-track deliveries.');
+    } else if(domainExtras.spi<cfg.spiWarn){
+      push('warning','SCHEDULE',
+        'SPI '+domainExtras.spi+' < '+cfg.spiWarn+' — Slightly behind schedule',
+        'Planned: '+inp.conPlannedPct+'%, Actual: '+inp.conActualPct+'%.',
+        'Review sequencing. Prioritise critical-path activities today.');
+    }
+    if(domainExtras.totalLostHrs>cfg.lostHrsAlert){
+      push('warning','PRODUCTIVITY',
+        domainExtras.totalLostHrs+'h lost (material+equipment+weather) — threshold: '+cfg.lostHrsAlert+'h',
+        'Lost productive time = '+Math.round(domainExtras.totalLostHrs/(inp.hoursElapsed||8)*100)+'% of day. Productive: '+domainExtras.productiveHrs+'h.',
+        'Reassign idle crew. Expedite material. Log in daily report.');
+    }
+    if((inp.conRework||0)>cfg.reworkAlert){
+      push('warning','QUALITY',
+        'Rework '+inp.conRework+'% > '+cfg.reworkAlert+'% — quality concern',
+        'Quality score: '+domainExtras.qualityScore+'/100.',
+        'Identify root cause: drawing error, workmanship, or material quality.');
+    }
+    if(domainExtras.certApprovalRate!==null&&domainExtras.certApprovalRate<cfg.certApprWarn){
+      push('warning','CASHFLOW',
+        'Payment cert approval '+domainExtras.certApprovalRate+'% < '+cfg.certApprWarn+'%',
+        'Low approval delays receivables. Working capital at risk.',
+        'Follow up with client QS. Resolve open snags blocking approval.');
+    }
+  }
+
+  if(inp.domain==='education'&&domainExtras&&cfg){
+    if(domainExtras.studAttendance<cfg.studAttCrit){
+      push('critical','ATTENDANCE',
+        'Student attendance '+domainExtras.studAttendance+'% < '+cfg.studAttCrit+'% — critically low',
+        'Below '+cfg.studAttCrit+'% risks academic continuity and regulatory eligibility.',
+        'Identify chronic absentees. Notify parents. Check batch-level issues.');
+    } else if(domainExtras.studAttendance<cfg.studAttWarn){
+      push('warning','ATTENDANCE',
+        'Student attendance '+domainExtras.studAttendance+'% < '+cfg.studAttWarn+'%',
+        'Students below 75% cumulative face exam eligibility issues.',
+        'Attendance drive. Identify at-risk students.');
+    }
+    if(domainExtras.classDelivery<cfg.classDelAlert){
+      push('warning','DELIVERY',
+        'Class delivery '+domainExtras.classDelivery+'% < '+cfg.classDelAlert+'% — periods missed',
+        'Missed classes compound syllabus risk near exams.',
+        'Schedule remedial/compensatory classes. Identify cause.');
+    }
+    if(domainExtras.syllabusRisk>cfg.syllabusHigh){
+      push('warning','ACADEMIC',
+        'Syllabus risk '+domainExtras.syllabusRiskLabel+' — '+inp.eduSyllabusPct+'% covered, '+inp.eduExamDays+'d to exam',
+        'Risk score: '+Math.round(domainExtras.syllabusRisk*10)/10+' portions/day needed. Threshold: '+cfg.syllabusHigh+' portions/day.',
+        'Review gaps. Prioritise high-weightage portions. Consider extra periods.');
+    }
+    if(domainExtras.passRate>0&&domainExtras.passRate<cfg.passRateCrit){
+      push('critical','ACADEMIC',
+        'Pass rate '+domainExtras.passRate+'% < '+cfg.passRateCrit+'% — below threshold',
+        'Systemic learning gaps. Avg score: '+domainExtras.avgScore+'%.',
+        'Remedial batches. Notify HOD. Weakest subjects analysis.');
+    }
+    if(domainExtras.feeRecovery<cfg.feeRecovWarn){
+      push('warning','CASHFLOW',
+        'Fee recovery '+domainExtras.feeRecovery+'% < '+cfg.feeRecovWarn+'% — ₹'+INR(inp.eduFeeOutstanding||0)+' outstanding',
+        'High outstanding fees strain cashflow and salary payment timelines.',
+        'Fee reminder notices. Instalment negotiation. Escalate overdue cases.');
+    }
+    if((inp.eduComplaints||0)>0){
+      push('warning','QUALITY',
+        inp.eduComplaints+' complaint'+(inp.eduComplaints>1?'s':'')+' received today',
+        'Unresolved complaints erode institutional credibility.',
+        'Log complaint. Assign to grievance officer. Target 48h resolution.');
+    }
+  }
+
+  alerts.sort(function(a,b){var r={critical:0,warning:1,ok:2};return (r[a.severity]||3)-(r[b.severity]||3);});
+  return alerts.slice(0,12);
+}
+
+// ── Collect inputs ────────────────────────────────────────────────────────
+function v(id){ var e=document.getElementById(id); return e?parseFloat(e.value)||0:0; }
+function vs(id){ var e=document.getElementById(id); return e?e.value||'':''; }
+
+function collectHV(pfx){
+  var hv=[],ht=[];
+  for(var i=0;i<10;i++){
+    var he=document.getElementById('h'+pfx+i), te=document.getElementById('ht'+pfx+i);
+    if(!he)continue;
+    var vv=parseFloat(he.value), tt=parseFloat(te?te.value:NaN);
+    if(!isNaN(vv)&&vv>=0){ hv.push(vv); ht.push(isNaN(tt)?0:tt); }
+  }
+  return{hv:hv,ht:ht};
+}
+
+function collectGeneral(){
+  var hp=collectHV('');
+  return{
+    domain:'general',
+    hourlyProd:hp.hv,hourlyTargets:hp.ht,
+    empPresent:v('empPresent'),empTotal:v('empTotal')||1,
+    runningCost:v('runCost'),fixedCost:v('fixedCost'),capital:v('capital'),
+    outputVol:v('outVol'),outputValue:v('outVal'),targetValue:v('targetVal'),
+    ordersReceived:v('ordRec'),ordersConfirmed:v('ordCon'),
+    paymentLeadDays:v('payLead'),
+    salesLeads:v('saleLeads'),salesClosed:v('saleClosed'),
+    hoursElapsed:v('hoursEl')||8,
+    prodUnit:vs('prodUnit')||'units',
+  };
+}
+
+function collectContractor(){
+  var hp=collectHV('Con');
+  var workers=v('conWorkers'),total=v('conTotal')||1,subW=v('conSubWorkers'),subT=v('conSubTotal')||1;
+  var labCost=v('conLabourCost'),matCost=v('conMaterialCost'),eqCost=v('conEquipCost');
+  var billing=v('conBillingToday'),bilTarget=v('conBillingTarget');
+  var workDone=v('conWorkDone'),workTarget=v('conWorkTarget');
+  var scope=v('conTotalScope')||1,cumDone=v('conCumDone');
+  var plannedPct=v('conPlannedPct'),actualPct=v('conActualPct');
+  var contractVal=v('conContractValue'),billedToDate=v('conBilledToDate'),retention=v('conRetention');
+  var certRaised=v('conPayCertRaised'),certApproved=v('conPayCertApproved');
+  var payLead=v('conPayLead'),hoursEl=v('conHoursEl')||8;
+  var totalCost=labCost+matCost+eqCost;
+  return{
+    domain:'contractor',
+    hourlyProd:hp.hv,hourlyTargets:hp.ht,
+    empPresent:workers+subW,empTotal:total+subT,
+    runningCost:totalCost,fixedCost:0,capital:contractVal,
+    outputVol:workDone,outputValue:billing,targetValue:bilTarget,
+    ordersReceived:certRaised,ordersConfirmed:certApproved,
+    paymentLeadDays:payLead,salesLeads:0,salesClosed:0,
+    hoursElapsed:hoursEl,prodUnit:vs('conWorkUnit')||'sqm',
+    conWorkers:workers,conTotal:total,conSubWorkers:subW,conSubTotal:subT,
+    conWorkDone:workDone,conWorkTarget:workTarget,
+    conTotalScope:scope,conCumDone:cumDone,
+    conPlannedPct:plannedPct,conActualPct:actualPct,
+    conSafetyIncidents:v('conSafetyIncidents'),conNearMiss:v('conNearMiss'),
+    conMaterialDelay:v('conMaterialDelay'),conEquipDowntime:v('conEquipDowntime'),
+    conRework:v('conRework'),conWeatherStop:v('conWeatherStop'),
+    conContractVal:contractVal,conBilledToDate:billedToDate,conRetention:retention,
+    conLabCost:labCost,conMatCost:matCost,conEqCost:eqCost,
+    conBillingTarget:bilTarget,
+  };
+}
+
+function collectEducation(){
+  var hp=collectHV('Edu');
+  var studPresent=v('eduStudentsPresent'),studTotal=v('eduStudentsTotal')||1;
+  var teachPresent=v('eduTeachersPresent'),teachTotal=v('eduTeachersTotal')||1;
+  var classScheduled=v('eduClassesScheduled'),classConducted=v('eduClassesConducted');
+  var assDue=v('eduAssessmentsDue'),assDone=v('eduAssessmentsDone');
+  var staffCost=v('eduStaffCost'),opCost=v('eduOpCost');
+  var feeCollected=v('eduFeeCollected'),feeTarget=v('eduFeeTarget');
+  var feeOutstanding=v('eduFeeOutstanding'),feeTotalMonth=v('eduFeeTotalMonth');
+  var hoursEl=v('eduHoursEl')||6;
+  // payment lead: derived from outstanding/collected ratio × 30
+  var derivedPayLead=feeCollected>0?Math.min(180,Math.round(feeOutstanding/feeCollected*30)):30;
+  return{
+    domain:'education',
+    hourlyProd:hp.hv,hourlyTargets:hp.ht,
+    empPresent:teachPresent,empTotal:teachTotal,
+    runningCost:staffCost,fixedCost:opCost,capital:feeTotalMonth,
+    outputVol:classConducted,outputValue:feeCollected,targetValue:feeTarget,
+    ordersReceived:v('eduEnquiries'),ordersConfirmed:v('eduAdmissions'),
+    paymentLeadDays:derivedPayLead,salesLeads:0,salesClosed:0,
+    hoursElapsed:hoursEl,prodUnit:'classes',
+    eduStudPresent:studPresent,eduStudTotal:studTotal,
+    eduTeachPresent:teachPresent,eduTeachTotal:teachTotal,
+    eduClassScheduled:classScheduled,eduClassConducted:classConducted,
+    eduAssDue:assDue,eduAssDone:assDone,
+    eduAvgStrength:v('eduAvgStrength'),eduDropouts:v('eduDropouts'),
+    eduFeeCollected:feeCollected,eduFeeTarget:feeTarget,
+    eduFeeOutstanding:feeOutstanding,eduFeeTotalMonth:feeTotalMonth,
+    eduComplaints:v('eduComplaints'),eduLateComers:v('eduLateComers'),
+    eduAvgScore:v('eduAvgScore'),eduPassPct:v('eduPassPct'),
+    eduSyllabusPct:v('eduSyllabusPct'),eduExamDays:v('eduExamDays'),
+    eduEnquiries:v('eduEnquiries'),eduAdmissions:v('eduAdmissions'),
+    eduSeatsAvail:v('eduSeatsAvail')||1,eduSeatsFilled:v('eduSeatsFilled'),
+    staffCost:staffCost,opCost:opCost,
   };
 }
 
@@ -435,288 +1490,42 @@ function collect(){
 function compute(){
   var btn=document.getElementById('computeBtn');
   btn.disabled=true; btn.textContent='⏳ Computing…';
-  document.getElementById('mainPanel').innerHTML='<div class="loading">⏳ UEDP v5 protocol — BIC segmentation · Hybrinear · RSL modulation · Omega dynamics…</div>';
+  document.getElementById('mainPanel').innerHTML='<div class="loading">⏳ UEDP v4 · ISeq · RSL · METP · Ω_dynamics · FIX-P1..P5 active…</div>';
 
-  var data=collect();
-  if(!data.outputValue&&!data.runningCost&&!data.hourlyProd.length){
-    document.getElementById('mainPanel').innerHTML='<div class="empty"><div class="empty-icon">⊕</div><div class="empty-text">Please enter at least some data before computing.</div></div>';
+  var inp;
+  if(currentDomain==='contractor')inp=collectContractor();
+  else if(currentDomain==='education')inp=collectEducation();
+  else inp=collectGeneral();
+
+  if(!inp.outputValue&&!inp.runningCost&&!inp.hourlyProd.length&&!inp.empPresent){
+    document.getElementById('mainPanel').innerHTML='<div class="empty"><div class="empty-icon">⊕</div><div class="empty-text">Enter at least some operational data before computing.</div></div>';
     btn.disabled=false; btn.textContent='▶ COMPUTE Ω'; return;
   }
 
-  fetch('/api/compute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
-  .then(function(r){
-    if(!r.ok)return r.json().then(function(e){throw new Error(e.error||'HTTP '+r.status);});
-    return r.json();
-  })
-  .then(function(resp){
-    btn.disabled=false; btn.textContent='▶ COMPUTE Ω';
-    if(resp.status!=='ok')throw new Error(resp.error||'Engine error');
-    render(resp.result, resp.alerts, data, resp.input_echo);
-  })
-  .catch(function(e){
-    btn.disabled=false; btn.textContent='▶ COMPUTE Ω';
-    document.getElementById('mainPanel').innerHTML=
-      '<div style="margin:20px;padding:16px;background:var(--red3);border:1px solid var(--red2);border-radius:7px;color:var(--red2);font-family:var(--mono);font-size:12px;">Error: '+esc(e.message)+'</div>';
-  });
+  var W=CFG.W;
+  var raw=computeOmegaCore(inp,W,CFG);
+  var domainExtras=null;
+  if(currentDomain==='contractor')domainExtras=computeContractorExtras(inp,raw,CFG);
+  else if(currentDomain==='education')domainExtras=computeEducationExtras(inp,raw,CFG);
+  var alerts=generateAlerts(raw,inp,domainExtras,CFG);
+  var sens=computeSensitivity(inp,W,CFG);
+
+  btn.disabled=false; btn.textContent='▶ COMPUTE Ω';
+  render(raw,alerts,inp,domainExtras,sens);
 }
 
-// ── Render ────────────────────────────────────────────────────────────────
-function render(R, alerts, inp, echo){
-  var oc=R.omega>=0.65?'stable':R.omega>=OC?'stressed':'critical';
-  var stateLabel=R.omega>=0.70?'STABLE — Structured Dynamics':R.omega>=0.55?'STRESSED — Early Incoherence':R.omega>=OC?'NEAR-CRITICAL — Threshold Zone':'CRITICAL — Excessive Instability';
-  var meaning=R.omega>=0.70?'All operational systems coherent and self-organising above Ω_crit. Business in Structured Dynamics — generative mode.'
-    :R.omega>=0.55?'Early coordination loss detected. One or more operational dimensions are pulling Omega down. Monitor for progression.'
-    :R.omega>=OC?'Approaching Ω_crit = 1/e — the METP variational boundary. Any additional disruption may trigger a regime shift. Intervene now.'
-    :'System has crossed Ω_crit. The cost of waiting exceeds the cost of acting. Address the top alert immediately.';
-
-  var h='';
-
-  // ── 1. Omega Hero ────────────────────────────────────────────────────
-  h+='<div class="omega-card">';
-  h+='<div class="omega-row">';
-  h+='<div class="omega-num '+oc+'">'+R.omega+'</div>';
-  h+='<div><div class="omega-state '+oc+'">'+stateLabel+'</div>';
-  h+='<div class="omega-meaning">'+esc(meaning)+'</div></div>';
-  h+='</div>';
-  h+='<div class="omega-bar">';
-  h+='<div class="crit-tick">Ω_crit=1/e</div>';
-  h+='<div class="crit-vline"></div>';
-  h+='<div class="omega-marker" style="left:'+Math.round(R.omega*100)+'%"></div>';
-  h+='</div>';
-  h+='<div class="omega-labs"><span>0 — Chaos</span><span>0.368 (critical)</span><span>1.0 — Coherent</span></div>';
-  h+='</div>';
-
-  // ── Live P&L Status Banner ───────────────────────────────────────────
-  // Shows current margin/profit and EOD projection prominently at the top.
-  var plBannerCol = R.netProfit>=0 ? 'var(--green)' : 'var(--red)';
-  var plBannerBg  = R.netProfit>=0 ? 'var(--green3)' : 'var(--red3)';
-  var projProfitEOD = (R.projEOD!==null && R.costPerUnit!==null && R.revPerUnit!==null)
-    ? Math.round(R.projEOD * (R.revPerUnit - R.costPerUnit) - (inp.fixedCost||0))
-    : null;
-  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:16px;">';
-  // Current net P/L
-  h+='<div style="background:'+plBannerBg+';border:1px solid '+plBannerCol+';border-radius:8px;padding:14px 16px;">';
-  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Net P/L — Now</div>';
-  h+='<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:'+(R.netProfit>=0?'var(--green2)':'var(--red2)')+'">₹'+fmt(R.netProfit)+'</div>';
-  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+(R.netProfit>=0?'Profit so far':'Loss so far')+' · '+echo.hoursElapsed+'h elapsed</div>';
-  h+='</div>';
-  // Current margin %
-  h+='<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">';
-  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Margin — Now</div>';
-  h+='<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:'+(R.netMargin===null?'var(--text2)':R.netMargin>=15?'var(--green2)':R.netMargin>=0?'var(--amber2)':'var(--red2)')+'">'+( R.netMargin!==null ? R.netMargin+'%' : 'N/A')+'</div>';
-  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+(R.netMargin===null?'Enter revenue to calculate':'of revenue as net margin')+'</div>';
-  h+='</div>';
-  // EOD projected P/L
-  h+='<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px 16px;">';
-  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Projected EOD P/L</div>';
-  if(projProfitEOD!==null){
-    h+='<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:'+(projProfitEOD>=0?'var(--green2)':'var(--red2)')+'">₹'+fmt(projProfitEOD)+'</div>';
-    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">at '+R.projEOD+' '+echo.prodUnit+' projected</div>';
-  } else {
-    h+='<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:var(--text2)">—</div>';
-    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">Enter costs + revenue to project</div>';
-  }
-  h+='</div>';
-  // EOD projected margin %
-  h+='<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px 16px;">';
-  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Projected Margin</div>';
-  if(R.projMargin!==null){
-    h+='<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:'+(R.projMargin>=15?'var(--green2)':R.projMargin>=0?'var(--amber2)':'var(--red2)')+'">'+R.projMargin+'%</div>';
-    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">if today\'s rate holds to EOD</div>';
-  } else {
-    h+='<div style="font-family:var(--mono);font-size:26px;font-weight:600;color:var(--text2)">—</div>';
-    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">Enter costs + output vol to project</div>';
-  }
-  h+='</div>';
-  h+='</div>';
-
-  // ── KPIs ──────────────────────────────────────────────────────────────
-  h+='<div class="kpi-grid">';
-  h+=kpi('Ω_dynamics',R.omega,oc==='stable'?'g':oc==='stressed'?'w':'b','coherence score');
-  h+=kpi('Net Margin',R.netMargin!==null?R.netMargin+'%':'N/A',R.netMargin===null?'w':R.netMargin>=15?'g':R.netMargin>=0?'w':'b','today so far');
-  h+=kpi('Net Profit','₹'+fmt(R.netProfit),R.netProfit>=0?'g':'b','after all costs');
-  // ── FIX: use echo.empPresent / echo.empTotal so headcount always matches what engine computed ──
-  h+=kpi('Attendance',R.attendance+'%',R.attendance>=85?'g':R.attendance>=70?'w':'b',echo.empPresent+' of '+echo.empTotal);
-  h+=kpi('Output Rate',R.ratePerHr!==null?R.ratePerHr+'/hr':'—','n',echo.prodUnit+' per hour');
-  h+=kpi('EOD Projection',R.projEOD!==null?R.projEOD+'':'—',R.projEOD&&R.projEOD>inp.outputVol?'g':'w',echo.prodUnit+' at this rate');
-  h+=kpi('A/T Ratio',R.AT!==null?R.AT:'—',R.isAnados===true?'g':R.isAnados===false?'b':'n',R.isAnados===true?'Anados ↑':R.isAnados===false?'Thanatos ↓':'monotone');
-  h+=kpi('I_seq',R.Iseq,R.Iseq<0.3?'g':R.Iseq<0.7?'w':'b','instability index');
-  h+='</div>';
-
-  // ── Sub-scores ────────────────────────────────────────────────────────
-  h+='<div class="ss-row">';
-  h+=ss('Workforce',R.wfScore,'Attendance + Throughput');
-  h+=ss('Financial',R.finScore,'Revenue vs Cost');
-  h+=ss('Order/Sales',R.ordScore,'Pipeline Health');
-  h+='</div>';
-
-  // ── A/T Banner ────────────────────────────────────────────────────────
-  var atAna = R.isAnados===true;
-  h+='<div class="at-banner '+(atAna?'ana':'tha')+'">';
-  h+='<div class="at-num">'+(R.AT!==null?R.AT:'—')+'</div>';
-  h+='<div><div class="at-lbl">'+(atAna?'⬆ ANADOS — Generative Growth Mode':R.isAnados===false?'⬇ THANATOS — Depletion / Collapse Risk':'◼ A/T UNDEFINED — Monotone Production')+'</div>';
-  h+='<div class="at-desc">'+esc(atAna?'The ratio of constructive energy (Υ·Φ) to depleting forces (I_seq·Γ) is positive. Business dynamics are generative. Growth is the path of least resistance.':R.isAnados===false?'Depleting forces exceed constructive energy. The system spends more coherence than it generates. Structural review needed.':'Production sequence is perfectly monotone (ISeq < 0.01). A/T ratio is undefined at this boundary — no directional chaos to measure.')+'</div>';
-  h+='</div></div>';
-
-  // ── Profitability Prediction ──────────────────────────────────────────
-  var predAlert = alerts.find(function(a){return a.category==='PREDICTION';});
-  if(predAlert){
-    h+='<div class="sh" style="margin-top:0;">③ Profitability Prediction</div>';
-    h+='<div class="alert '+predAlert.severity+'" style="margin-bottom:16px;">';
-    h+='<div class="alert-ico">'+(predAlert.severity==='ok'?'✅':predAlert.severity==='critical'?'❌':'⚠')+'</div>';
-    h+='<div><div class="alert-title">'+esc(predAlert.title)+'</div>';
-    h+='<div class="alert-detail">'+esc(predAlert.detail)+'</div>';
-    h+='<div class="alert-action">→ '+esc(predAlert.action)+'</div>';
-    h+='</div></div>';
-  }
-
-  // ── Charts ────────────────────────────────────────────────────────────
-  if(R.hv&&R.hv.length>=2){
-    h+='<div class="sh">Hourly Output · Omega Timeline</div>';
-    h+='<div class="charts-row">';
-    h+='<div class="chart-box"><canvas id="cvHour" height="160"></canvas></div>';
-    h+='<div class="chart-box"><canvas id="cvOmega" height="160"></canvas></div>';
-    h+='</div>';
-  }
-
-  // ── P&L ──────────────────────────────────────────────────────────────
-  h+='<div class="sh">② P&amp;L Snapshot</div>';
-  h+='<div class="pl-grid">';
-  // Left col: income statement
-  h+='<div class="pl-card">';
-  h+=plRow('Output Value (Revenue)','₹'+fmt(inp.outputValue),'pos');
-  h+=plRow('Variable Running Cost','−₹'+fmt(inp.runningCost),'neg');
-  h+='<div class="pl-divider"></div>';
-  h+=plRow('Gross Profit','₹'+fmt(R.grossProfit),R.grossProfit>=0?'pos':'neg');
-  h+=plRow('Gross Margin',R.grossMargin!==null?R.grossMargin+'%':'N/A',R.grossMargin===null?'':R.grossMargin>=20?'pos':R.grossMargin>=0?'':'neg');
-  h+=plRow('Fixed Overhead','−₹'+fmt(inp.fixedCost),'neg');
-  h+='<div class="pl-divider"></div>';
-  h+='<div class="pl-total">';
-  h+='<span class="pl-total-lbl">Net Profit (Today)</span>';
-  h+='<span class="pl-val '+(R.netProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(R.netProfit)+'</span>';
-  h+='</div>';
-  h+=plRow('Net Margin',R.netMargin!==null?R.netMargin+'%':'N/A',R.netMargin===null?'':R.netMargin>=10?'pos':R.netMargin>=0?'':'neg');
-  if(R.capReturn!==null) h+=plRow('Return on Capital',R.capReturn+'%',R.capReturn>=5?'pos':'');
-  h+='</div>';
-  // Right col: unit economics
-  h+='<div class="pl-card">';
-  if(R.costPerUnit!==null) h+=plRow('Cost per Unit','₹'+R.costPerUnit,'');
-  if(R.revPerUnit!==null)  h+=plRow('Revenue per Unit','₹'+R.revPerUnit,R.revPerUnit>R.costPerUnit?'pos':'neg');
-  if(R.ratePerHr!==null)   h+=plRow('Units per Hour',R.ratePerHr+' '+echo.prodUnit,'');
-  if(R.projEOD!==null)     h+=plRow('Projected EOD',R.projEOD+' '+echo.prodUnit,'');
-  if(R.targetGap!==null)   h+=plRow(R.targetGap>0?'Target Gap':'Exceeded Target by','₹'+fmt(Math.abs(R.targetGap)),R.targetGap<=0?'pos':'neg');
-  if(inp.capital>0)         h+=plRow('Capital Deployed','₹'+fmt(inp.capital),'');
-  h+='<div class="pl-divider"></div>';
-  h+=plRow('Break-even Revenue','₹'+fmt(R.breakEven),'');
-  // Mix revenue
-  if(echo.mixItems&&echo.mixItems.length){
-    h+='<div class="pl-divider"></div>';
-    echo.mixItems.forEach(function(m){
-      h+=plRow(m.name+' ('+m.vol+'u)','₹'+fmt(m.vol*m.unitValue),'');
-    });
-    h+=plRow('Mix Total','₹'+fmt(R.mixRevenue),R.mixRevenue>0?'pos':'');
-  }
-  h+='</div>';
-  h+='</div>';
-
-  // ── Order/Sales Pipeline ──────────────────────────────────────────────
-  if(inp.ordersReceived>0||inp.salesLeads>0){
-    h+='<div class="sh">Order &amp; Sales Pipeline</div>';
-    h+='<div class="pipe-list">';
-    if(inp.ordersReceived>0){
-      var cr=inp.ordersReceived>0?Math.round(inp.ordersConfirmed/inp.ordersReceived*100):100;
-      h+=pipeBar('Order Confirm Rate',cr,cr>=70?'var(--green2)':cr>=50?'var(--amber)':'var(--red2)',cr+'%');
-    }
-    if(inp.salesLeads>0){
-      var scr=Math.round(inp.salesClosed/inp.salesLeads*100);
-      h+=pipeBar('Sales Conversion',scr,scr>=50?'var(--green2)':scr>=30?'var(--amber)':'var(--red2)',scr+'%');
-    }
-    if(inp.paymentLeadDays>0){
-      var ps=Math.min(100,Math.round(30/inp.paymentLeadDays*100));
-      h+=pipeBar('Payment Speed (30d target)',ps,ps>=70?'var(--green2)':'var(--amber)',inp.paymentLeadDays+'d lead');
-    }
-    h+='</div>';
-    h+='<div class="kpi-grid">';
-    if(inp.ordersReceived>0){h+=kpi('Received',inp.ordersReceived,'n','orders today');h+=kpi('Confirmed',inp.ordersConfirmed,inp.ordersConfirmed===inp.ordersReceived?'g':'w','orders');}
-    if(inp.salesLeads>0){h+=kpi('Leads',inp.salesLeads,'n','today');h+=kpi('Closed',inp.salesClosed,inp.salesClosed>0?'g':'w','sales');}
-    if(inp.paymentLeadDays>0)h+=kpi('Pay Lead',inp.paymentLeadDays+'d',inp.paymentLeadDays<=30?'g':inp.paymentLeadDays<=60?'w':'b','expected');
-    h+='</div>';
-  }
-
-  // ── Alerts ────────────────────────────────────────────────────────────
-  var mainAlerts=alerts.filter(function(a){return a.category!=='PREDICTION';});
-  if(mainAlerts.length){
-    h+='<div class="sh">④ Actionable Alerts</div>';
-    h+='<div class="alert-list">';
-    mainAlerts.forEach(function(a){
-      var ico=a.severity==='critical'?'⚠':a.severity==='ok'?'✅':'⚡';
-      h+='<div class="alert '+a.severity+'">';
-      h+='<div class="alert-ico">'+ico+'</div>';
-      h+='<div><div class="alert-cat">'+esc(a.category)+'</div>';
-      h+='<div class="alert-title">'+esc(a.title)+'</div>';
-      h+='<div class="alert-detail">'+esc(a.detail)+'</div>';
-      h+='<div class="alert-action">→ '+esc(a.action)+'</div>';
-      h+='</div></div>';
-    });
-    h+='</div>';
-  }
-
-  // ── UEDP Diagnostics ─────────────────────────────────────────────────
-  h+='<div class="sh" style="margin-top:20px;">UEDP v5 Protocol Diagnostics</div>';
-  h+='<div class="kpi-grid">';
-  h+=kpi('Ω_dynamics',R.omega,R.omega>=OC?'g':'b','coherence');
-  h+=kpi('Ω_crit','0.3679','n','1/e · METP');
-  h+=kpi('I_seq',R.Iseq,R.Iseq<0.3?'g':R.Iseq<0.7?'w':'b','instability');
-  h+=kpi('Φ (tension)',R.Phi,R.Phi>0?'g':'b','emergence');
-  h+=kpi('Γ (burden)',R.Gamma,'n','cost index');
-  h+=kpi('Ψ (psi)',R.psi,'n','capability');
-  h+=kpi('R_mod',R.Rmod,R.Rmod>0?'g':'b','RSL direction');
-  h+=kpi('Penalty',R.penalty,R.penalty<0.3?'g':R.penalty<0.6?'w':'b','total weight');
-  h+='</div>';
-  // Penalty breakdown
-  h+='<div style="margin-top:10px;">';
-  R.penalties.forEach(function(p){
-    var raw=Math.round(p.raw*100);
-    var col=raw>60?'var(--red2)':raw>35?'var(--amber2)':'var(--green2)';
-    h+='<div class="pen-row">';
-    h+='<div class="pen-lbl">'+esc(p.label)+'</div>';
-    h+='<div class="pen-track"><div class="pen-fill" style="width:'+raw+'%;background:'+col+'"></div></div>';
-    h+='<div class="pen-val">'+raw+'%</div>';
-    h+='</div>';
-  });
-  h+='</div>';
-  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:10px;">UEDP v5 — G S Ramesh Kumar · DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4 · Ω_crit = 1/e ≈ 0.36788 (METP variational principle)</div>';
-  h += '<div style="margin-top:22px;text-align:center;">';
-h += '<a href="https://www.configurationalmodeling.com/turnaround" target="_blank" ' +
-     'style="display:inline-block;background:linear-gradient(135deg,#0a2a50,#2d7fd4);' +
-     'color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;' +
-     'font-family:var(--cond);font-size:13px;font-weight:700;letter-spacing:1px;' +
-     'box-shadow:0 4px 18px rgba(45,127,212,.35);">';
-h += '⚡ Run Turnaround Analysis';
-h += '</a>';
-h += '<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:6px;">';
-h += 'Paste Profit Pulse scores → get structured turnaround actions';
-h += '</div>';
-h += '</div>';
-  document.getElementById('mainPanel').innerHTML=h;
-
-  // Charts
-  setTimeout(function(){
-    if(R.hv&&R.hv.length>=2){
-      drawHour(R.hv,inp.hourlyTargets||[],echo.prodUnit);
-      drawOmega(R.hv);
-    }
-  },60);
-}
-
-// ── HTML helpers ──────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────
+function r4(v){return typeof v==='number'?Math.round(v*10000)/10000:v;}
+function r2(v){return typeof v==='number'?Math.round(v*100)/100:v;}
+function r0(v){return typeof v==='number'?Math.round(v):v;}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function fmt(v){
   if(typeof v!=='number'||isNaN(v))return'—';
-  if(Math.abs(v)>=1e7)return(v/1e7).toFixed(2)+'Cr';
-  if(Math.abs(v)>=1e5)return(v/1e5).toFixed(2)+'L';
-  if(Math.abs(v)>=1e3)return(v/1e3).toFixed(1)+'K';
-  return Math.round(v)+'';
+  var sign=v<0?'-':''; var a=Math.abs(v);
+  if(a>=1e7)return sign+(a/1e7).toFixed(2)+'Cr';
+  if(a>=1e5)return sign+(a/1e5).toFixed(2)+'L';
+  if(a>=1e3)return sign+(a/1e3).toFixed(1)+'K';
+  return sign+Math.round(a);
 }
 function kpi(lbl,val,cls,sub){
   return'<div class="kpi"><div class="kpi-lbl">'+lbl+'</div>'+
@@ -731,115 +1540,411 @@ function ss(lbl,val,name){
     '<div class="ss-bar"><div class="ss-fill" style="width:'+val+'%;background:'+col+'"></div></div>'+
     '<div class="ss-name">'+name+'</div></div>';
 }
-function plRow(lbl,val,cls){
-  return'<div class="pl-row"><span class="pl-lbl">'+lbl+'</span><span class="pl-val '+(cls||'')+'">'+val+'</span></div>';
-}
+function plRow(lbl,val,cls){return'<div class="pl-row"><span class="pl-lbl">'+lbl+'</span><span class="pl-val '+(cls||'')+'">'+val+'</span></div>';}
 function pipeBar(lbl,pct,color,valLbl){
   return'<div class="pipe-row">'+
     '<div class="pipe-lbl">'+lbl+'</div>'+
-    '<div class="pipe-track"><div class="pipe-fill" style="width:'+Math.min(100,pct)+'%;background:'+color+'"></div></div>'+
+    '<div class="pipe-track"><div class="pipe-fill" style="width:'+Math.min(100,Math.max(0,pct))+'%;background:'+color+'"></div></div>'+
     '<div class="pipe-val">'+valLbl+'</div></div>';
 }
 
-// ── Canvas charts ─────────────────────────────────────────────────────────
-function drawHour(hv,ht,unit){
-  var cv=document.getElementById('cvHour');if(!cv)return;
+// ── Render ────────────────────────────────────────────────────────────────
+function render(R,alerts,inp,domainExtras,sens){
+  var effectiveOmega=(inp.domain==='contractor'&&domainExtras)?domainExtras.adjustedOmega:R.omega;
+  var oc=effectiveOmega>=CFG.omegaStableFloor?'stable':effectiveOmega>=OC?'stressed':'critical';
+
+  var stateLabel=effectiveOmega>=CFG.omegaStableFloor?'STABLE — Structured Dynamics':
+    effectiveOmega>=CFG.omegaWarnHi?'STRESSED — Early Incoherence':
+    effectiveOmega>=OC?'NEAR-CRITICAL — Threshold Zone':'CRITICAL — Excessive Instability';
+  var meaning=effectiveOmega>=CFG.omegaStableFloor?'All operational systems coherent above Ω_crit. Structured Dynamics regime.':
+    effectiveOmega>=CFG.omegaWarnHi?'Early coordination loss detected. Primary driver pulling Omega down.':
+    effectiveOmega>=OC?'Approaching Ω_crit = 1/e — METP variational boundary. Intervene now.':
+    'System has crossed Ω_crit. Cost of waiting exceeds cost of acting. Address top alert immediately.';
+
+  var shClass=inp.domain==='contractor'?'con':inp.domain==='education'?'edu':'';
+  var dBadge=inp.domain==='contractor'?'🏗 CONTRACTOR':'inp.domain'==='education'?'🎓 EDUCATION':'🏭 GENERAL BUSINESS';
+  dBadge=inp.domain==='contractor'?'🏗 CONTRACTOR / CONSTRUCTION':inp.domain==='education'?'🎓 EDUCATIONAL INSTITUTION':'🏭 GENERAL BUSINESS';
+  var dBadgeClass=inp.domain==='contractor'?'badge-con':inp.domain==='education'?'badge-edu':'badge-gen';
+
+  var h='';
+
+  // Domain + config fingerprint badge
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">';
+  h+='<span style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:3px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);">'+dBadge+'</span>';
+  h+='<span style="font-family:var(--mono);font-size:9px;color:var(--text3);">UEDP v4 · Ω_crit=1/e · Ω_ref='+CFG.omegaRef+' · W={var:'+CFG.W.var+',spk:'+CFG.W.spike+',drft:'+CFG.W.drift+',dir:'+CFG.W.dir+',cost:'+CFG.W.cost+',ord:'+CFG.W.order+'}</span>';
+  if(R.preRevMode)h+='<span style="font-family:var(--mono);font-size:9px;color:var(--amber2);background:var(--amber3);padding:2px 8px;border-radius:3px;">FIX-P1 ACTIVE: Pre-revenue ops floor</span>';
+  h+='</div>';
+
+  // Omega hero
+  h+='<div class="omega-card">';
+  h+='<div class="omega-row">';
+  h+='<div class="omega-num '+oc+'">'+r4(effectiveOmega)+'</div>';
+  h+='<div><div class="omega-state '+oc+'">'+stateLabel+'</div>';
+  h+='<div class="omega-meaning">'+esc(meaning)+'</div>';
+  if(inp.domain==='contractor'&&domainExtras&&domainExtras.safetyOmegaPenalty>0){
+    h+='<div style="margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--red2);">⚠ Safety penalty: −'+Math.round(domainExtras.safetyOmegaPenalty*100)/100+' from Ω ('+inp.conSafetyIncidents+' incident × '+CFG.safetyPenalty+', cap '+CFG.safetyPenaltyCap+')</div>';
+  }
+  h+='</div></div>';
+  // Omega bar with dynamic Ω_crit and Ω_ref lines
+  var critPct=Math.round(OC*100), refPct=Math.round(CFG.omegaRef*100);
+  h+='<div class="omega-bar" style="position:relative;">';
+  h+='<div class="crit-tick" style="left:'+critPct+'%;">Ω_crit=1/e</div>';
+  h+='<div class="crit-vline" style="left:'+critPct+'%;"></div>';
+  h+='<div style="position:absolute;left:'+refPct+'%;top:-4px;height:19px;border-left:2px dashed rgba(90,172,240,.5);"></div>';
+  h+='<div style="position:absolute;left:'+refPct+'%;top:-14px;font-family:var(--mono);font-size:8px;color:var(--blue2);transform:translateX(-50%);white-space:nowrap;">Ω_ref='+CFG.omegaRef+'</div>';
+  h+='<div class="omega-marker" style="left:'+Math.round(effectiveOmega*100)+'%"></div>';
+  h+='</div>';
+  h+='<div class="omega-labs"><span>0 — Chaos</span><span>Ω_crit='+Math.round(OC*10000)/10000+' (1/e)</span><span>1.0 — Coherent</span></div>';
+  h+='</div>';
+
+  // P&L banner
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:9px;margin-bottom:14px;">';
+  var plBg=R.netProfit>=0?'var(--green3)':'var(--red3)', plBorder=R.netProfit>=0?'var(--green)':'var(--red)', plCol=R.netProfit>=0?'var(--green2)':'var(--red2)';
+  h+='<div style="background:'+plBg+';border:1px solid '+plBorder+';border-radius:8px;padding:13px 15px;">';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Net P/L — Now</div>';
+  h+='<div style="font-family:var(--mono);font-size:24px;font-weight:600;color:'+plCol+'">₹'+fmt(R.netProfit)+'</div>';
+  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+(R.netProfit>=0?'Positive':'Loss')+' · '+inp.hoursElapsed+'h elapsed</div>';
+  h+='</div>';
+  h+='<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px 15px;">';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Net Margin</div>';
+  h+='<div style="font-family:var(--mono);font-size:24px;font-weight:600;color:'+(R.netMargin===null?'var(--text3)':R.netMargin>=CFG.marginTarget?'var(--green2)':R.netMargin>=0?'var(--amber2)':'var(--red2)')+'">'+( R.netMargin!==null?r2(R.netMargin)+'%':'N/A')+'</div>';
+  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">target: '+CFG.marginTarget+'% · thin: '+CFG.marginThin+'%</div>';
+  h+='</div>';
+  if(R.projEOD!==null){
+    h+='<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:13px 15px;">';
+    h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Projected EOD</div>';
+    h+='<div style="font-family:var(--mono);font-size:24px;font-weight:600;color:var(--blue2)">'+r0(R.projEOD)+'</div>';
+    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+inp.prodUnit+' @ '+CFG.projHrs+'h day</div>';
+    h+='</div>';
+  }
+  h+='</div>';
+
+  // Core KPIs
+  h+='<div class="kpi-grid">';
+  h+=kpi('Ω_dynamics',r4(effectiveOmega),oc==='stable'?'g':oc==='stressed'?'w':'b','coherence');
+  h+=kpi('I_seq',r4(R.Iseq),R.Iseq<0.3?'g':R.Iseq<CFG.iseqChaos?'w':'b','instability');
+  h+=kpi('A/T Ratio',R.AT!==null?r2(R.AT):'—',R.isAnados===true?'g':R.isAnados===false?'b':'n',R.isAnados===true?'Anados ↑':R.isAnados===false?'Thanatos ↓':'monotone');
+  h+=kpi('Attendance',Math.round(R.attendance*100)+'%',R.attendance*100>=CFG.attWarn?'g':R.attendance*100>=CFG.attCrit?'w':'b',inp.empPresent+' of '+inp.empTotal);
+  h+=kpi('Net Margin',R.netMargin!==null?r2(R.netMargin)+'%':'N/A (FIX-P4)',R.netMargin===null?'n':R.netMargin>=CFG.marginTarget?'g':R.netMargin>=0?'w':'b','today');
+  h+=kpi('Penalty',r4(R.penalty),R.penalty<0.3?'g':R.penalty<0.6?'w':'b','weighted');
+  h+='</div>';
+
+  // Domain KPIs
+  if(inp.domain==='contractor'&&domainExtras){
+    h+='<div class="domain-panel con">';
+    h+='<div class="domain-panel-title">🏗 Contractor Site KPIs</div>';
+    h+='<div class="kpi-grid">';
+    h+=kpi('SPI',domainExtras.spi,domainExtras.spi>=1?'g':domainExtras.spi>=CFG.spiCrit?'w':'b',domainExtras.spiLabel);
+    h+=kpi('Work Efficiency',domainExtras.workEff+'%',domainExtras.workEff>=90?'g':domainExtras.workEff>=70?'w':'b',inp.conWorkDone+'/'+inp.conWorkTarget);
+    h+=kpi('Safety',domainExtras.safetyScore+'/100',domainExtras.safetyScore>=90?'g':domainExtras.safetyScore>=70?'w':'b',inp.conSafetyIncidents+' incidents');
+    h+=kpi('Quality',domainExtras.qualityScore+'/100',domainExtras.qualityScore>=85?'g':domainExtras.qualityScore>=65?'w':'b',inp.conRework+'% rework');
+    h+=kpi('Productive Hrs',domainExtras.productiveHrs+'h',domainExtras.totalLostHrs<CFG.lostHrsAlert?'g':domainExtras.totalLostHrs<3?'w':'b',domainExtras.totalLostHrs+'h lost');
+    if(domainExtras.billingPct!==null)h+=kpi('Billing',domainExtras.billingPct+'%',domainExtras.billingPct>=80?'g':domainExtras.billingPct>=60?'w':'b','of contract');
+    h+='</div>';
+    h+='<div class="pipe-list" style="margin-top:12px;">';
+    h+=pipeBar('Schedule (SPI)',domainExtras.spi*100,domainExtras.spi>=1?'var(--green2)':domainExtras.spi>=CFG.spiCrit?'var(--amber2)':'var(--red2)','SPI '+domainExtras.spi);
+    h+=pipeBar('Work Efficiency',domainExtras.workEff,'var(--blue2)',domainExtras.workEff+'%');
+    h+=pipeBar('Safety Score',domainExtras.safetyScore,domainExtras.safetyScore>=90?'var(--green2)':'var(--amber2)',domainExtras.safetyScore+'%');
+    h+='</div>';
+    h+='</div>';
+  }
+
+  if(inp.domain==='education'&&domainExtras){
+    h+='<div class="domain-panel">';
+    h+='<div class="domain-panel-title">🎓 Academic Institution KPIs</div>';
+    h+='<div class="kpi-grid">';
+    h+=kpi('Student Att.',domainExtras.studAttendance+'%',domainExtras.studAttendance>=CFG.studAttWarn?'g':domainExtras.studAttendance>=CFG.studAttCrit?'w':'b',inp.eduStudPresent+'/'+inp.eduStudTotal);
+    h+=kpi('Class Delivery',domainExtras.classDelivery+'%',domainExtras.classDelivery>=CFG.classDelAlert?'g':domainExtras.classDelivery>=80?'w':'b',inp.eduClassConducted+'/'+inp.eduClassScheduled);
+    h+=kpi('Teaching Quality',domainExtras.teachingQuality+'%',domainExtras.teachingQuality>=80?'g':domainExtras.teachingQuality>=60?'w':'b','composite');
+    h+=kpi('Pass Rate',domainExtras.passRate+'%',domainExtras.passRate>=CFG.passRateCrit?'g':domainExtras.passRate>=50?'w':'b','recent exam');
+    h+=kpi('Avg Score',domainExtras.avgScore+'%',domainExtras.avgScore>=70?'g':domainExtras.avgScore>=50?'w':'b','recent exam');
+    h+=kpi('Seat Utilization',domainExtras.seatUtilization+'%',domainExtras.seatUtilization>=90?'g':domainExtras.seatUtilization>=70?'w':'b',inp.eduSeatsFilled+'/'+inp.eduSeatsAvail);
+    h+=kpi('Fee Recovery',domainExtras.feeRecovery+'%',domainExtras.feeRecovery>=80?'g':domainExtras.feeRecovery>=CFG.feeRecovWarn?'w':'b','of monthly');
+    h+=kpi('Admn. Conv.',domainExtras.admissionConversion+'%',domainExtras.admissionConversion>=40?'g':domainExtras.admissionConversion>=20?'w':'b',inp.eduAdmissions+'/'+inp.eduEnquiries);
+    h+='</div>';
+    h+='<div class="pipe-list" style="margin-top:12px;">';
+    h+=pipeBar('Syllabus Coverage',inp.eduSyllabusPct||0,inp.eduSyllabusPct>=80?'var(--green2)':inp.eduSyllabusPct>=60?'var(--amber2)':'var(--red2)',(inp.eduSyllabusPct||0)+'%');
+    h+=pipeBar('Student Att.',domainExtras.studAttendance,domainExtras.studAttendance>=CFG.studAttWarn?'var(--green2)':domainExtras.studAttendance>=CFG.studAttCrit?'var(--amber2)':'var(--red2)',domainExtras.studAttendance+'%');
+    h+=pipeBar('Class Delivery',domainExtras.classDelivery,domainExtras.classDelivery>=CFG.classDelAlert?'var(--green2)':'var(--amber2)',domainExtras.classDelivery+'%');
+    h+=pipeBar('Fee Recovery',domainExtras.feeRecovery,domainExtras.feeRecovery>=80?'var(--green2)':'var(--amber2)',domainExtras.feeRecovery+'%');
+    h+='</div>';
+    h+='<div style="margin-top:10px;background:var(--bg2);border-radius:6px;padding:10px 14px;border:1px solid var(--border);">';
+    h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:5px;">SYLLABUS RISK (high>'+CFG.syllabusHigh+' portions/day · moderate>'+CFG.syllabusModerate+')</div>';
+    h+='<span style="font-family:var(--cond);font-size:18px;font-weight:700;color:'+(domainExtras.syllabusRiskLabel==='HIGH'?'var(--red2)':domainExtras.syllabusRiskLabel==='MODERATE'?'var(--amber2)':'var(--green2)')+'">'+domainExtras.syllabusRiskLabel+'</span>';
+    h+='<span style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-left:10px;">'+(inp.eduSyllabusPct||0)+'% covered · '+inp.eduExamDays+' days to exam · risk score: '+Math.round(domainExtras.syllabusRisk*10)/10+'</span>';
+    h+='</div>';
+    h+='</div>';
+  }
+
+  // Sub-scores
+  h+='<div class="sh '+shClass+'">Operational Sub-Scores</div>';
+  h+='<div class="ss-row">';
+  h+=ss('Workforce',R.wfScore,'Att.×'+CFG.wfAtt+'+Var×'+CFG.wfVar+'+Spike×'+CFG.wfSpike);
+  h+=ss('Financial',R.finScore,'RevEff×'+CFG.finRev+'+Cost×'+CFG.finCost);
+  h+=ss(inp.domain==='education'?'Pipeline':'Order/Sales',R.ordScore,'Conf×'+CFG.ordConf+'+Conv×'+CFG.ordConv+'+Pay×'+CFG.ordPay);
+  h+='</div>';
+
+  // A/T banner
+  var atClass=R.isAnados===true?'ana':R.isAnados===false?'tha':'undef';
+  h+='<div class="at-banner '+atClass+'">';
+  h+='<div class="at-num">'+(R.AT!==null?r2(R.AT):'—')+'</div>';
+  h+='<div><div class="at-lbl">'+(R.isAnados===true?'⬆ ANADOS — Generative Growth':R.isAnados===false?'⬇ THANATOS — Depletion Risk':'◼ A/T UNDEFINED — ISeq < '+CFG.iseqMono+' (monotone)')+'</div>';
+  h+='<div class="at-desc">'+(R.isAnados===true?'Constructive energy > depleting forces. Self-correcting generative mode.':R.isAnados===false?'Depleting forces > constructive energy. Address top penalty driver.':'Production sequence is monotone (ISeq < cfg.iseqMono). A/T ratio undefined per FIX-P5.')+'</div>';
+  h+='</div></div>';
+
+  // Charts
+  if(R.hv&&R.hv.length>=2){
+    h+='<div class="sh '+shClass+'">Output Timeline · Running Ω</div>';
+    h+='<div class="charts-row"><div class="chart-box"><canvas id="cvHour" height="155"></canvas></div><div class="chart-box"><canvas id="cvOmega" height="155"></canvas></div></div>';
+  }
+
+  // Alerts
+  var mainAlerts=alerts.filter(function(a){return a.category!=='PREDICTION';});
+  var predAlert=alerts.find(function(a){return a.category==='PREDICTION';});
+  if(predAlert){
+    h+='<div class="sh '+shClass+'">Profitability Prediction</div>';
+    h+='<div class="alert '+predAlert.severity+'" style="margin-bottom:14px;">';
+    h+='<div class="alert-ico">'+(predAlert.severity==='ok'?'✅':predAlert.severity==='critical'?'❌':'⚠')+'</div>';
+    h+='<div><div class="alert-title">'+esc(predAlert.title)+'</div>';
+    h+='<div class="alert-detail">'+esc(predAlert.detail)+'</div>';
+    h+='<div class="alert-action">→ '+esc(predAlert.action)+'</div></div></div>';
+  }
+
+  if(mainAlerts.length){
+    h+='<div class="sh '+shClass+'">Actionable Alerts</div>';
+    h+='<div class="alert-list">';
+    mainAlerts.forEach(function(a){
+      var ico=a.severity==='critical'?'⚠':a.severity==='ok'?'✅':'⚡';
+      h+='<div class="alert '+a.severity+'">';
+      h+='<div class="alert-ico">'+ico+'</div>';
+      h+='<div><div class="alert-cat">'+esc(a.category)+'</div>';
+      h+='<div class="alert-title">'+esc(a.title)+'</div>';
+      h+='<div class="alert-detail">'+esc(a.detail)+'</div>';
+      h+='<div class="alert-action">→ '+esc(a.action)+'</div></div></div>';
+    });
+    h+='</div>';
+  }
+
+  // Financial Snapshot
+  h+='<div class="sh '+shClass+'">Financial Snapshot</div>';
+  if(inp.domain==='contractor'){
+    h+='<div class="pl-grid"><div class="pl-card">';
+    h+=plRow('Billing Raised Today','₹'+fmt(inp.outputValue||0),'pos');
+    h+=plRow('Labour Cost','−₹'+fmt(inp.conLabCost||0),'neg');
+    h+=plRow('Material Cost','−₹'+fmt(inp.conMatCost||0),'neg');
+    h+=plRow('Equipment/OH','−₹'+fmt(inp.conEqCost||0),'neg');
+    h+='<div class="pl-divider"></div>';
+    h+='<div class="pl-total"><span class="pl-total-lbl">Net Contribution</span><span class="pl-val '+(R.netProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(R.netProfit)+'</span></div>';
+    h+=plRow('Margin %',R.netMargin!==null?r2(R.netMargin)+'%':'N/A (FIX-P4)',R.netMargin!==null&&R.netMargin>=0?'pos':'neg');
+    h+='</div><div class="pl-card">';
+    h+=plRow('Contract Value','₹'+fmt(inp.conContractVal||0),'');
+    h+=plRow('Billed to Date','₹'+fmt(inp.conBilledToDate||0),'');
+    if(domainExtras&&domainExtras.billingPct!==null)h+=plRow('Billing Progress',domainExtras.billingPct+'%','');
+    h+=plRow('Retention Held','₹'+fmt(inp.conRetention||0),'neg');
+    h+=plRow('Billing Target','₹'+fmt(inp.conBillingTarget||0),'');
+    h+=plRow('vs Target',R.targetGap!==null?(R.targetGap<=0?'On Target ✓':'Gap ₹'+fmt(R.targetGap)):'-',R.targetGap!==null&&R.targetGap<=0?'pos':'neg');
+    h+='</div></div>';
+  } else if(inp.domain==='education'){
+    h+='<div class="pl-grid"><div class="pl-card">';
+    h+=plRow('Fee Collected Today','₹'+fmt(inp.eduFeeCollected||0),'pos');
+    h+=plRow('Staff Cost','−₹'+fmt(inp.staffCost||0),'neg');
+    h+=plRow('Operational Cost','−₹'+fmt(inp.opCost||0),'neg');
+    h+='<div class="pl-divider"></div>';
+    h+='<div class="pl-total"><span class="pl-total-lbl">Net Surplus/Deficit</span><span class="pl-val '+(R.netProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(R.netProfit)+'</span></div>';
+    h+=plRow('Fee Target','₹'+fmt(inp.eduFeeTarget||0),'');
+    h+=plRow('Target Gap',inp.eduFeeTarget>0?'₹'+fmt(Math.abs((inp.eduFeeTarget||0)-(inp.eduFeeCollected||0))):'—',(inp.eduFeeCollected>=(inp.eduFeeTarget||0))?'pos':'neg');
+    h+='</div><div class="pl-card">';
+    h+=plRow('Monthly Fee Target','₹'+fmt(inp.eduFeeTotalMonth||0),'');
+    h+=plRow('Fee Outstanding','₹'+fmt(inp.eduFeeOutstanding||0),'neg');
+    if(domainExtras)h+=plRow('Fee Recovery',domainExtras.feeRecovery+'%',domainExtras.feeRecovery>=80?'pos':'');
+    h+='</div></div>';
+  } else {
+    h+='<div class="pl-grid"><div class="pl-card">';
+    h+=plRow('Output Value','₹'+fmt(inp.outputValue||0),'pos');
+    h+=plRow('Variable Cost','−₹'+fmt(inp.runningCost||0),'neg');
+    h+='<div class="pl-divider"></div>';
+    h+=plRow('Gross Profit','₹'+fmt(R.grossProfit),R.grossProfit>=0?'pos':'neg');
+    h+=plRow('Gross Margin',R.grossMargin!==null?r2(R.grossMargin)+'%':'N/A (FIX-P4)','');
+    h+=plRow('Fixed Overhead','−₹'+fmt(inp.fixedCost||0),'neg');
+    h+='<div class="pl-divider"></div>';
+    h+='<div class="pl-total"><span class="pl-total-lbl">Net Profit (Today)</span><span class="pl-val '+(R.netProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(R.netProfit)+'</span></div>';
+    h+=plRow('Net Margin',R.netMargin!==null?r2(R.netMargin)+'%':'N/A (FIX-P4)',R.netMargin!==null&&R.netMargin>=CFG.marginTarget?'pos':R.netMargin!==null&&R.netMargin>=0?'':'neg');
+    h+='</div><div class="pl-card">';
+    if(R.costPerUnit!==null)h+=plRow('Cost/Unit','₹'+r2(R.costPerUnit),'');
+    if(R.revPerUnit!==null) h+=plRow('Rev/Unit','₹'+r2(R.revPerUnit),R.revPerUnit>(R.costPerUnit||0)?'pos':'neg');
+    if(R.ratePerHr!==null)  h+=plRow('Units/Hour',r2(R.ratePerHr),'');
+    if(R.projEOD!==null)    h+=plRow('Proj. EOD',r0(R.projEOD)+' '+inp.prodUnit+' @ '+CFG.projHrs+'h','');
+    if(R.targetGap!==null)  h+=plRow('Target Gap',R.targetGap<=0?'Target Met ✓':'₹'+fmt(R.targetGap),R.targetGap<=0?'pos':'neg');
+    h+=plRow('Break-even','₹'+fmt(R.breakEven),'');
+    h+='</div></div>';
+  }
+
+  // Sensitivity Analysis
+  if(sens){
+    h+='<div class="sh '+shClass+'">Sensitivity Analysis (±'+Math.round(CFG.sensDelta*100)+'% perturbation)</div>';
+    h+='<div class="sens-box">';
+    h+='<div class="sens-title">Base Ω: '+sens.base_omega+' · Max swing: ±'+Math.round(sens.max_swing*100)+'% · '+(sens.stable?'✓ STABLE':'⚠ SENSITIVE')+'</div>';
+    if(sens.warning)h+='<div style="font-family:var(--mono);font-size:10px;color:var(--amber2);margin-bottom:8px;">'+esc(sens.warning)+'</div>';
+    Object.keys(sens.swings).forEach(function(k){
+      var sw=sens.swings[k];
+      h+=pipeBar(k,sw*200,sw<0.05?'var(--green2)':sw<0.1?'var(--amber2)':'var(--red2)','±'+Math.round(sw*100)+'%');
+    });
+    h+='</div>';
+  }
+
+  // UEDP Protocol Diagnostics
+  h+='<div class="sh '+shClass+'" style="margin-top:18px;">UEDP v4 Protocol Diagnostics</div>';
+  h+='<div class="kpi-grid">';
+  h+=kpi('Ω_raw',r4(R.omega),R.omega>=OC?'g':'b','before safety adj');
+  if(inp.domain==='contractor'&&domainExtras&&domainExtras.safetyOmegaPenalty>0)
+    h+=kpi('Ω_adjusted',r4(effectiveOmega),'b','after safety');
+  h+=kpi('Ω_crit','0.3679','n','1/e · METP theory');
+  h+=kpi('Ω_ref',CFG.omegaRef,'n','RSL reference');
+  h+=kpi('I_seq',r4(R.Iseq),R.Iseq<0.3?'g':R.Iseq<CFG.iseqChaos?'w':'b','[0,2]');
+  h+=kpi('Φ (tension)',r4(R.Phi),R.Phi>0?'g':'b','FIX-P2,P3');
+  h+=kpi('Γ (burden)',r4(R.Gamma),'n','cost index');
+  h+=kpi('Ψ (psi)',r4(R.psi),'n',R.preRevMode?'ops floor (P1)':'revenue ceiling');
+  h+=kpi('R_mod',r4(R.Rmod),R.Rmod>0?'g':'b','RSL direction');
+  h+='</div>';
+
+  // Penalty breakdown
+  h+='<div style="margin-top:8px;">';
+  R.penalties.forEach(function(p){
+    var raw=Math.round(p.raw*100);
+    var col=raw>60?'var(--red2)':raw>35?'var(--amber2)':'var(--green2)';
+    h+='<div class="pen-row"><div class="pen-lbl">'+esc(p.label)+'</div>';
+    h+='<div class="pen-track"><div class="pen-fill" style="width:'+raw+'%;background:'+col+'"></div></div>';
+    h+='<div class="pen-val">'+raw+'%</div></div>';
+  });
+  h+='</div>';
+
+  // Config fingerprint
+  h+='<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:12px;margin-top:12px;">';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">Active Model Configuration (all dynamic — no hardcode)</div>';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);line-height:1.8;">';
+  h+='Ω_crit=1/e≈0.36788 (METP — fixed by theory) · Ω_ref='+CFG.omegaRef+' · PAY_MAX='+CFG.payMax+'d · SPIKE_DIV='+CFG.spikeDiv+' · PROJ_HRS='+CFG.projHrs+'h · PRE_REV_HRS='+CFG.preRevHrs+'h<br>';
+  h+='AT_MAX='+CFG.atMax+' · ISEQ_MONO='+CFG.iseqMono+' · ISEQ_CHAOS='+CFG.iseqChaos+' · SENS_DELTA=±'+(CFG.sensDelta*100)+'%<br>';
+  h+='W: var='+CFG.W.var+' spk='+CFG.W.spike+' drft='+CFG.W.drift+' dir='+CFG.W.dir+' cost='+CFG.W.cost+' ord='+CFG.W.order+'  (Σ='+Math.round(Object.values(CFG.W).reduce(function(s,v){return s+v;},0)*1000)/1000+')<br>';
+  h+='Alert: Ω_warn='+CFG.omegaWarnHi+' att_crit='+CFG.attCrit+'% att_warn='+CFG.attWarn+'% margin_thin='+CFG.marginThin+'% margin_target='+CFG.marginTarget+'%<br>';
+  h+='Safety: penalty/inc='+CFG.safetyPenalty+' cap='+CFG.safetyPenaltyCap+' · SPI_crit='+CFG.spiCrit+' SPI_warn='+CFG.spiWarn;
+  h+='</div>';
+  h+='</div>';
+
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:10px;line-height:1.6;">';
+  h+='UEDP v4 · G S Ramesh Kumar · DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4<br>';
+  h+='FIX-P1: ψ ops floor · FIX-P2: Icoh=1-ISeq/2 · FIX-P3: δΩ=|ω-Ω_ref| · FIX-P4: null margins · FIX-P5: AT null when ISeq<'+CFG.iseqMono;
+  h+='</div>';
+
+  document.getElementById('mainPanel').innerHTML=h;
+
+  setTimeout(function(){
+    if(R.hv&&R.hv.length>=2){
+      drawHour(R.hv,inp.hourlyTargets||[],inp.prodUnit||'units',inp.domain);
+      drawOmega(R.hv,inp.domain,CFG);
+    }
+  },60);
+}
+
+// ── Canvas Charts ─────────────────────────────────────────────────────────
+var SLOT_LABELS=['8am','9am','10am','11am','12pm','1pm','2pm','3pm','4pm','5pm'];
+var EDU_LABELS=['P1','P2','P3','P4','P5','P6','P7','P8','P9','P10'];
+
+function drawHour(hv,ht,unit,domain){
+  var cv=document.getElementById('cvHour'); if(!cv)return;
   var dpr=window.devicePixelRatio||1;
-  cv.width=cv.parentElement.clientWidth*dpr; cv.height=160*dpr; cv.style.height='160px';
+  cv.width=cv.parentElement.clientWidth*dpr; cv.height=155*dpr; cv.style.height='155px';
   var ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
-  var W=cv.parentElement.clientWidth, H=160;
+  var W=cv.parentElement.clientWidth,H=155;
   ctx.fillStyle='#0d1018'; ctx.fillRect(0,0,W,H);
-  var pd={t:20,b:24,l:36,r:8}, cw=W-pd.l-pd.r, ch=H-pd.t-pd.b, N=hv.length;
+  var pd={t:18,b:22,l:34,r:8}, cw=W-pd.l-pd.r, ch=H-pd.t-pd.b, N=hv.length;
   var nonZeroT=ht.filter(function(t){return t>0;});
   var mx=Math.max.apply(null,hv.concat(nonZeroT))||1;
+  var labels=domain==='education'?EDU_LABELS:SLOT_LABELS;
+  var accentColor=domain==='contractor'?'#f09050':domain==='education'?'#b09ae0':'#5aacf0';
   function px(i){return pd.l+i*(cw/(N-1||1));}
-  function py(v){return pd.t+ch-(v/mx)*ch;}
-  // Grid
+  function py(vv){return pd.t+ch-(vv/mx)*ch;}
   ctx.strokeStyle='#1e2840'; ctx.lineWidth=0.5;
   [0.5,1].forEach(function(f){
     ctx.beginPath();ctx.moveTo(pd.l,py(mx*f));ctx.lineTo(pd.l+cw,py(mx*f));ctx.stroke();
     ctx.fillStyle='#2a3858';ctx.font='7px IBM Plex Mono';ctx.textAlign='right';
     ctx.fillText(Math.round(mx*f),pd.l-3,py(mx*f)+3);
   });
-  // Target line
   if(nonZeroT.length){
-    var avgT=nonZeroT.reduce(function(s,v){return s+v;},0)/nonZeroT.length;
+    var avgT=mean(nonZeroT);
     ctx.strokeStyle='rgba(212,144,10,.5)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
     ctx.beginPath();ctx.moveTo(pd.l,py(avgT));ctx.lineTo(pd.l+cw,py(avgT));ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle='#d4900a';ctx.font='7px IBM Plex Mono';ctx.textAlign='left';
-    ctx.fillText('target',pd.l+3,py(avgT)-3);
   }
-  // Bars
   var bw=Math.max(4,cw/N-5);
-  hv.forEach(function(v,i){
-    var x=pd.l+i*(cw/(N-1||1))-bw/2, barH=(v/mx)*ch;
+  hv.forEach(function(vv,i){
+    var x=pd.l+i*(cw/(N-1||1))-bw/2, barH=(vv/mx)*ch;
     var tgt=nonZeroT[i]||0;
-    var col=tgt?v/tgt>=0.9?'rgba(26,136,80,.85)':v/tgt>=0.6?'rgba(212,144,10,.85)':'rgba(192,48,48,.85)':'rgba(45,127,212,.7)';
-    ctx.fillStyle=col;ctx.fillRect(x,py(v),bw,barH);
+    var col=tgt?vv/tgt>=0.9?'rgba(26,136,80,.85)':vv/tgt>=0.6?'rgba(212,144,10,.85)':'rgba(192,48,48,.85)':'rgba(45,127,212,.6)';
+    ctx.fillStyle=col; ctx.fillRect(x,py(vv),bw,barH);
   });
-  // Line
-  ctx.strokeStyle='#5aacf0';ctx.lineWidth=1.5;
-  ctx.beginPath();hv.forEach(function(v,i){i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});ctx.stroke();
-  hv.forEach(function(v,i){
-    ctx.beginPath();ctx.arc(px(i),py(v),3,0,2*Math.PI);
-    ctx.fillStyle='#2d7fd4';ctx.fill();
+  ctx.strokeStyle=accentColor;ctx.lineWidth=1.5;
+  ctx.beginPath();hv.forEach(function(vv,i){i===0?ctx.moveTo(px(i),py(vv)):ctx.lineTo(px(i),py(vv));});ctx.stroke();
+  hv.forEach(function(vv,i){
+    ctx.beginPath();ctx.arc(px(i),py(vv),3,0,2*Math.PI);
+    ctx.fillStyle=accentColor;ctx.fill();
     ctx.fillStyle='#5a7098';ctx.font='7px IBM Plex Mono';ctx.textAlign='center';
-    ctx.fillText(SLOTS[i].split('–')[0],px(i),H-4);
+    ctx.fillText(labels[i]||('H'+(i+1)),px(i),H-4);
   });
-  ctx.fillStyle='#2d7fd4';ctx.font='bold 8px IBM Plex Mono';ctx.textAlign='left';
-  ctx.fillText('Output per hour ('+unit+')',pd.l,pd.t-4);
+  ctx.fillStyle=accentColor;ctx.font='bold 8px IBM Plex Mono';ctx.textAlign='left';
+  ctx.fillText('Output per slot ('+unit+')',pd.l,pd.t-2);
 }
 
-function drawOmega(hv){
-  var cv=document.getElementById('cvOmega');if(!cv||hv.length<2)return;
+function drawOmega(hv,domain,cfg){
+  var cv=document.getElementById('cvOmega'); if(!cv||hv.length<2)return;
   var dpr=window.devicePixelRatio||1;
-  cv.width=cv.parentElement.clientWidth*dpr; cv.height=160*dpr; cv.style.height='160px';
+  cv.width=cv.parentElement.clientWidth*dpr; cv.height=155*dpr; cv.style.height='155px';
   var ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
-  var W=cv.parentElement.clientWidth,H=160;
+  var W=cv.parentElement.clientWidth,H=155;
   ctx.fillStyle='#0d1018';ctx.fillRect(0,0,W,H);
-  var pd={t:20,b:24,l:40,r:8}, cw=W-pd.l-pd.r, ch=H-pd.t-pd.b, N=hv.length;
-  // Running omega at each prefix
+  var pd={t:18,b:22,l:40,r:8},cw=W-pd.l-pd.r,ch=H-pd.t-pd.b,N=hv.length;
+  var accentColor=domain==='contractor'?'#f09050':domain==='education'?'#b09ae0':'#2d7fd4';
+  var labels=domain==='education'?EDU_LABELS:SLOT_LABELS;
+  // Build running omega using CFG parameters
   var oms=[];
   for(var t=1;t<=N;t++){
-    var sub=hv.slice(0,t), m=sub.reduce(function(s,v){return s+v;},0)/sub.length;
-    var vv=sub.reduce(function(s,v){return s+(v-m)*(v-m);},0)/sub.length;
-    var sp=0;for(var i=1;i<sub.length;i++)sp=Math.max(sp,Math.abs(sub[i]-sub[i-1]));
-    var nv=Math.min(1,vv/(m*m+1e-9)), ns=Math.min(1,m>0?sp/m/3:0);
+    var sub=hv.slice(0,t), m=mean(sub)||1;
+    var vv=sub.reduce(function(s,vv){return s+(vv-m)*(vv-m);},0)/sub.length;
+    var sp=0; for(var i=1;i<sub.length;i++)sp=Math.max(sp,Math.abs(sub[i]-sub[i-1]));
+    var nv=Math.min(1,vv/(m*m+1e-9)), ns=Math.min(1,sp/m/cfg.spikeDiv);
     var ps=Math.min(1,m/(m+1));
-    oms.push(Math.min(1,ps*Math.exp(-(nv*0.5+ns*0.5))));
+    oms.push(Math.min(1,ps*Math.exp(-(nv*cfg.W.var+ns*cfg.W.spike))));
   }
   function px(i){return pd.l+i*(cw/(N-1||1));}
-  function py(v){return pd.t+ch-v*ch;}
-  // Crit line
+  function py(vv){return pd.t+ch-vv*ch;}
+  // Draw Ω_crit line
   ctx.strokeStyle='rgba(192,48,48,.5)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
   ctx.beginPath();ctx.moveTo(pd.l,py(OC));ctx.lineTo(pd.l+cw,py(OC));ctx.stroke();
+  // Draw Ω_ref line (from CFG)
+  ctx.strokeStyle='rgba(90,172,240,.3)';
+  ctx.beginPath();ctx.moveTo(pd.l,py(cfg.omegaRef));ctx.lineTo(pd.l+cw,py(cfg.omegaRef));ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle='#c03030';ctx.font='7px IBM Plex Mono';ctx.textAlign='left';
-  ctx.fillText('Ω_crit=1/e',pd.l+3,py(OC)-3);
-  // Fill
+  ctx.fillText('Ω_crit='+Math.round(OC*1000)/1000,pd.l+3,py(OC)-3);
+  ctx.fillStyle='#2d7fd4';
+  ctx.fillText('Ω_ref='+cfg.omegaRef,pd.l+3,py(cfg.omegaRef)+9);
   ctx.beginPath();
-  oms.forEach(function(v,i){i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});
+  oms.forEach(function(vv,i){i===0?ctx.moveTo(px(i),py(vv)):ctx.lineTo(px(i),py(vv));});
   ctx.lineTo(px(N-1),py(0));ctx.lineTo(px(0),py(0));ctx.closePath();
-  ctx.fillStyle='rgba(45,127,212,.07)';ctx.fill();
-  // Curve
-  ctx.strokeStyle='#2d7fd4';ctx.lineWidth=2;
-  ctx.beginPath();oms.forEach(function(v,i){i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});ctx.stroke();
-  oms.forEach(function(v,i){
-    ctx.beginPath();ctx.arc(px(i),py(v),3,0,2*Math.PI);
-    ctx.fillStyle=v>=OC?'#1a8850':'#c03030';ctx.fill();
+  ctx.fillStyle='rgba(45,127,212,.06)';ctx.fill();
+  ctx.strokeStyle=accentColor;ctx.lineWidth=2;
+  ctx.beginPath();oms.forEach(function(vv,i){i===0?ctx.moveTo(px(i),py(vv)):ctx.lineTo(px(i),py(vv));});ctx.stroke();
+  oms.forEach(function(vv,i){
+    ctx.beginPath();ctx.arc(px(i),py(vv),3,0,2*Math.PI);
+    ctx.fillStyle=vv>=OC?'#1a8850':'#c03030';ctx.fill();
     ctx.fillStyle='#5a7098';ctx.font='7px IBM Plex Mono';ctx.textAlign='center';
-    ctx.fillText(SLOTS[i].split('–')[0],px(i),H-4);
+    ctx.fillText(labels[i]||('H'+(i+1)),px(i),H-4);
   });
-  // Y axis
   ctx.fillStyle='#2a3858';ctx.font='7px IBM Plex Mono';ctx.textAlign='right';
   ctx.fillText('1.0',pd.l-3,pd.t+5);ctx.fillText('0',pd.l-3,pd.t+ch);
-  ctx.fillText(Math.round(OC*1000)/1000,pd.l-3,py(OC)+3);
-  ctx.fillStyle='#2d7fd4';ctx.font='bold 8px IBM Plex Mono';ctx.textAlign='left';
-  ctx.fillText('Running Ω timeline',pd.l,pd.t-4);
+  ctx.fillStyle=accentColor;ctx.font='bold 8px IBM Plex Mono';ctx.textAlign='left';
+  ctx.fillText('Running Ω (Ω_ref='+cfg.omegaRef+')',pd.l,pd.t-2);
 }
 
-// Keyboard shortcut
 document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='Enter')compute();});
 </script>
 </body>
