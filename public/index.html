@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>UEDP Business Pulse · Multi-Domain v4.0 · Zero Hardcode</title>
+<title>UEDP Business Pulse · Multi-Domain v4.1 · Zero Hardcode</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -469,7 +469,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 <div class="bar">
   <div>
     <div class="bar-logo">UEDP <em>PULSE</em></div>
-    <div class="bar-sub">MULTI-DOMAIN COHERENCE ENGINE · G S RAMESH KUMAR · v4.0 · ZERO HARDCODE · Ω_crit=1/e</div>
+    <div class="bar-sub">MULTI-DOMAIN COHERENCE ENGINE · G S RAMESH KUMAR · v4.1 · ZERO HARDCODE · Ω_crit=1/e</div>
   </div>
   <div class="bar-date" id="barDate"></div>
   <button class="cfg-btn" onclick="openConfig()">⚙ CONFIG</button>
@@ -1209,22 +1209,38 @@ function generateAlerts(R,inp,domainExtras,cfg){
   }
 
   // 4. Profitability forecast
-  var predConf=inp.hoursElapsed>=6?'HIGH':inp.hoursElapsed>=4?'MEDIUM':'LOW';
+  // Data-sufficiency label (not statistical confidence — heuristic model per UEDP protocol)
+  // hoursElapsed drives how much of the day's data is available, not model accuracy.
+  var dataSufficiency=inp.hoursElapsed>=cfg.projHrs*0.6?'SUFFICIENT':inp.hoursElapsed>=cfg.projHrs*0.4?'PARTIAL':'EARLY';
+  var dataSuffNote='[Heuristic model · '+inp.hoursElapsed+'h of '+cfg.projHrs+'h elapsed · data: '+dataSufficiency+']';
+  // Extreme margin guard: when |netMargin|>300, % figure is misleading — show burn rate instead
+  var tc_alert=(inp.runningCost||0)+(inp.fixedCost||0);
+  var burnRate=inp.hoursElapsed>0?Math.round(tc_alert/inp.hoursElapsed):0;
+  var marginDisplay=R.netMargin!==null&&Math.abs(R.netMargin)<=300?r2(R.netMargin)+'%':null;
+  var profitDetail=R.willProfitable
+    ?(marginDisplay!==null?'Net margin '+marginDisplay+' on ₹'+INR(inp.outputValue||0)+' revenue. ':'Revenue ₹'+INR(inp.outputValue||0)+' vs cost ₹'+INR(tc_alert)+'. Break-even met. ')+dataSuffNote
+    :'Burn rate: ₹'+INR(burnRate)+'/hr. Break-even: ₹'+INR(R.breakEven)+'. Gap: ₹'+INR(Math.abs(R.netProfit))+'. '+dataSuffNote;
   push(
     R.willProfitable&&R.netMargin!==null&&R.netMargin>=cfg.marginTarget?'ok':R.willProfitable?'warning':'critical',
     'PREDICTION',
-    'Profitability forecast ('+predConf+' confidence): '+(R.willProfitable?'PROFITABLE':'LOSS'),
-    R.willProfitable
-      ?'Projected net margin '+(R.projMargin!==null?r2(R.projMargin):r2(R.netMargin))+'% on ₹'+INR(inp.outputValue||0)+' revenue.'
-      :'At current rate, closes at −₹'+INR(Math.abs(R.netProfit))+'. Break-even: ₹'+INR(R.breakEven)+'.',
+    'Profitability outlook (data: '+dataSufficiency+'): '+(R.willProfitable?'PROFITABLE':'LOSS')+' — heuristic, not forecast',
+    profitDetail,
     R.willProfitable?'Maintain pace. Confirm pipeline orders.':'Reduce variable cost. Push unconfirmed orders.');
 
-  // 5. Thin margin
-  if(R.willProfitable&&R.netMargin!==null&&R.netMargin<cfg.marginThin){
+  // 5. Thin margin — only fire when margin is in interpretable range
+  var tc_thin=(inp.runningCost||0)+(inp.fixedCost||0);
+  var burnRateAlert=inp.hoursElapsed>0?Math.round(tc_thin/inp.hoursElapsed):0;
+  if(R.willProfitable&&R.netMargin!==null&&Math.abs(R.netMargin)<=300&&R.netMargin<cfg.marginThin){
     push('warning','P&L',
       'Thin margin '+r2(R.netMargin)+'% — target >'+cfg.marginTarget+'%',
-      '₹'+INR(R.netProfit)+' net on ₹'+INR(inp.outputValue||0)+' revenue. One cost spike tips into loss.',
+      '₹'+INR(R.netProfit)+' net on ₹'+INR(inp.outputValue||0)+' revenue. Burn rate: ₹'+INR(burnRateAlert)+'/hr. One cost spike tips into loss.',
       'Prioritise higher-margin SKUs in remaining hours.');
+  } else if(!R.willProfitable&&R.netMargin!==null&&Math.abs(R.netMargin)>300){
+    // Extreme loss ratio — show burn rate instead of misleading %
+    push('warning','P&L',
+      'Revenue too low to compute meaningful margin — burn rate: ₹'+INR(burnRateAlert)+'/hr',
+      'Revenue ₹'+INR(inp.outputValue||0)+' vs cost ₹'+INR(tc_thin)+'. Margin % suppressed (would show >300% — misleading). Break-even gap: ₹'+INR(Math.abs(R.netProfit))+'.',
+      'Focus on break-even gap, not margin %. Increase revenue or reduce cost immediately.');
   }
 
   // 6. Target gap (threshold from CFG)
@@ -1595,6 +1611,21 @@ function render(R,alerts,inp,domainExtras,sens){
   h+='<div class="omega-marker" style="left:'+Math.round(effectiveOmega*100)+'%"></div>';
   h+='</div>';
   h+='<div class="omega-labs"><span>0 — Chaos</span><span>Ω_crit='+Math.round(OC*10000)/10000+' (1/e)</span><span>1.0 — Coherent</span></div>';
+  // WHY 1/e — METP derivation note (visible to CTO, non-specialist)
+  h+='<details style="margin-top:10px;"><summary style="font-family:var(--mono);font-size:9px;color:var(--blue2);cursor:pointer;user-select:none;">▸ Why Ω_crit = 1/e? (METP derivation)</summary>';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);line-height:1.7;margin-top:8px;padding:10px 12px;background:var(--bg3);border-radius:6px;border:1px solid var(--border2);">';
+  h+='<strong style="color:var(--amber2);">METP Optimal Stopping Principle</strong> (G S Ramesh Kumar, 2025):<br>';
+  h+='The Minimum Effort Transition Path (METP) defines the critical point where two costs balance:<br>';
+  h+='&nbsp;&nbsp;① Dissipation cost — cost of staying in an unstable state (system burns energy)<br>';
+  h+='&nbsp;&nbsp;② Wasted effort cost — cost of acting too soon (system is still stable)<br>';
+  h+='Mathematically, this balance resolves to Ω_crit = 1/e ≈ 0.368 — the unique point that maximises<br>';
+  h+='the probability of a successful, minimum-effort transition. It is not an empirical fit or a tuned threshold.<br>';
+  h+='It is derived from the variational principle analogous to the Principle of Least Action in physics,<br>';
+  h+='extended to far-from-equilibrium operational systems. DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4<br><br>';
+  h+='<strong style="color:var(--text3);">Model classification:</strong> Heuristic decision engine. Ω is a coherence indicator, not a probabilistic forecast.<br>';
+  h+='I_seq = 0 means monotone production (no chaos) → A/T ratio is undefined (correct per FIX-P5, not a bug).<br>';
+  h+='Use history[] + backtest mode to measure directional accuracy on your own data.';
+  h+='</div></details>';
   h+='</div>';
 
   // P&L banner
@@ -1606,9 +1637,12 @@ function render(R,alerts,inp,domainExtras,sens){
   h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+(R.netProfit>=0?'Positive':'Loss')+' · '+inp.hoursElapsed+'h elapsed</div>';
   h+='</div>';
   h+='<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px 15px;">';
-  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Net Margin</div>';
-  h+='<div style="font-family:var(--mono);font-size:24px;font-weight:600;color:'+(R.netMargin===null?'var(--text3)':R.netMargin>=CFG.marginTarget?'var(--green2)':R.netMargin>=0?'var(--amber2)':'var(--red2)')+'">'+( R.netMargin!==null?r2(R.netMargin)+'%':'N/A')+'</div>';
-  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">target: '+CFG.marginTarget+'% · thin: '+CFG.marginThin+'%</div>';
+  var displayMargin=R.netMargin!==null&&Math.abs(R.netMargin)<=300;
+  var tc_banner=(inp.runningCost||0)+(inp.fixedCost||0);
+  var burnRateBanner=inp.hoursElapsed>0?Math.round(tc_banner/inp.hoursElapsed):0;
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">'+(displayMargin?'Net Margin':'Burn Rate')+'</div>';
+  h+='<div style="font-family:var(--mono);font-size:24px;font-weight:600;color:'+(displayMargin?(R.netMargin>=CFG.marginTarget?'var(--green2)':R.netMargin>=0?'var(--amber2)':'var(--red2)'):'var(--red2)')+'">'+( displayMargin?r2(R.netMargin)+'%':'₹'+fmt(burnRateBanner)+'/hr')+'</div>';
+  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+(displayMargin?'target: '+CFG.marginTarget+'% · thin: '+CFG.marginThin+'%':'margin >300% — burn rate shown · break-even gap: ₹'+fmt(Math.abs(R.netProfit)))+'</div>';
   h+='</div>';
   if(R.projEOD!==null){
     h+='<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:13px 15px;">';
@@ -1625,7 +1659,10 @@ function render(R,alerts,inp,domainExtras,sens){
   h+=kpi('I_seq',r4(R.Iseq),R.Iseq<0.3?'g':R.Iseq<CFG.iseqChaos?'w':'b','instability');
   h+=kpi('A/T Ratio',R.AT!==null?r2(R.AT):'—',R.isAnados===true?'g':R.isAnados===false?'b':'n',R.isAnados===true?'Anados ↑':R.isAnados===false?'Thanatos ↓':'monotone');
   h+=kpi('Attendance',Math.round(R.attendance*100)+'%',R.attendance*100>=CFG.attWarn?'g':R.attendance*100>=CFG.attCrit?'w':'b',inp.empPresent+' of '+inp.empTotal);
-  h+=kpi('Net Margin',R.netMargin!==null?r2(R.netMargin)+'%':'N/A (FIX-P4)',R.netMargin===null?'n':R.netMargin>=CFG.marginTarget?'g':R.netMargin>=0?'w':'b','today');
+  h+=kpi('Net Margin',
+    (R.netMargin!==null&&Math.abs(R.netMargin)<=300)?r2(R.netMargin)+'%':R.netMargin===null?'N/A':'See Burn Rate',
+    R.netMargin===null?'n':Math.abs(R.netMargin)>300?'b':R.netMargin>=CFG.marginTarget?'g':R.netMargin>=0?'w':'b',
+    R.netMargin!==null&&Math.abs(R.netMargin)>300?'|margin|>300% — see burn rate':(R.netMargin===null?'FIX-P4: no revenue':'today'));
   h+=kpi('Penalty',r4(R.penalty),R.penalty<0.3?'g':R.penalty<0.6?'w':'b','weighted');
   h+='</div>';
 
@@ -1729,53 +1766,72 @@ function render(R,alerts,inp,domainExtras,sens){
   h+='<div class="sh '+shClass+'">Financial Snapshot</div>';
   if(inp.domain==='contractor'){
     h+='<div class="pl-grid"><div class="pl-card">';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--orange2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">⏱ TODAY — Site Cost vs Billing</div>';
     h+=plRow('Billing Raised Today','₹'+fmt(inp.outputValue||0),'pos');
     h+=plRow('Labour Cost','−₹'+fmt(inp.conLabCost||0),'neg');
     h+=plRow('Material Cost','−₹'+fmt(inp.conMatCost||0),'neg');
     h+=plRow('Equipment/OH','−₹'+fmt(inp.conEqCost||0),'neg');
     h+='<div class="pl-divider"></div>';
-    h+='<div class="pl-total"><span class="pl-total-lbl">Net Contribution</span><span class="pl-val '+(R.netProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(R.netProfit)+'</span></div>';
-    h+=plRow('Margin %',R.netMargin!==null?r2(R.netMargin)+'%':'N/A (FIX-P4)',R.netMargin!==null&&R.netMargin>=0?'pos':'neg');
+    h+='<div class="pl-total"><span class="pl-total-lbl">Net Contribution (Today)</span><span class="pl-val '+(R.netProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(R.netProfit)+'</span></div>';
+    h+=plRow('Margin %',R.netMargin!==null&&Math.abs(R.netMargin)<=300?r2(R.netMargin)+'%':'See Burn Rate',R.netMargin!==null&&R.netMargin>=0?'pos':'neg');
+    var burnCon=(inp.hoursElapsed||1)>0?Math.round(((inp.conLabCost||0)+(inp.conMatCost||0)+(inp.conEqCost||0))/(inp.hoursElapsed||1)):0;
+    h+=plRow('Site Burn Rate','₹'+fmt(burnCon)+'/hr','');
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:6px;line-height:1.5;">⚠ Today\'s billing vs today\'s cost only. Project-level P&L needs cumulative view.</div>';
     h+='</div><div class="pl-card">';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--orange2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">📋 PROJECT — Cumulative Context</div>';
     h+=plRow('Contract Value','₹'+fmt(inp.conContractVal||0),'');
     h+=plRow('Billed to Date','₹'+fmt(inp.conBilledToDate||0),'');
     if(domainExtras&&domainExtras.billingPct!==null)h+=plRow('Billing Progress',domainExtras.billingPct+'%','');
     h+=plRow('Retention Held','₹'+fmt(inp.conRetention||0),'neg');
-    h+=plRow('Billing Target','₹'+fmt(inp.conBillingTarget||0),'');
+    h+=plRow('Billing Target Today','₹'+fmt(inp.conBillingTarget||0),'');
     h+=plRow('vs Target',R.targetGap!==null?(R.targetGap<=0?'On Target ✓':'Gap ₹'+fmt(R.targetGap)):'-',R.targetGap!==null&&R.targetGap<=0?'pos':'neg');
     h+='</div></div>';
   } else if(inp.domain==='education'){
     h+='<div class="pl-grid"><div class="pl-card">';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--purple2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">⏱ TODAY — Fee vs Operating Cost</div>';
     h+=plRow('Fee Collected Today','₹'+fmt(inp.eduFeeCollected||0),'pos');
     h+=plRow('Staff Cost','−₹'+fmt(inp.staffCost||0),'neg');
     h+=plRow('Operational Cost','−₹'+fmt(inp.opCost||0),'neg');
     h+='<div class="pl-divider"></div>';
     h+='<div class="pl-total"><span class="pl-total-lbl">Net Surplus/Deficit</span><span class="pl-val '+(R.netProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(R.netProfit)+'</span></div>';
-    h+=plRow('Fee Target','₹'+fmt(inp.eduFeeTarget||0),'');
-    h+=plRow('Target Gap',inp.eduFeeTarget>0?'₹'+fmt(Math.abs((inp.eduFeeTarget||0)-(inp.eduFeeCollected||0))):'—',(inp.eduFeeCollected>=(inp.eduFeeTarget||0))?'pos':'neg');
+    var burnEdu=inp.hoursElapsed>0?Math.round(((inp.staffCost||0)+(inp.opCost||0))/inp.hoursElapsed):0;
+    h+=plRow('Burn Rate','₹'+fmt(burnEdu)+'/hr','');
+    h+=plRow('Fee Target Today','₹'+fmt(inp.eduFeeTarget||0),'');
+    h+=plRow('Today Gap',inp.eduFeeTarget>0?'₹'+fmt(Math.abs((inp.eduFeeTarget||0)-(inp.eduFeeCollected||0))):'—',(inp.eduFeeCollected>=(inp.eduFeeTarget||0))?'pos':'neg');
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:6px;line-height:1.5;">⚠ Today\'s fee vs today\'s cost. Monthly view shows structural position.</div>';
     h+='</div><div class="pl-card">';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--purple2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">📅 MONTH — Receivables Context</div>';
     h+=plRow('Monthly Fee Target','₹'+fmt(inp.eduFeeTotalMonth||0),'');
     h+=plRow('Fee Outstanding','₹'+fmt(inp.eduFeeOutstanding||0),'neg');
     if(domainExtras)h+=plRow('Fee Recovery',domainExtras.feeRecovery+'%',domainExtras.feeRecovery>=80?'pos':'');
+    h+'<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:6px;line-height:1.5;">Outstanding fees affect cashflow but not today\'s cost structure.</div>';
     h+='</div></div>';
   } else {
     h+='<div class="pl-grid"><div class="pl-card">';
-    h+=plRow('Output Value','₹'+fmt(inp.outputValue||0),'pos');
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--blue2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">⏱ TODAY — Actuals ('+inp.hoursElapsed+'h elapsed)</div>';
+    h+=plRow('Output Value (Revenue)','₹'+fmt(inp.outputValue||0),'pos');
     h+=plRow('Variable Cost','−₹'+fmt(inp.runningCost||0),'neg');
     h+='<div class="pl-divider"></div>';
     h+=plRow('Gross Profit','₹'+fmt(R.grossProfit),R.grossProfit>=0?'pos':'neg');
-    h+=plRow('Gross Margin',R.grossMargin!==null?r2(R.grossMargin)+'%':'N/A (FIX-P4)','');
+    h+=plRow('Gross Margin',R.grossMargin!==null&&Math.abs(R.grossMargin)<=300?r2(R.grossMargin)+'%':'See Burn Rate','');
     h+=plRow('Fixed Overhead','−₹'+fmt(inp.fixedCost||0),'neg');
     h+='<div class="pl-divider"></div>';
     h+='<div class="pl-total"><span class="pl-total-lbl">Net Profit (Today)</span><span class="pl-val '+(R.netProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(R.netProfit)+'</span></div>';
-    h+=plRow('Net Margin',R.netMargin!==null?r2(R.netMargin)+'%':'N/A (FIX-P4)',R.netMargin!==null&&R.netMargin>=CFG.marginTarget?'pos':R.netMargin!==null&&R.netMargin>=0?'':'neg');
+    var tc_snap=(inp.runningCost||0)+(inp.fixedCost||0);
+    var burnSnap=inp.hoursElapsed>0?Math.round(tc_snap/inp.hoursElapsed):0;
+    var marginSnap=R.netMargin!==null&&Math.abs(R.netMargin)<=300?r2(R.netMargin)+'%':'N/A (|margin|>300%)';
+    h+=plRow('Net Margin',marginSnap,R.netMargin!==null&&R.netMargin>=CFG.marginTarget?'pos':R.netMargin!==null&&R.netMargin>=0?'':'neg');
+    h+=plRow('Burn Rate','₹'+fmt(burnSnap)+'/hr','');
     h+='</div><div class="pl-card">';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--blue2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">📈 PROJECTED — If current rate holds to '+CFG.projHrs+'h</div>';
     if(R.costPerUnit!==null)h+=plRow('Cost/Unit','₹'+r2(R.costPerUnit),'');
     if(R.revPerUnit!==null) h+=plRow('Rev/Unit','₹'+r2(R.revPerUnit),R.revPerUnit>(R.costPerUnit||0)?'pos':'neg');
     if(R.ratePerHr!==null)  h+=plRow('Units/Hour',r2(R.ratePerHr),'');
-    if(R.projEOD!==null)    h+=plRow('Proj. EOD',r0(R.projEOD)+' '+inp.prodUnit+' @ '+CFG.projHrs+'h','');
+    if(R.projEOD!==null)    h+=plRow('Proj. EOD Volume',r0(R.projEOD)+' '+inp.prodUnit,'');
+    if(R.projMargin!==null&&Math.abs(R.projMargin)<=300) h+=plRow('Proj. Margin',r2(R.projMargin)+'%',R.projMargin>=CFG.marginTarget?'pos':'');
     if(R.targetGap!==null)  h+=plRow('Target Gap',R.targetGap<=0?'Target Met ✓':'₹'+fmt(R.targetGap),R.targetGap<=0?'pos':'neg');
-    h+=plRow('Break-even','₹'+fmt(R.breakEven),'');
+    h+=plRow('Break-even Revenue','₹'+fmt(R.breakEven),'');
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:8px;line-height:1.5;">Note: Projection assumes constant hourly rate. Actual EOD may vary with orders, shift changes, or capacity.</div>';
     h+='</div></div>';
   }
 
