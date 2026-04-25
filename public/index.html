@@ -1272,10 +1272,21 @@ function computeEducationExtras(inp,base,cfg){
   x.seatUtilization = inp.eduSeatsAvail>0
     ? Math.round(inp.eduSeatsFilled/inp.eduSeatsAvail*100) : null;
 
-  // [FIX-EDU-5]: Fee recovery — null (N/A) when no monthly fee data exists at all
-  // "No data" ≠ "100% recovery" — previous version falsely showed 100%
-  x.feeRecovery = inp.hasMonthlyFeeData && inp.eduFeeTotalMonth>0
-    ? Math.round(clamp(1-(inp.eduFeeOutstanding/inp.eduFeeTotalMonth))*100) : null;
+  // [FIX-EDU-5 v2]: Fee recovery logic — three distinct states:
+  // (a) feeTotalMonth > 0 → compute recovery from outstanding
+  // (b) feeTotalMonth = 0, feeOutstanding = 0, feeCollected = 0 → Prepaid or no receivable → 100% (collected)
+  // (c) feeTotalMonth = 0, no data → null (N/A — missing data)
+  if(inp.hasMonthlyFeeData && inp.eduFeeTotalMonth>0){
+    x.feeRecovery = Math.round(clamp(1-(inp.eduFeeOutstanding/inp.eduFeeTotalMonth))*100);
+    x.feeRecoveryLabel = 'of monthly target';
+  } else if(inp.eduFeeTotalMonth===0 && inp.eduFeeOutstanding===0 && inp.monthlyFeePerStudent>0){
+    // Fees collected on time / prepaid — nothing outstanding
+    x.feeRecovery = 100;
+    x.feeRecoveryLabel = 'Prepaid — ₹0 outstanding';
+  } else {
+    x.feeRecovery = null;
+    x.feeRecoveryLabel = 'no monthly data';
+  }
 
   // [FIX-EDU-6]: Admission conversion — 0 (not "N/A treated as perfect") when both are zero
   // Enquiries=0 AND admissions=0 = no pipeline data → 0% (not 100%)
@@ -1307,7 +1318,31 @@ function computeEducationExtras(inp,base,cfg){
     Math.round(inp.eduFeeCollected/expectedDailyCollection*100) : null;
   x.collectionTimingIssue = x.feeRecovery!==null && x.feeRecovery>=75 && x.collectionVsExpected!==null && x.collectionVsExpected<80;
   x.collectionStructuralIssue = x.feeRecovery!==null && x.feeRecovery<60;
-  // Daily cost coverage % (replaces misleading burn rate for education)
+  // ── Structural Loss Detector ─────────────────────────────────────────────
+  // [FIX-EDU-INSIGHT]: Do NOT suggest "increase enrollment" when at full capacity OR
+  // when unit contribution is negative (each student adds loss, not reduces it).
+  // atCapacity: seats filled >= seats available (or both entered as equal)
+  x.atCapacity = inp.eduSeatsAvail>0
+    ? (inp.eduSeatsFilled >= inp.eduSeatsAvail)
+    : false; // unknown capacity → can't confirm full
+  // canScaleToProfit: adding students reduces per-student fixed cost AND unitContrib>0
+  // If unitContrib<0, enrollment increase worsens loss
+  x.canScaleToProfit = !x.atCapacity && x.unitContribPerStudent!==null && x.dailyCostTotal>0
+    ? (x.unitContribPerStudent > 0 || // already profitable per student
+      (x.costPerStudent!==null && x.earnedPerStudent!==null &&
+       // Fixed cost spread scenario: revenue > variable cost (no pure variable here, all fixed)
+       // Since edu cost is entirely fixed, more students always improves per-student cost
+       // BUT only if fee > 0
+       x.earnedPerStudent > 0 && !x.atCapacity))
+    : false;
+  x.structuralLoss = x.unitContribPerStudent!==null && x.unitContribPerStudent < 0;
+  x.enrollmentLeversBlocked = x.atCapacity || (x.structuralLoss && x.earnedPerStudent>0);
+  // Fee adequacy: what fee per student is needed to break even?
+  x.breakEvenFeePerStudent = (x.costPerStudent!==null && inp.workingDays>0)
+    ? Math.round(x.costPerStudent * inp.workingDays) : null;
+  x.feeGapPerStudent = (x.breakEvenFeePerStudent!==null && inp.monthlyFeePerStudent>0)
+    ? x.breakEvenFeePerStudent - inp.monthlyFeePerStudent : null;
+  // Daily cost coverage label
   x.dailyCostCoverageLabel = x.dailyCostCoverage===null?'N/A':
     x.dailyCostCoverage>=100?'COVERED':x.dailyCostCoverage>=75?'PARTIAL':'DEFICIT';
   return x;
@@ -1544,12 +1579,26 @@ function generateAlerts(R,inp,domainExtras,cfg){
   var profitDetail=R.willProfitable
     ?(marginDisplay!==null?'Net margin '+marginDisplay+' on ₹'+INR(inp.outputValue||0)+' revenue. ':'Revenue ₹'+INR(inp.outputValue||0)+' vs cost ₹'+INR(tc_alert)+'. Break-even met. ')+dataSuffNote
     :'Burn rate: ₹'+INR(burnRate)+'/hr. Break-even: ₹'+INR(R.breakEven)+'. Gap: ₹'+INR(Math.abs(R.netProfit))+'. '+dataSuffNote;
+  // [FIX-GEN-2]: Profitability action line — suppress "push orders" when unit contribution is negative
+  // or when in construction (billing ≠ revenue). Show correct action per context.
+  var profitAction;
+  if(R.willProfitable){
+    profitAction = 'Maintain pace. Confirm pipeline orders.';
+  } else if(inp.domain==='contractor'){
+    profitAction = 'Cost front-loaded vs billing — assess profitability using Earned Value, not daily billing. Monitor cashflow.';
+  } else if(R.unitLoss&&inp.domain==='general'){
+    profitAction = 'Do NOT push orders — each unit increases loss. Fix unit economics (price/cost) before scaling.';
+  } else if(inp.domain==='education'&&domainExtras&&domainExtras.structuralLoss&&domainExtras.atCapacity){
+    profitAction = 'Enrollment is not a lever — at full capacity. Revise fee structure or reduce cost.';
+  } else {
+    profitAction = 'Reduce variable cost. Focus on highest-margin output.';
+  }
   push(
     R.willProfitable&&R.netMargin!==null&&R.netMargin>=cfg.marginTarget?'ok':R.willProfitable?'warning':'critical',
     'PREDICTION',
     'Profitability outlook (data: '+dataSufficiency+'): '+(R.willProfitable?'PROFITABLE':'LOSS')+' — heuristic, not forecast',
     profitDetail,
-    R.willProfitable?'Maintain pace. Confirm pipeline orders.':'Reduce variable cost. Push unconfirmed orders.');
+    profitAction);
 
   // 5. Thin margin — only fire when margin is in interpretable range
   var tc_thin=(inp.runningCost||0)+(inp.fixedCost||0);
@@ -1859,12 +1908,29 @@ function collectContractor(){
   var certRaised=v('conPayCertRaised'),certApproved=v('conPayCertApproved');
   var payLead=v('conPayLead'),hoursEl=v('conHoursEl')||8;
   var totalCost=labCost+matCost+eqCost;
+
+  // [FIX-CON-1]: For construction, true revenue = Earned Value (EV), NOT today's billing.
+  // Billing is a cash event; EV = actual completion % × contract value = work truly earned.
+  // Use EV as outputValue for Ω/ψ when available. Fall back to billing only if no EV data.
+  var ev = contractVal>0 && actualPct>0 ? (actualPct/100)*contractVal : null;
+  var effectiveRevenue = ev!==null ? ev : billing;
+  // Revenue efficiency: compare EV to what should have been earned (planned %)
+  var plannedEV = contractVal>0 && plannedPct>0 ? (plannedPct/100)*contractVal : null;
+  // [FIX-CON-3]: Detect material spike — if material cost >> labour cost by 5×, burn rate is lumpy
+  var materialSpike = matCost>0 && labCost>0 && matCost > labCost*5;
+  var materialSpikeFactor = labCost>0 ? Math.round(matCost/labCost) : null;
+
   return{
     domain:'contractor',
     hourlyProd:hp.hv,hourlyTargets:hp.ht,
     empPresent:workers+subW,empTotal:total+subT,
     runningCost:totalCost,fixedCost:0,capital:contractVal,
-    outputVol:workDone,outputValue:billing,targetValue:bilTarget,
+    outputVol:workDone,
+    // [FIX-CON-1]: Use EV as effective revenue for Ω, not daily billing
+    outputValue:effectiveRevenue,
+    // Store raw billing separately for cash P&L display
+    conBillingTodayRaw:billing,
+    targetValue:plannedEV||bilTarget,
     ordersReceived:certRaised,ordersConfirmed:certApproved,
     paymentLeadDays:payLead,salesLeads:0,salesClosed:0,
     hoursElapsed:hoursEl,prodUnit:vs('conWorkUnit')||'sqm',
@@ -1878,6 +1944,9 @@ function collectContractor(){
     conContractVal:contractVal,conBilledToDate:billedToDate,conRetention:retention,
     conLabCost:labCost,conMatCost:matCost,conEqCost:eqCost,
     conBillingTarget:bilTarget,
+    earnedValue:ev, plannedEV:plannedEV,
+    // [FIX-CON-3]: Material spike flag for burn rate suppression
+    materialSpike:materialSpike, materialSpikeFactor:materialSpikeFactor,
   };
 }
 
@@ -2177,9 +2246,12 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     h+='<div style="margin-bottom:14px;padding:10px 14px;background:'+(R.unitLoss?'rgba(192,48,48,.08)':'rgba(26,136,80,.06)')+';border:1px solid '+(R.unitLoss?'rgba(192,48,48,.25)':'rgba(26,136,80,.2)')+';border-radius:7px;font-family:var(--mono);font-size:10px;line-height:1.7;">';
     h+='<div style="color:'+(R.unitLoss?'var(--red2)':'var(--green2)')+';font-weight:600;margin-bottom:3px;">⚡ UNIT ECONOMICS INSIGHT</div>';
     if(R.unitLoss){
-      h+=esc('Rev/unit ₹'+r2(R.revPerUnit)+' < Var.cost/unit ₹'+r2(R.varCostPerUnit||0)+'. Contribution: ₹'+r2(R.unitContrib||0)+'/unit (negative). Scaling output INCREASES loss. Fix pricing or cut variable cost before scaling.');
+      // [FIX-GEN-2]: Unit loss → block "push orders" advice completely
+      h+=esc('NEGATIVE UNIT ECONOMICS: Rev/unit ₹'+r2(R.revPerUnit)+' < Var.cost/unit ₹'+r2(R.varCostPerUnit||0)+'. Contribution: ₹'+r2(R.unitContrib||0)+'/unit. '
+        +'Do NOT scale orders — each additional unit increases loss by ₹'+Math.abs(r2(R.unitContrib||0))+'. '
+        +'Profitability requires price correction, cost reduction, or product mix change. Stop scaling until unit economics are fixed.');
     } else if(R.unitContrib!==null&&R.unitContrib>0&&!R.willProfitable){
-      h+=esc('Positive contribution margin ₹'+r2(R.unitContrib)+'/unit. Loss is fixed-overhead driven (₹'+fmt(inp.fixedCost||0)+'). Increase volume to spread fixed cost, or reduce overhead.');
+      h+=esc('Positive contribution margin ₹'+r2(R.unitContrib)+'/unit. Loss is fixed-overhead driven (₹'+fmt(inp.fixedCost||0)+'). Increasing volume spreads fixed cost — but only if unit contribution stays positive. Target volume = ₹'+fmt(inp.fixedCost||0)+' ÷ ₹'+r2(R.unitContrib)+'/unit = '+Math.ceil((inp.fixedCost||0)/Math.max(R.unitContrib,0.01))+' units to break even.');
     } else if(R.willProfitable){
       h+=esc('Sound unit economics: ₹'+r2(R.unitContrib||0)+' contribution/unit. Fixed cost (₹'+fmt(inp.fixedCost||0)+') covered. Maintain pace and guard variable cost per unit.');
     }
@@ -2214,9 +2286,11 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     h+='<div style="color:var(--orange2);font-weight:600;margin-bottom:3px;">⚡ PROJECT POSITION INSIGHT</div>';
     var posInsight='';
     if(domainExtras.earnedValue!==null&&inp.conBilledToDate>0){
-      if(domainExtras.overbilled) posInsight='Billing ahead of earned value — clawback risk if client disputes. Reconcile before next RA bill.';
-      else if(domainExtras.underbilled) posInsight='Work earned ₹'+fmt(domainExtras.earnedValue||0)+' but only ₹'+fmt(inp.conBilledToDate||0)+' billed — ₹'+fmt(Math.round((domainExtras.earnedValue||0)-(inp.conBilledToDate||0)))+' revenue leakage. Raise RA bill.';
-      else posInsight='Billing and earned value aligned. Cash risk: ₹'+fmt(inp.conRetention||0)+' retention + ₹'+fmt(domainExtras.workingCapitalStress||0)+' receivables in '+inp.paymentLeadDays+'-day payment cycle.';
+      if(domainExtras.overbilled) posInsight='Billing ahead of earned value — clawback risk if client disputes. Reconcile before next RA bill. Use EV (₹'+fmt(domainExtras.earnedValue||0)+') as true revenue benchmark, not billing.';
+      else if(domainExtras.underbilled) posInsight='Work earned ₹'+fmt(domainExtras.earnedValue||0)+' but only ₹'+fmt(inp.conBilledToDate||0)+' billed — ₹'+fmt(Math.round((domainExtras.earnedValue||0)-(inp.conBilledToDate||0)))+' revenue leakage. Raise RA bill. Cash net today (₹'+fmt((inp.conBillingTodayRaw||0)-((inp.conLabCost||0)+(inp.conMatCost||0)+(inp.conEqCost||0)))+') is a cash view only — does not reflect earned position.';
+      else posInsight='Billing and EV aligned. Cost front-loaded vs billing is normal in construction. Assess profitability using EV (₹'+fmt(domainExtras.earnedValue||0)+'), not daily billing. Cash risk: ₹'+fmt(inp.conRetention||0)+' retention + ₹'+fmt(domainExtras.workingCapitalStress||0)+' receivables in '+inp.paymentLeadDays+'-day cycle.';
+    } else if(domainExtras.earnedValue!==null){
+      posInsight='EV = ₹'+fmt(domainExtras.earnedValue||0)+' ('+inp.conActualPct+'% complete). Cost front-loaded vs billing is normal. Monitor cashflow, but evaluate profitability using EV, not daily billing.';
     } else {
       posInsight='Enter contract value and completion % to unlock Earned Value analysis.';
     }
@@ -2241,7 +2315,7 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     // [FIX-EDU-5]: fee recovery — show N/A when no monthly fee data
     var frVal = domainExtras.feeRecovery!==null ? domainExtras.feeRecovery+'%' : 'N/A';
     var frCls = domainExtras.feeRecovery!==null ? (domainExtras.feeRecovery>=80?'g':domainExtras.feeRecovery>=CFG.feeRecovWarn?'w':'b') : 'n';
-    h+=kpi('Fee Recovery',frVal,frCls,domainExtras.feeRecovery!==null?'of monthly':'no monthly data');
+    h+=kpi('Fee Recovery',frVal,frCls,domainExtras.feeRecoveryLabel||'no monthly data');
     // [FIX-EDU-6]: admission conversion — 0% when both=0 (no pipeline today), not N/A=perfect
     var acVal = domainExtras.admissionConversion!==null ? domainExtras.admissionConversion+'%' : 'N/A';
     var acSub = (inp.eduEnquiries===0&&inp.eduAdmissions===0) ? 'no pipeline today' : inp.eduAdmissions+'/'+inp.eduEnquiries;
@@ -2261,14 +2335,27 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     h+='<div style="margin:10px 0;padding:9px 12px;background:rgba(124,92,191,.06);border:1px solid rgba(124,92,191,.2);border-radius:6px;font-family:var(--mono);font-size:10px;line-height:1.6;">';
     h+='<div style="color:var(--purple2);font-weight:600;margin-bottom:3px;">⚡ INSTITUTION POSITION INSIGHT</div>';
     var eduInsight='';
-    if(domainExtras.unitContribPerStudent!==null&&domainExtras.unitContribPerStudent<0){
-      eduInsight='Loss per student (₹'+Math.abs(domainExtras.unitContribPerStudent)+'/day). Increasing enrollment helps spread fixed cost, but fee adequacy review needed.';
+    if(domainExtras.structuralLoss){
+      if(domainExtras.atCapacity){
+        // [FIX-EDU-INSIGHT]: At full capacity + loss-per-student → enrollment is NOT a lever
+        var beeFee = domainExtras.breakEvenFeePerStudent;
+        var feeGap = domainExtras.feeGapPerStudent;
+        eduInsight = 'STRUCTURAL LOSS at full capacity. '
+          +'Revenue/student: ₹'+Math.abs(domainExtras.earnedPerStudent||0)+'/day vs Cost/student: ₹'+Math.abs(domainExtras.costPerStudent||0)+'/day. '
+          +'Enrollment increase is NOT a lever — institution is already at '+(domainExtras.seatUtilization!==null?domainExtras.seatUtilization+'%':'full')+' capacity. '
+          +(beeFee!==null?'Break-even fee = ₹'+beeFee+'/month (current: ₹'+(inp.monthlyFeePerStudent||0)+'/month). Fee revision or cost reduction required.':'Profitability requires fee revision or cost reduction — not volume.');
+      } else {
+        // Has spare seats, but unit contribution is negative → scaling worsens loss
+        eduInsight = 'Loss per student (₹'+Math.abs(domainExtras.unitContribPerStudent||0)+'/day). '
+          +'⚠ Increasing enrollment will NOT fix this — each additional student adds ₹'+Math.abs(domainExtras.unitContribPerStudent||0)+' loss/day. '
+          +(domainExtras.breakEvenFeePerStudent?'Break-even requires ₹'+domainExtras.breakEvenFeePerStudent+'/student/month. Fee revision or cost reduction is the only lever.':'Fee revision or cost reduction required before scaling.');
+      }
     } else if(domainExtras.collectionTimingIssue){
       eduInsight='Deficit is collection timing, not structural. Monthly recovery '+(domainExtras.feeRecovery||'N/A')+'% is healthy. Earned revenue today covers '+(domainExtras.dailyCostCoverage||0)+'% of daily cost.';
     } else if(domainExtras.collectionStructuralIssue){
       eduInsight='Structural collection weakness ('+(domainExtras.feeRecovery||0)+'% recovery). Outstanding ₹'+fmt(inp.eduFeeOutstanding||0)+'. Operational performance stable — financial stress is receivables-driven.';
     } else if(domainExtras.dailyCostCoverage!==null){
-      eduInsight='Daily cost coverage: '+domainExtras.dailyCostCoverage+'% (accrual basis). Enter monthly fee per student for full unit economics.';
+      eduInsight='Daily cost coverage: '+domainExtras.dailyCostCoverage+'% (accrual basis). Enter monthly fee per student and working days for full unit economics.';
     } else {
       eduInsight='Enter monthly fee per student and working days to unlock unit economics analysis.';
     }
@@ -2356,47 +2443,53 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
   // Financial Snapshot
   h+='<div class="sh '+shClass+'">Financial Snapshot</div>';
   if(inp.domain==='contractor'){
+    // [FIX-CON-1]: Three distinct layers for construction finance
+    var conBillingRaw = inp.conBillingTodayRaw||0;
+    var conTotalCost = (inp.conLabCost||0)+(inp.conMatCost||0)+(inp.conEqCost||0);
+    var cashNetToday = conBillingRaw - conTotalCost;
     h+='<div class="pl-grid"><div class="pl-card">';
-    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--orange2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">⏱ TODAY — Site Cost vs Billing</div>';
-    h+=plRow('Billing Raised Today','₹'+fmt(inp.outputValue||0),'pos');
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--orange2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">⏱ LAYER 1: TODAY — Cash Billing vs Site Cost</div>';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-bottom:6px;line-height:1.4;">Cash billing ≠ revenue. This layer shows today\'s cash only.</div>';
+    h+=plRow('Cash Billing Today','₹'+fmt(conBillingRaw),'pos');
     h+=plRow('Labour Cost','−₹'+fmt(inp.conLabCost||0),'neg');
     h+=plRow('Material Cost','−₹'+fmt(inp.conMatCost||0),'neg');
+    if(inp.materialSpike) h+='<div style="font-family:var(--mono);font-size:8px;color:var(--amber2);background:rgba(212,144,10,.08);border-radius:4px;padding:4px 7px;margin:2px 0;">⚠ Material cost is '+inp.materialSpikeFactor+'× labour — bulk procurement. Burn rate suppressed.</div>';
     h+=plRow('Equipment/OH','−₹'+fmt(inp.conEqCost||0),'neg');
     h+='<div class="pl-divider"></div>';
-    h+='<div class="pl-total"><span class="pl-total-lbl">Net Contribution (Today)</span><span class="pl-val '+(R.netProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(R.netProfit)+'</span></div>';
-    h+=plRow('Margin %',R.netMargin!==null&&Math.abs(R.netMargin)<=300?r2(R.netMargin)+'%':'See Burn Rate',R.netMargin!==null&&R.netMargin>=0?'pos':'neg');
-    var burnCon=(inp.hoursElapsed||1)>0?Math.round(((inp.conLabCost||0)+(inp.conMatCost||0)+(inp.conEqCost||0))/(inp.hoursElapsed||1)):0;
-    h+=plRow('Site Burn Rate','₹'+fmt(burnCon)+'/hr','');
-    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:6px;line-height:1.5;">⚠ Today\'s billing vs today\'s cost only. Project-level P&L needs cumulative view.</div>';
-    h+='</div><div class="pl-card">';
-    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--orange2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">📋 PROJECT — Earned Value & Cash</div>';
-    h+=plRow('Contract Value','₹'+fmt(inp.conContractVal||0),'');
-    h+=plRow('Billed to Date','₹'+fmt(inp.conBilledToDate||0),'');
-    // Earned Value — suppressed if contract/billing data inconsistency detected
-    if(domainExtras&&domainExtras.earnedValue!==null&&!evSuppressed){
-      h+='<div class="pl-divider"></div>';
-      h+='<div style="font-family:var(--mono);font-size:8px;color:var(--cyan2);margin:4px 0 2px;">EARNED VALUE (EV) = Completion% × Contract</div>';
-      h+=plRow('Earned Value (EV)','₹'+fmt(domainExtras.earnedValue||0),domainExtras.earnedValue>=(inp.conBilledToDate||0)?'pos':'neg');
-      if(domainExtras.billingVsEV!==null){
-        var bvevColor=domainExtras.overbilled?'neg':domainExtras.underbilled?'w':'pos';
-        h+=plRow('Billing vs EV',domainExtras.billingVsEV+'% '+(domainExtras.overbilled?'⚠ OVER':domainExtras.underbilled?'⚠ UNDER':'✓ ALIGNED'),bvevColor);
-      }
-      h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin:4px 0 6px;line-height:1.4;">Billing = what you invoiced. EV = what you earned. Overbilling → dispute risk. Underbilling → cash gap.</div>';
-    } else if(evSuppressed){
-      h+='<div class="pl-divider"></div>';
-      h+='<div style="font-family:var(--mono);font-size:9px;color:var(--red2);background:rgba(192,48,48,.07);border-radius:4px;padding:6px 8px;margin:4px 0;">⚠ EV analysis suppressed — fix input inconsistency (billed to date vs contract value) to enable Earned Value calculations.</div>';
+    h+='<div class="pl-total"><span class="pl-total-lbl">Cash Net Today</span><span class="pl-val '+(cashNetToday>=0?'pos hi':'neg hi')+'">₹'+fmt(cashNetToday)+'</span></div>';
+    if(!inp.materialSpike){
+      var burnCon=(inp.hoursElapsed||1)>0?Math.round(conTotalCost/(inp.hoursElapsed||1)):0;
+      h+=plRow('Site Burn Rate','₹'+fmt(burnCon)+'/hr','');
     }
-    h+='<div class="pl-divider"></div>';
-    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--cyan2);margin:4px 0 2px;">CASH POSITION (Today)</div>';
+    h+='</div><div class="pl-card">';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--cyan2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">📋 LAYER 2: EARNED VALUE — True Revenue</div>';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-bottom:6px;line-height:1.4;">EV = Completion% × Contract. True revenue, independent of billing timing.</div>';
+    h+=plRow('Contract Value','₹'+fmt(inp.conContractVal||0),'');
+    h+=plRow('Completion %',(inp.conActualPct||0)+'% actual vs '+(inp.conPlannedPct||0)+'% planned','');
+    if(domainExtras&&domainExtras.earnedValue!==null&&!evSuppressed){
+      h+=plRow('Earned Value (EV)','₹'+fmt(domainExtras.earnedValue||0),'pos');
+      if(inp.plannedEV) h+=plRow('Planned EV','₹'+fmt(inp.plannedEV||0),'');
+      if(inp.plannedEV){var evVsPlan=Math.round(domainExtras.earnedValue/Math.max(inp.plannedEV,1)*100);h+=plRow('EV vs Plan',evVsPlan+'% '+(evVsPlan>=100?'✓ On/Ahead':'⚠ Behind'),evVsPlan>=100?'pos':'neg');}
+      if(domainExtras.billingVsEV!==null){
+        h+='<div class="pl-divider"></div>';
+        h+=plRow('Billed to Date','₹'+fmt(inp.conBilledToDate||0),'');
+        h+=plRow('Billing vs EV',domainExtras.billingVsEV+'% '+(domainExtras.overbilled?'⚠ OVERBILLED':domainExtras.underbilled?'⚠ UNDERBILLED':'✓ ALIGNED'),domainExtras.overbilled?'neg':domainExtras.underbilled?'w':'pos');
+        h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin:3px 0;line-height:1.4;">Overbilled → dispute/clawback risk. Underbilled → cash gap, raise RA bill.</div>';
+      }
+    } else if(evSuppressed){
+      h+='<div style="font-family:var(--mono);font-size:9px;color:var(--red2);background:rgba(192,48,48,.07);border-radius:4px;padding:6px 8px;margin:4px 0;">⚠ EV suppressed — fix input inconsistency to enable EV analysis.</div>';
+    } else {
+      h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);">Enter contract value + completion % to compute Earned Value.</div>';
+    }
+    h+='</div></div>';
+    h+='<div class="pl-grid" style="margin-top:10px;"><div class="pl-card">';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--purple2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">💰 LAYER 3: CASH POSITION — Receivables & Retention</div>';
+    h+=plRow('Billing Target Today','₹'+fmt(inp.conBillingTarget||0),'');
+    h+=plRow('vs Billing Target',conBillingRaw>=(inp.conBillingTarget||0)?'On Target ✓':'Gap ₹'+fmt(Math.abs((inp.conBillingTarget||0)-conBillingRaw)),conBillingRaw>=(inp.conBillingTarget||0)?'pos':'neg');
     h+=plRow('Retention Held','₹'+fmt(inp.conRetention||0),'neg');
-    if(domainExtras)h+=plRow('Retention Rate',domainExtras.retentionRate+'%','');
     if(domainExtras)h+=plRow('Cash Expected Today (est.)','₹'+fmt(domainExtras.cashExpectedToday||0),'pos');
     if(domainExtras&&domainExtras.workingCapitalStress>0)h+=plRow('Receivables Outstanding (est.)','₹'+fmt(domainExtras.workingCapitalStress||0),'neg');
-    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:6px;line-height:1.4;">Cash = Billing × (1−retention rate). Receivable = billing × payment lead days ÷ 30. Approx only.</div>';
-    h+='<div class="pl-divider"></div>';
-    h+=plRow('Billing Target Today','₹'+fmt(inp.conBillingTarget||0),'');
-    h+=plRow('vs Target',R.targetGap!==null?(R.targetGap<=0?'On Target ✓':'Gap ₹'+fmt(R.targetGap)):'-',R.targetGap!==null&&R.targetGap<=0?'pos':'neg');
-    h+=plRow('Billing Progress',domainExtras&&domainExtras.billingPct!==null?domainExtras.billingPct+'%':'—','');
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:6px;line-height:1.4;">Cash = billing × (1−retention). Receivable = billing × payment lead ÷ 30. Approx only.</div>';
     h+='</div></div>';
   } else if(inp.domain==='education'){
     var eduFeeRaw = inp.eduFeeCollectedRaw||0;
@@ -2521,7 +2614,6 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
       h+='</div>';
       h+='</div>';
     });
-  
     // Ranking: which lever has biggest P&L impact?
     var rankedLevers=levers.filter(function(l){return l.impact>0;}).sort(function(a,b){return b.impact-a.impact;});
     if(rankedLevers.length>0){
