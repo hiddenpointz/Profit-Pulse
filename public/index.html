@@ -1091,7 +1091,16 @@ function computeOmegaCore(inp, W, cfg){
   // ── Dimension scores (formula weights from CFG) ───────────────────────
   var wfs = Math.round(clamp(att*cfg.wfAtt+(1-nVar)*cfg.wfVar+(1-nSpike)*cfg.wfSpike)*100);
   var fs  = Math.round(clamp(revEf*cfg.finRev+(1-nCost)*cfg.finCost)*100);
-  var os  = Math.round(clamp(confR*cfg.ordConf+convR*cfg.ordConv+(1-payPen/Math.max(cfg.payPenMult,EP))*cfg.ordPay)*100);
+  // [FIX-PIPE]: For education with no pipeline activity (enquiries=0 AND admissions=0),
+  // confR=1 and convR=1 (division-by-zero fallback) falsely yields 100% pipeline score.
+  // When both are zero, there is NO pipeline data — score must be 0, not perfect.
+  var noPipelineData = inp.domain==='education' && (inp.ordersReceived||0)===0 && (inp.ordersConfirmed||0)===0;
+  var os;
+  if(noPipelineData){
+    os = 0; // no pipeline activity today — score is 0, not assumed perfect
+  } else {
+    os = Math.round(clamp(confR*cfg.ordConf+convR*cfg.ordConv+(1-payPen/Math.max(cfg.payPenMult,EP))*cfg.ordPay)*100);
+  }
 
   var pens=[
     {key:'hourly_variance',score:W.var*nVar,  raw:nVar,   label:'Hourly Productivity Variance',  validated:'statistical',  assumption:'CV² = σ²/μ² dimensionless'},
@@ -1106,7 +1115,7 @@ function computeOmegaCore(inp, W, cfg){
     omega:omega,Iseq:Iseq,Rmod:Rmod,Phi:Phi,Gamma:Gamma,AT:AT,
     isAnados:AT!==null?AT>1:null,psi:psi,preRevMode:preRevMode,penalty:penalty,drift:dslope,
     attendance:att,prodEff:prodEf,revEff:revEf,confirmRate:confR,salesConvRate:convR,
-    wfScore:wfs,finScore:fs,ordScore:os,
+    wfScore:wfs,finScore:fs,ordScore:os,noPipelineData:noPipelineData,
     grossProfit:gp,netProfit:np,grossMargin:gm,netMargin:nm,
     capReturn:cr,costPerUnit:cpu,varCostPerUnit:vcpu,revPerUnit:rpu,
     unitContrib:unitContrib,unitLoss:unitLoss,
@@ -1118,20 +1127,32 @@ function computeOmegaCore(inp, W, cfg){
   };
 }
 
-// ── Sensitivity Analysis (Fortune 500 grade — all params dynamic) ─────────
+// ── Sensitivity Analysis (v5.1 — domain-aware keys) ──────────────────────
 function computeSensitivity(inp,W,cfg){
   var DELTA=cfg.sensDelta;
   var keys=['outputValue','runningCost','fixedCost','empPresent','paymentLeadDays'];
+  // [FIX-6]: For education, attendance sensitivity flows through student count → earnedRevenue.
+  // Standard keys miss this. Add eduStudPresent and earnedRevenueToday as co-perturbed pair.
+  if(inp.domain==='education'){
+    keys=['outputValue','runningCost','fixedCost','empPresent','paymentLeadDays','earnedRevenueToday','eduStudPresent'];
+  }
   var base=computeOmegaCore(inp,W,cfg).omega;
   var maxSwing=0, swings={};
   keys.forEach(function(k){
     var bv=inp[k]||0; if(bv===0)return;
     var inpHi=Object.assign({},inp); inpHi[k]=bv*(1+DELTA);
     var inpLo=Object.assign({},inp); inpLo[k]=bv*(1-DELTA);
+    // For education: when perturbing student count, also update earnedRevenueToday proportionally
+    if(k==='eduStudPresent'&&inp.dailyFeeRatePerStudent>0){
+      inpHi.outputValue = inp.dailyFeeRatePerStudent * (bv*(1+DELTA));
+      inpLo.outputValue = inp.dailyFeeRatePerStudent * (bv*(1-DELTA));
+    }
     var hi=computeOmegaCore(inpHi,W,cfg).omega;
     var lo=computeOmegaCore(inpLo,W,cfg).omega;
     var sw=Math.abs(hi-lo);
-    swings[k]=Math.round(sw*10000)/10000;
+    // Merge eduStudPresent result into empPresent key for display
+    var displayKey = k==='eduStudPresent'?'empPresent':(k==='earnedRevenueToday'?'outputValue':k);
+    if(!swings[displayKey]||sw>swings[displayKey]) swings[displayKey]=Math.round(sw*10000)/10000;
     if(sw>maxSwing)maxSwing=sw;
   });
   return{
@@ -1144,32 +1165,54 @@ function computeSensitivity(inp,W,cfg){
   };
 }
 
-// ── Confidence Score (new in v5) ──────────────────────────────────────────
+// ── Confidence Score (v5.1) ───────────────────────────────────────────────
 // Confidence = f(data completeness, variance stability, sensitivity impact)
-// This converts raw Ω into a trust-scored output: Ω=0.62, Confidence=LOW
+// KEY PRINCIPLE: Missing data is NEVER high confidence. Absence ≠ good.
 function computeConfidence(inp,R,sens,hasCriticalDataIssue){
   var score = 100;
   var reasons = [];
 
-  // 1. Critical data issues → confidence halved
-  if(hasCriticalDataIssue){ score -= 40; reasons.push('critical data inconsistencies present'); }
+  // 1. Critical data issues → large deduction
+  if(hasCriticalDataIssue){ score -= 35; reasons.push('critical data inconsistencies present'); }
 
-  // 2. Sensitivity: each 5% Ω swing deducts confidence
+  // 2. Sensitivity: each Ω swing deducts confidence
   var maxSwingPct = Math.round((sens.max_swing||0)*100);
-  if(maxSwingPct>=20){ score -= 30; reasons.push('Ω swing ±'+maxSwingPct+'% — high input sensitivity'); }
-  else if(maxSwingPct>=10){ score -= 15; reasons.push('Ω swing ±'+maxSwingPct+'% — moderate sensitivity'); }
-  else if(maxSwingPct>=5){ score -= 5; reasons.push('Ω swing ±'+maxSwingPct+'%'); }
+  if(maxSwingPct>=20){ score -= 25; reasons.push('Ω swing ±'+maxSwingPct+'% — high input sensitivity'); }
+  else if(maxSwingPct>=10){ score -= 12; reasons.push('Ω swing ±'+maxSwingPct+'% — moderate sensitivity'); }
+  else if(maxSwingPct>=5){ score -= 5; }
 
-  // 3. Data completeness: missing hourly data
+  // 3. Hourly output data completeness
   var hvLen = (inp.hourlyProd||[]).filter(function(v){return v>0;}).length;
   if(hvLen===0){ score -= 20; reasons.push('no hourly output data'); }
   else if(hvLen<3){ score -= 10; reasons.push('only '+hvLen+' hourly data point'+(hvLen>1?'s':'')); }
 
-  // 4. Education-specific: no monthly fee basis
-  if(inp.domain==='education'&&!inp.hasMonthlyFeeData){ score -= 15; reasons.push('no monthly fee basis — accrual not possible'); }
+  // 4. Omega at floor — sensitivity suppressed (numerical artifact)
+  if(R.omega<0.01){ score -= 10; reasons.push('Ω at floor — sensitivity clamped, model reliability reduced'); }
 
-  // 5. Omega at floor — sensitivity is suppressed (numerical artifact)
-  if(R.omega===0||R.omega<0.01){ score -= 10; reasons.push('Ω at floor — sensitivity clamped'); }
+  // 5. EDUCATION-SPECIFIC completeness checks
+  if(inp.domain==='education'){
+    // No monthly fee/receivable data
+    if(!inp.hasMonthlyFeeData){
+      score -= 15; reasons.push('no monthly fee basis — financial accrual incomplete');
+    }
+    // No pipeline data (enquiries=0 AND admissions=0 → unknown, not zero)
+    if((inp.eduEnquiries||0)===0 && (inp.eduAdmissions||0)===0){
+      score -= 10; reasons.push('no pipeline data — enquiries and admissions both absent');
+    }
+    // No capacity data (seatsAvail not entered)
+    if(!inp.eduSeatsAvail || inp.eduSeatsAvail<=0){
+      score -= 5; reasons.push('seat capacity not entered');
+    }
+    // No monthly fee receivable data entered at all
+    if(!(inp.eduFeeTotalMonth>0)){
+      score -= 5; reasons.push('monthly fee receivable not entered');
+    }
+  }
+
+  // 6. GENERAL: no financial data at all
+  if(inp.domain!=='education' && !(inp.outputValue>0) && !(inp.runningCost>0)){
+    score -= 20; reasons.push('no financial data entered');
+  }
 
   score = Math.max(0, Math.min(100, score));
   var label = score>=75?'HIGH':score>=50?'MEDIUM':'LOW';
@@ -1710,11 +1753,21 @@ function generateAlerts(R,inp,domainExtras,cfg){
         'Systemic learning gaps. Avg score: '+domainExtras.avgScore+'%.',
         'Remedial batches. Notify HOD. Weakest subjects analysis.');
     }
-    if(domainExtras.feeRecovery<cfg.feeRecovWarn){
-      push('warning','CASHFLOW',
-        'Fee recovery '+domainExtras.feeRecovery+'% < '+cfg.feeRecovWarn+'% — ₹'+INR(inp.eduFeeOutstanding||0)+' outstanding',
-        'High outstanding fees strain cashflow and salary payment timelines.',
-        'Fee reminder notices. Instalment negotiation. Escalate overdue cases.');
+    // [FIX-3]: Fee recovery alert — only fire when we HAVE monthly data. null = missing data, not a problem.
+    if(domainExtras.feeRecovery!==null && domainExtras.feeRecovery<cfg.feeRecovWarn){
+      // Additional guard: outstanding must be >0. outstanding=0 with recovery=null is "no data", not "perfect recovery"
+      if(inp.eduFeeOutstanding>0||inp.eduFeeTotalMonth>0){
+        push('warning','CASHFLOW',
+          'Fee recovery '+domainExtras.feeRecovery+'% < '+cfg.feeRecovWarn+'% — ₹'+INR(inp.eduFeeOutstanding||0)+' outstanding',
+          'High outstanding fees strain cashflow and salary payment timelines.',
+          'Fee reminder notices. Instalment negotiation. Escalate overdue cases.');
+      }
+    } else if(domainExtras.feeRecovery===null && inp.hasMonthlyFeeData===false){
+      // Explicitly flag missing data — not a cashflow risk, but a data gap
+      push('warning','DATA_QUALITY',
+        'Fee receivable data not entered — financial completeness: LOW',
+        'Monthly fee target and outstanding are both zero or not entered. Fee recovery, structural cashflow position, and collection timing analysis are unavailable.',
+        'Enter monthly fee target (₹) and fee outstanding (₹) to unlock cashflow analysis.');
     }
     if((inp.eduComplaints||0)>0){
       push('warning','QUALITY',
@@ -2084,9 +2137,18 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
   var displayMargin=R.netMargin!==null&&Math.abs(R.netMargin)<=300;
   var tc_banner=(inp.runningCost||0)+(inp.fixedCost||0);
   var burnRateBanner=inp.hoursElapsed>0?Math.round(tc_banner/inp.hoursElapsed):0;
-  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">'+(displayMargin?'Net Margin':'Burn Rate')+'</div>';
-  h+='<div style="font-family:var(--mono);font-size:24px;font-weight:600;color:'+(displayMargin?(R.netMargin>=CFG.marginTarget?'var(--green2)':R.netMargin>=0?'var(--amber2)':'var(--red2)'):'var(--red2)')+'">'+( displayMargin?r2(R.netMargin)+'%':'₹'+fmt(burnRateBanner)+'/hr')+'</div>';
-  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+(displayMargin?'target: '+CFG.marginTarget+'% · thin: '+CFG.marginThin+'%':'margin >300% — burn rate shown · break-even gap: ₹'+fmt(Math.abs(R.netProfit)))+'</div>';
+  if(inp.domain==='education'){
+    // [FIX-5]: Education — replace burn rate card with daily cost coverage. Hourly burn is meaningless.
+    var eduCovPct = inp.dailyCostCoverage!==null ? inp.dailyCostCoverage : 0;
+    var eduCovColor = eduCovPct>=100?'var(--green2)':eduCovPct>=75?'var(--amber2)':'var(--red2)';
+    h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Daily Coverage</div>';
+    h+='<div style="font-family:var(--mono);font-size:24px;font-weight:600;color:'+eduCovColor+'">'+(inp.dailyCostCoverage!==null?inp.dailyCostCoverage+'%':'N/A')+'</div>';
+    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">accrual · burn/hr suppressed</div>';
+  } else {
+    h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">'+(displayMargin?'Net Margin':'Burn Rate')+'</div>';
+    h+='<div style="font-family:var(--mono);font-size:24px;font-weight:600;color:'+(displayMargin?(R.netMargin>=CFG.marginTarget?'var(--green2)':R.netMargin>=0?'var(--amber2)':'var(--red2)'):'var(--red2)')+'">'+( displayMargin?r2(R.netMargin)+'%':'₹'+fmt(burnRateBanner)+'/hr')+'</div>';
+    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+(displayMargin?'target: '+CFG.marginTarget+'% · thin: '+CFG.marginThin+'%':'margin >300% — burn rate shown · break-even gap: ₹'+fmt(Math.abs(R.netProfit)))+'</div>';
+  }
   h+='</div>';
   if(R.projEOD!==null){
     h+='<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:13px 15px;">';
@@ -2233,16 +2295,30 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
   h+='<div class="ss-row">';
   h+=ss('Workforce',R.wfScore,'Att.×'+CFG.wfAtt+'+Var×'+CFG.wfVar+'+Spike×'+CFG.wfSpike);
   h+=ss('Financial',R.finScore,'RevEff×'+CFG.finRev+'+Cost×'+CFG.finCost);
-  h+=ss(inp.domain==='education'?'Pipeline':'Order/Sales',R.ordScore,'Conf×'+CFG.ordConf+'+Conv×'+CFG.ordConv+'+Pay×'+CFG.ordPay);
+  // [FIX-2]: Show N/A label when no pipeline data; show actual score otherwise
+  var pipeLabel = R.noPipelineData ? 'Pipeline (N/A — no activity)' : (inp.domain==='education'?'Pipeline':'Order/Sales');
+  h+=ss(pipeLabel, R.ordScore, 'Conf×'+CFG.ordConf+'+Conv×'+CFG.ordConv+'+Pay×'+CFG.ordPay);
   h+='</div>';
 
-  // A/T banner
+  // A/T banner — [FIX-4]: Anados MUST NOT display when Ω < Ω_crit or net loss
+  // A/T ratio may mathematically be > 1 but real-world state contradicts "generative growth"
   var atClass=R.isAnados===true?'ana':R.isAnados===false?'tha':'undef';
-  h+='<div class="at-banner '+atClass+'">';
-  h+='<div class="at-num">'+(R.AT!==null?r2(R.AT):'—')+'</div>';
-  h+='<div><div class="at-lbl">'+(R.isAnados===true?'⬆ ANADOS — Generative Growth':R.isAnados===false?'⬇ THANATOS — Depletion Risk':'◼ A/T UNDEFINED — ISeq < '+CFG.iseqMono+' (monotone)')+'</div>';
-  h+='<div class="at-desc">'+(R.isAnados===true?'Constructive energy > depleting forces. Self-correcting generative mode.':R.isAnados===false?'Depleting forces > constructive energy. Address top penalty driver.':'Production sequence is monotone (ISeq < cfg.iseqMono). A/T ratio undefined per FIX-P5.')+'</div>';
-  h+='</div></div>';
+  var anaInvalidated = R.isAnados===true && (effectiveOmega<OC || R.netProfit<0);
+  if(anaInvalidated){
+    // Override to suppressed state — display contradiction warning instead
+    h+='<div class="at-banner undef">';
+    h+='<div class="at-num" style="color:var(--amber2);">'+r2(R.AT)+'</div>';
+    h+='<div><div class="at-lbl" style="color:var(--amber2);">⚠ ANADOS SUPPRESSED — System contradictions detected</div>';
+    h+='<div class="at-desc">A/T ratio is '+r2(R.AT)+' (mathematically ↑) but Ω='+r4(effectiveOmega)+' < Ω_crit='+Math.round(OC*10000)/10000+' and net '+(R.netProfit<0?'loss=₹'+fmt(Math.abs(R.netProfit)):'')+'.'
+      +' Anados requires Ω ≥ Ω_crit AND positive net contribution. Current state: CRITICAL. Address top alert before interpreting A/T.</div>';
+    h+='</div></div>';
+  } else {
+    h+='<div class="at-banner '+atClass+'">';
+    h+='<div class="at-num">'+(R.AT!==null?r2(R.AT):'—')+'</div>';
+    h+='<div><div class="at-lbl">'+(R.isAnados===true?'⬆ ANADOS — Generative Growth':R.isAnados===false?'⬇ THANATOS — Depletion Risk':'◼ A/T UNDEFINED — ISeq < '+CFG.iseqMono+' (monotone)')+'</div>';
+    h+='<div class="at-desc">'+(R.isAnados===true?'Constructive energy > depleting forces. Self-correcting generative mode.':R.isAnados===false?'Depleting forces > constructive energy. Address top penalty driver.':'Production sequence is monotone (ISeq < cfg.iseqMono). A/T ratio undefined per FIX-P5.')+'</div>';
+    h+='</div></div>';
+  }
 
   // Charts
   if(R.hv&&R.hv.length>=2){
@@ -2402,10 +2478,10 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     }
     h+='<div style="font-family:var(--mono);font-size:9px;color:var(--blue2);text-transform:uppercase;letter-spacing:.8px;margin:10px 0 6px;">Ω swing if each input changes ±'+Math.round(CFG.sensDelta*100)+'%</div>';
     var swingEntries=[
-      {key:'outputValue',  label:'Revenue ±'+Math.round(CFG.sensDelta*100)+'%'},
+      {key:'outputValue',  label: inp.domain==='education'?'Earned Revenue ±'+Math.round(CFG.sensDelta*100)+'%':'Revenue ±'+Math.round(CFG.sensDelta*100)+'%'},
       {key:'runningCost',  label:'Variable Cost ±'+Math.round(CFG.sensDelta*100)+'%'},
       {key:'fixedCost',    label:'Fixed Overhead ±'+Math.round(CFG.sensDelta*100)+'%'},
-      {key:'empPresent',   label:'Attendance ±'+Math.round(CFG.sensDelta*100)+'%'},
+      {key:'empPresent',   label: inp.domain==='education'?'Student Attendance ±'+Math.round(CFG.sensDelta*100)+'%':'Workforce Att. ±'+Math.round(CFG.sensDelta*100)+'%'},
       {key:'paymentLeadDays', label:'Payment Lead ±'+Math.round(CFG.sensDelta*100)+'%'},
     ];
     swingEntries.forEach(function(se){
@@ -2424,14 +2500,14 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     var delta=CFG.sensDelta;
     h+='<div style="font-family:var(--mono);font-size:9px;color:var(--blue2);text-transform:uppercase;letter-spacing:.8px;margin:12px 0 6px;">What does ±'+Math.round(delta*100)+'% change in each input mean for profit?</div>';
     var levers=[
-      {key:'outputValue',  label:'Revenue +'+Math.round(delta*100)+'%',
-       impact: oval_sens>0?Math.round(oval_sens*delta):null, sign:1, note:'Every ₹X more revenue → ₹X straight to profit'},
+      {key:'outputValue',  label:(inp.domain==='education'?'Earned Revenue +':''+'Revenue +')+Math.round(delta*100)+'%',
+       impact: oval_sens>0?Math.round(oval_sens*delta):null, sign:1, note: inp.domain==='education'?'More students present or higher fee → earned revenue up':'Every ₹X more revenue → ₹X straight to profit'},
       {key:'runningCost',  label:'Variable Cost −'+Math.round(delta*100)+'%',
        impact: (inp.runningCost||0)>0?Math.round((inp.runningCost||0)*delta):null, sign:1, note:'Cost reduction flows directly to net profit'},
       {key:'fixedCost',    label:'Fixed Overhead −'+Math.round(delta*100)+'%',
        impact: (inp.fixedCost||0)>0?Math.round((inp.fixedCost||0)*delta):null, sign:1, note:'Fixed cost savings — requires structural change'},
-      {key:'empPresent',   label:'Attendance +'+Math.round(delta*100)+'%',
-       impact: null, sign:1, note:'Reduces Ω penalty — indirect P&L effect via throughput'},
+      {key:'empPresent',   label:(inp.domain==='education'?'Student Att.':'Attendance')+' +'+Math.round(delta*100)+'%',
+       impact: null, sign:1, note: inp.domain==='education'?'More students → earned revenue up, cost/student down':'Reduces Ω penalty — indirect P&L effect via throughput'},
       {key:'paymentLeadDays', label:'Payment lead −'+Math.round(delta*100)+'% days',
        impact: null, sign:1, note:'Reduces order pipeline Ω penalty and working capital stress'},
     ];
@@ -2445,7 +2521,7 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
       h+='</div>';
       h+='</div>';
     });
-    });
+  
     // Ranking: which lever has biggest P&L impact?
     var rankedLevers=levers.filter(function(l){return l.impact>0;}).sort(function(a,b){return b.impact-a.impact;});
     if(rankedLevers.length>0){
