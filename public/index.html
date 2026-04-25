@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>UEDP Business Pulse · Multi-Domain v4.2 · Zero Hardcode</title>
+<title>UEDP Business Pulse · Multi-Domain v4.3 · Zero Hardcode</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -469,7 +469,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 <div class="bar">
   <div>
     <div class="bar-logo">UEDP <em>PULSE</em></div>
-    <div class="bar-sub">MULTI-DOMAIN COHERENCE ENGINE · G S RAMESH KUMAR · v4.2 · ZERO HARDCODE · Ω_crit=1/e</div>
+    <div class="bar-sub">MULTI-DOMAIN COHERENCE ENGINE · G S RAMESH KUMAR · v4.3 · ZERO HARDCODE · Ω_crit=1/e</div>
   </div>
   <div class="bar-date" id="barDate"></div>
   <button class="cfg-btn" onclick="openConfig()">⚙ CONFIG</button>
@@ -1226,13 +1226,192 @@ function computeEducationExtras(inp,base,cfg){
   return x;
 }
 
-// ── Alert Engine (all thresholds from CFG) ────────────────────────────────
+// ── Cross-field Data Consistency Validator ───────────────────────────────────
+// Checks for impossible or implausible input combinations BEFORE any analysis.
+// Returns array of {field, issue, severity, suggestion} objects.
+// These are shown as DATA_QUALITY alerts and also used to suppress unreliable outputs.
+function validateInputConsistency(inp){
+  var issues=[];
+  var add=function(field,issue,sev,suggestion){
+    issues.push({field:field,issue:issue,severity:sev||'warning',suggestion:suggestion||''});
+  };
+
+  if(inp.domain==='contractor'){
+    // 1. Billed to date >> contract value — the "10000% EV" problem
+    if(inp.conContractVal>0&&inp.conBilledToDate>0&&inp.conBilledToDate>inp.conContractVal*1.05){
+      add('conBilledToDate',
+        'Billed to date (₹'+Math.round(inp.conBilledToDate/1e5)/10+'L) exceeds contract value (₹'+Math.round(inp.conContractVal/1e5)/10+'L) by more than 5%. EV analysis suppressed.',
+        'critical',
+        'Check: Is contract value entered correctly (full value, not a partial amount)? Has a variation order increased contract value?');
+    }
+    // 2. Completion % vs billed % mismatch — early overbilling detector
+    var billedPct = inp.conContractVal>0 ? inp.conBilledToDate/inp.conContractVal*100 : 0;
+    var completionPct = inp.conActualPct||0;
+    if(billedPct>0&&completionPct>0&&Math.abs(billedPct-completionPct)>20){
+      add('billingVsCompletion',
+        'Billing % ('+Math.round(billedPct)+'%) and completion % ('+completionPct+'%) differ by '+Math.round(Math.abs(billedPct-completionPct))+'%. This is unusual.',
+        'warning',
+        'Normal range: billing and completion within ~10%. Large gap may mean advance billing, retention claims, or incorrect inputs.');
+    }
+    // 3. Today billing > contract value
+    if(inp.conContractVal>0&&inp.outputValue>inp.conContractVal){
+      add('conBillingToday',
+        'Today billing (₹'+Math.round(inp.outputValue/1e5)/10+'L) exceeds entire contract value (₹'+Math.round(inp.conContractVal/1e5)/10+'L). Check inputs.',
+        'critical',
+        'Likely a scale error: contract value may be in lakhs while billing is in rupees, or vice versa.');
+    }
+    // 4. Work done > total scope
+    if(inp.conTotalScope>0&&inp.conWorkDone>inp.conTotalScope){
+      add('conWorkDone',
+        'Work done today ('+inp.conWorkDone+' '+inp.prodUnit+') exceeds total project scope ('+inp.conTotalScope+' '+inp.prodUnit+'). Check scope entry.',
+        'warning',
+        'Total scope should be the complete project quantity, not just today target.');
+    }
+    // 5. Cum done > total scope
+    if(inp.conTotalScope>0&&inp.conCumDone>inp.conTotalScope){
+      add('conCumDone',
+        'Cumulative work done ('+inp.conCumDone+') exceeds total scope ('+inp.conTotalScope+'). Scope may be understated.',
+        'warning',
+        'Update total scope or correct cumulative quantity.');
+    }
+    // 6. Actual % > 100
+    if((inp.conActualPct||0)>100){
+      add('conActualPct','Actual completion ('+inp.conActualPct+'%) exceeds 100%. Not possible for a single project.','critical','Completion cannot exceed 100%. Check entry.');
+    }
+    // 7. Retention > total billed
+    if(inp.conBilledToDate>0&&inp.conRetention>inp.conBilledToDate){
+      add('conRetention',
+        'Retention held (₹'+Math.round(inp.conRetention/1e5)/10+'L) exceeds total billed (₹'+Math.round(inp.conBilledToDate/1e5)/10+'L). Impossible.',
+        'critical',
+        'Retention is a % of billed amount (typically 5-10%). It cannot exceed total billing.');
+    }
+    // 8. Workers > contracted total
+    if(inp.conWorkers>inp.conTotal&&inp.conTotal>0){
+      add('conWorkers',
+        'On-site workers ('+inp.conWorkers+') exceeds contracted total ('+inp.conTotal+'). Check headcount entry.',
+        'warning',
+        'Contracted total should be the maximum crew size, not fewer than today count.');
+    }
+  }
+
+  if(inp.domain==='education'){
+    // 1. Students present > total enrolled
+    if(inp.eduStudPresent>inp.eduStudTotal&&inp.eduStudTotal>0){
+      add('eduStudPresent',
+        'Students present ('+inp.eduStudPresent+') exceeds total enrolled ('+inp.eduStudTotal+'). Check entry.',
+        'critical',
+        'Present cannot exceed enrolled. Update enrollment count if new admissions.');
+    }
+    // 2. Classes conducted > scheduled
+    if(inp.eduClassConducted>inp.eduClassScheduled&&inp.eduClassScheduled>0){
+      add('eduClassConducted',
+        'Classes conducted ('+inp.eduClassConducted+') exceeds scheduled ('+inp.eduClassScheduled+'). Check entry.',
+        'warning',
+        'Conducted cannot exceed scheduled in the same session.');
+    }
+    // 3. Fee collected >> monthly target (suggests wrong scale)
+    if(inp.eduFeeTotalMonth>0&&inp.eduFeeCollected>inp.eduFeeTotalMonth){
+      add('eduFeeCollected',
+        'Fee collected today (₹'+Math.round(inp.eduFeeCollected/1e5)/10+'L) exceeds entire monthly target (₹'+Math.round(inp.eduFeeTotalMonth/1e5)/10+'L). Check scale of entry.',
+        'critical',
+        'Daily collection cannot exceed monthly total. Check if values are in different units (rupees vs thousands).');
+    }
+    // 4. Fee outstanding > monthly total
+    if(inp.eduFeeTotalMonth>0&&inp.eduFeeOutstanding>inp.eduFeeTotalMonth){
+      add('eduFeeOutstanding',
+        'Fee outstanding (₹'+Math.round(inp.eduFeeOutstanding/1e5)/10+'L) exceeds monthly receivable (₹'+Math.round(inp.eduFeeTotalMonth/1e5)/10+'L). Check entry.',
+        'warning',
+        'Outstanding should be a subset of monthly receivable. May indicate multi-month arrears — if so, note is valid but unit economics are distorted.');
+    }
+    // 5. Monthly fee per student implausible vs total
+    if(inp.monthlyFeePerStudent>0&&inp.eduFeeTotalMonth>0&&inp.eduStudentsTotal>0){
+      var impliedTotal = inp.monthlyFeePerStudent * inp.eduStudentsTotal;
+      var ratio = impliedTotal / inp.eduFeeTotalMonth;
+      if(ratio<0.5||ratio>2){
+        add('eduMonthlyFeePerStudent',
+          'Monthly fee per student × enrolled students (₹'+Math.round(impliedTotal/1e5)/10+'L) differs from monthly target (₹'+Math.round(inp.eduFeeTotalMonth/1e5)/10+'L) by more than 2×.',
+          'warning',
+          'Check: fee per student or monthly total may be mismatched. Unit economics accuracy depends on these being consistent.');
+      }
+    }
+    // 6. Pass % > 100
+    if((inp.eduPassPct||0)>100){
+      add('eduPassPct','Pass rate ('+inp.eduPassPct+'%) exceeds 100%.','critical','Cannot exceed 100%.');
+    }
+    // 7. Avg score > 100
+    if((inp.eduAvgScore||0)>100){
+      add('eduAvgScore','Average exam score ('+inp.eduAvgScore+'%) exceeds 100%.','critical','Cannot exceed 100%.');
+    }
+    // 8. Seats filled > seats available
+    if(inp.eduSeatsFilled>inp.eduSeatsAvail&&inp.eduSeatsAvail>0){
+      add('eduSeatsFilled',
+        'Seats filled ('+inp.eduSeatsFilled+') exceeds available ('+inp.eduSeatsAvail+').','warning',
+        'Update seat capacity if expanded, or correct entry.');
+    }
+  }
+
+  if(inp.domain==='general'){
+    // 1. Output value with zero volume — CPU will be null, revenue per unit unknown
+    if(inp.outputValue>0&&inp.outputVol===0){
+      add('outVol',
+        'Output value entered (₹'+Math.round(inp.outputValue/1e3)/10+'K) but output volume is 0. Unit economics (cost/unit, rev/unit) cannot be computed.',
+        'warning',
+        'Enter output volume (units produced/sold today) to enable unit economics analysis.');
+    }
+    // 2. Revenue >> capital deployed (100x) — scale mismatch indicator
+    if(inp.capital>0&&inp.outputValue>inp.capital*100){
+      add('capital',
+        'Output value (₹'+Math.round(inp.outputValue/1e5)/10+'L) is >100× capital deployed (₹'+Math.round(inp.capital/1e5)/10+'L). Check scale of entries.',
+        'warning',
+        'Capital deployed should be total working capital, not a daily figure. Large mismatch distorts capital return calculation.');
+    }
+    // 3. Running cost > output value by 10× — may be scale error
+    if(inp.runningCost>0&&inp.outputValue>0&&inp.runningCost>inp.outputValue*10){
+      add('runCost',
+        'Running cost (₹'+Math.round(inp.runningCost/1e5)/10+'L) is 10× output value (₹'+Math.round(inp.outputValue/1e5)/10+'L). Extreme loss ratio — verify scale.',
+        'warning',
+        'If this is correct, the business is in severe structural loss. If entries are in different scales (lakh vs rupees), correct them.');
+    }
+    // 4. Orders confirmed > received
+    if(inp.ordersConfirmed>inp.ordersReceived&&inp.ordersReceived>0){
+      add('ordCon',
+        'Orders confirmed ('+inp.ordersConfirmed+') exceeds orders received ('+inp.ordersReceived+'). Confirmation rate cannot exceed 100%.',
+        'critical',
+        'Update orders received to reflect all incoming orders including confirmed ones.');
+    }
+    // 5. Sales closed > leads
+    if(inp.salesClosed>inp.salesLeads&&inp.salesLeads>0){
+      add('saleClosed',
+        'Sales closed ('+inp.salesClosed+') exceeds sales leads ('+inp.salesLeads+'). Conversion rate cannot exceed 100%.',
+        'critical',
+        'Update leads count to include all qualified prospects including closed ones.');
+    }
+  }
+
+  return issues;
+}
+
+// ── Alert Engine (all thresholds from CFG) ────────────────────────────────────
 function generateAlerts(R,inp,domainExtras,cfg){
   var alerts=[],EP=1e-9;
   var push=function(sev,cat,title,detail,action){alerts.push({severity:sev,category:cat,title:title,detail:detail,action:action});};
   var INR=function(v){return Math.round(v).toLocaleString('en-IN');};
 
-  // 1. Data quality: output >N× target
+  // 0. Cross-field data consistency validation — runs FIRST, before any other alerts
+  var consistencyIssues = validateInputConsistency(inp);
+  var hasCriticalDataIssue = false;
+  var evSuppressed = false;
+  consistencyIssues.forEach(function(issue){
+    push(issue.severity,'DATA_QUALITY',
+      '⚠ Input inconsistency: '+issue.field+' — '+issue.issue,
+      'This inconsistency makes some outputs unreliable. Other alerts may be distorted by this data problem.',
+      issue.suggestion);
+    if(issue.severity==='critical') hasCriticalDataIssue=true;
+    // Suppress EV analysis if contract/billing scale is broken
+    if(issue.field==='conBilledToDate'&&issue.severity==='critical') evSuppressed=true;
+  });
+
+  // 1. Data quality: hourly output >N× target (existing check)
   var inp_hv=inp.hourlyProd||[], inp_ht=inp.hourlyTargets||[], suspectHrs=[];
   for(var _i=0;_i<Math.min(inp_hv.length,inp_ht.length);_i++){
     if(inp_ht[_i]>0&&inp_hv[_i]>inp_ht[_i]*cfg.dataQualMult)suspectHrs.push(_i+1);
@@ -1415,7 +1594,8 @@ function generateAlerts(R,inp,domainExtras,cfg){
         'Reassign idle crew. Expedite material. Log in daily report.');
     }
     // Billing vs Earned Value alignment alert
-    if(domainExtras.billingVsEV!==null){
+    // evSuppressed = true when contract/billing data inconsistency was detected
+    if(domainExtras.billingVsEV!==null&&!evSuppressed){
       if(domainExtras.overbilled){
         push('warning','BILLING RISK',
           'Overbilled vs earned value: billing '+domainExtras.billingVsEV+'% of EV — risk of clawback',
@@ -1676,11 +1856,14 @@ function compute(){
   var domainExtras=null;
   if(currentDomain==='contractor')domainExtras=computeContractorExtras(inp,raw,CFG);
   else if(currentDomain==='education')domainExtras=computeEducationExtras(inp,raw,CFG);
+  var consistencyIssues=validateInputConsistency(inp);
+  var evSuppressed=consistencyIssues.some(function(i){return i.field==='conBilledToDate'&&i.severity==='critical';});
+  var hasCriticalDataIssue=consistencyIssues.some(function(i){return i.severity==='critical';});
   var alerts=generateAlerts(raw,inp,domainExtras,CFG);
   var sens=computeSensitivity(inp,W,CFG);
 
   btn.disabled=false; btn.textContent='▶ COMPUTE Ω';
-  render(raw,alerts,inp,domainExtras,sens);
+  render(raw,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -1718,7 +1901,7 @@ function pipeBar(lbl,pct,color,valLbl){
 }
 
 // ── Render ────────────────────────────────────────────────────────────────
-function render(R,alerts,inp,domainExtras,sens){
+function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue){
   var effectiveOmega=(inp.domain==='contractor'&&domainExtras)?domainExtras.adjustedOmega:R.omega;
   var oc=effectiveOmega>=CFG.omegaStableFloor?'stable':effectiveOmega>=OC?'stressed':'critical';
 
@@ -1737,10 +1920,22 @@ function render(R,alerts,inp,domainExtras,sens){
 
   var h='';
 
+  // Data health banner — shown prominently when critical input issues exist
+  if(hasCriticalDataIssue){
+    h+='<div style="background:rgba(192,48,48,.10);border:1px solid var(--red);border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-start;">';
+    h+='<div style="font-size:18px;flex-shrink:0;">⚠</div>';
+    h+='<div>';
+    h+='<div style="font-family:var(--cond);font-size:14px;font-weight:700;color:var(--red2);margin-bottom:4px;">INPUT INCONSISTENCY DETECTED — Some outputs may be unreliable</div>';
+    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);line-height:1.6;">One or more input fields contain values that are mathematically impossible or implausible (e.g. billed amount > contract value, students present > enrolled). The engine has computed results using the entered values, but derived metrics like Earned Value, margin %, and EV-based alerts have been suppressed or flagged. Fix the DATA_QUALITY alerts below before relying on any financial outputs.</div>';
+    h+='</div></div>';
+  }
+
   // Domain + config fingerprint badge
   h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">';
   h+='<span style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:3px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);">'+dBadge+'</span>';
   h+='<span style="font-family:var(--mono);font-size:9px;color:var(--text3);">UEDP v4 · Ω_crit=1/e · Ω_ref='+CFG.omegaRef+' · W={var:'+CFG.W.var+',spk:'+CFG.W.spike+',drft:'+CFG.W.drift+',dir:'+CFG.W.dir+',cost:'+CFG.W.cost+',ord:'+CFG.W.order+'}</span>';
+  h+='<span style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;background:rgba(212,144,10,.1);border:1px solid rgba(212,144,10,.3);color:var(--amber2);">HEURISTIC — not audit-grade</span>';
+  if(hasCriticalDataIssue)h+='<span style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;background:var(--red3);border:1px solid var(--red);color:var(--red2);">⚠ DATA ISSUES — see alerts</span>';
   if(R.preRevMode)h+='<span style="font-family:var(--mono);font-size:9px;color:var(--amber2);background:var(--amber3);padding:2px 8px;border-radius:3px;">FIX-P1 ACTIVE: Pre-revenue ops floor</span>';
   h+='</div>';
 
@@ -1845,15 +2040,16 @@ function render(R,alerts,inp,domainExtras,sens){
     h+=kpi('Productive Hrs',domainExtras.productiveHrs+'h',domainExtras.totalLostHrs<CFG.lostHrsAlert?'g':domainExtras.totalLostHrs<3?'w':'b',domainExtras.totalLostHrs+'h lost');
     if(domainExtras.billingPct!==null)h+=kpi('Billing',domainExtras.billingPct+'%',domainExtras.billingPct>=80?'g':domainExtras.billingPct>=60?'w':'b','of contract');
     h+='</div>';
-    if(domainExtras.earnedValue!==null)h+=kpi('Earned Value','₹'+fmt(domainExtras.earnedValue||0),domainExtras.earnedValue>=(inp.conBilledToDate||0)?'g':'w','EV = '+inp.conActualPct+'% × contract');
-    if(domainExtras.billingVsEV!==null)h+=kpi('Billing/EV',domainExtras.billingVsEV+'%',domainExtras.overbilled?'b':domainExtras.underbilled?'w':'g',domainExtras.overbilled?'⚠ Overbilled':domainExtras.underbilled?'⚠ Underbilled':'✓ Aligned');
+    if(domainExtras.earnedValue!==null&&!evSuppressed)h+=kpi('Earned Value','₹'+fmt(domainExtras.earnedValue||0),domainExtras.earnedValue>=(inp.conBilledToDate||0)?'g':'w','EV = '+inp.conActualPct+'% × contract');
+    if(domainExtras.billingVsEV!==null&&!evSuppressed)h+=kpi('Billing/EV',domainExtras.billingVsEV+'%',domainExtras.overbilled?'b':domainExtras.underbilled?'w':'g',domainExtras.overbilled?'⚠ Overbilled':domainExtras.underbilled?'⚠ Underbilled':'✓ Aligned');
+    if(evSuppressed)h+=kpi('EV','⚠ Suppressed','b','fix input data');
     if(domainExtras.cashExpectedToday>0)h+=kpi('Cash Today (est.)','₹'+fmt(domainExtras.cashExpectedToday),'n','after '+domainExtras.retentionRate+'% retention');
     h+='</div>';
     h+='<div class="pipe-list" style="margin-top:12px;">';
     h+=pipeBar('Schedule (SPI)',domainExtras.spi*100,domainExtras.spi>=1?'var(--green2)':domainExtras.spi>=CFG.spiCrit?'var(--amber2)':'var(--red2)','SPI '+domainExtras.spi);
     h+=pipeBar('Work Efficiency',domainExtras.workEff,'var(--blue2)',domainExtras.workEff+'%');
     h+=pipeBar('Safety Score',domainExtras.safetyScore,domainExtras.safetyScore>=90?'var(--green2)':'var(--amber2)',domainExtras.safetyScore+'%');
-    if(domainExtras.billingVsEV!==null)h+=pipeBar('Billing vs EV',Math.min(120,domainExtras.billingVsEV),domainExtras.overbilled?'var(--red2)':domainExtras.underbilled?'var(--amber2)':'var(--green2)',domainExtras.billingVsEV+'%');
+    if(domainExtras.billingVsEV!==null&&!evSuppressed)h+=pipeBar('Billing vs EV',Math.min(120,domainExtras.billingVsEV),domainExtras.overbilled?'var(--red2)':domainExtras.underbilled?'var(--amber2)':'var(--green2)',domainExtras.billingVsEV+'%');
     h+='</div>';
     // Contractor killer insight line
     h+='<div style="margin-top:10px;padding:9px 12px;background:rgba(201,96,32,.06);border:1px solid rgba(201,96,32,.2);border-radius:6px;font-family:var(--mono);font-size:10px;line-height:1.6;">';
@@ -1993,8 +2189,8 @@ function render(R,alerts,inp,domainExtras,sens){
     h+='<div style="font-family:var(--mono);font-size:8px;color:var(--orange2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">📋 PROJECT — Earned Value & Cash</div>';
     h+=plRow('Contract Value','₹'+fmt(inp.conContractVal||0),'');
     h+=plRow('Billed to Date','₹'+fmt(inp.conBilledToDate||0),'');
-    // Earned Value — the critical distinction from billing
-    if(domainExtras&&domainExtras.earnedValue!==null){
+    // Earned Value — suppressed if contract/billing data inconsistency detected
+    if(domainExtras&&domainExtras.earnedValue!==null&&!evSuppressed){
       h+='<div class="pl-divider"></div>';
       h+='<div style="font-family:var(--mono);font-size:8px;color:var(--cyan2);margin:4px 0 2px;">EARNED VALUE (EV) = Completion% × Contract</div>';
       h+=plRow('Earned Value (EV)','₹'+fmt(domainExtras.earnedValue||0),domainExtras.earnedValue>=(inp.conBilledToDate||0)?'pos':'neg');
@@ -2002,7 +2198,10 @@ function render(R,alerts,inp,domainExtras,sens){
         var bvevColor=domainExtras.overbilled?'neg':domainExtras.underbilled?'w':'pos';
         h+=plRow('Billing vs EV',domainExtras.billingVsEV+'% '+(domainExtras.overbilled?'⚠ OVER':domainExtras.underbilled?'⚠ UNDER':'✓ ALIGNED'),bvevColor);
       }
-      h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin:4px 0 6px;line-height:1.4;">Billing = what you invoiced. EV = what you earned. Overbilling →  dispute risk. Underbilling → cash gap.</div>';
+      h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin:4px 0 6px;line-height:1.4;">Billing = what you invoiced. EV = what you earned. Overbilling → dispute risk. Underbilling → cash gap.</div>';
+    } else if(evSuppressed){
+      h+='<div class="pl-divider"></div>';
+      h+='<div style="font-family:var(--mono);font-size:9px;color:var(--red2);background:rgba(192,48,48,.07);border-radius:4px;padding:6px 8px;margin:4px 0;">⚠ EV analysis suppressed — fix input inconsistency (billed to date vs contract value) to enable Earned Value calculations.</div>';
     }
     h+='<div class="pl-divider"></div>';
     h+='<div style="font-family:var(--mono);font-size:8px;color:var(--cyan2);margin:4px 0 2px;">CASH POSITION (Today)</div>';
