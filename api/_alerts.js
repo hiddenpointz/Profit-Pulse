@@ -122,7 +122,7 @@ function generateAlerts(result, input) {
   }
 
   // ── 7. Order pipeline / Sales ────────────────────────────────────────
-  if (ordersReceived > 0 && confirmRate < 60) {
+ if (input.context?.pipelineRelevant !== false && ordersReceived > 0 && confirmRate < 60) {
     alerts.push({
       severity: 'warning',
       category: 'SALES',
