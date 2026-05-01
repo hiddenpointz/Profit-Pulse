@@ -2034,6 +2034,8 @@ function compute(){
   else if(currentDomain==='education')inp=collectEducation();
   else inp=collectGeneral();
 
+  window_lastInput = inp;
+
   if(!inp.outputValue&&!inp.runningCost&&!inp.hourlyProd.length&&!inp.empPresent){
     document.getElementById('mainPanel').innerHTML='<div class="empty"><div class="empty-icon">⊕</div><div class="empty-text">Enter at least some operational data before computing.</div></div>';
     btn.disabled=false; btn.textContent='▶ COMPUTE Ω'; return;
@@ -2041,6 +2043,7 @@ function compute(){
 
   var W=CFG.W;
   var raw=computeOmegaCore(inp,W,CFG);
+  window_lastOmegaResult = raw;
   var domainExtras=null;
   if(currentDomain==='contractor')domainExtras=computeContractorExtras(inp,raw,CFG);
   else if(currentDomain==='education')domainExtras=computeEducationExtras(inp,raw,CFG);
@@ -2376,6 +2379,26 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     h+='</div>';
     h+='</div>';
   }
+   
+    // ==========================================
+  // 🛠️ REALITY CHECK BUTTONS (Paste here)
+  // ==========================================
+  h+='<div class="sh '+shClass+'" style="margin-top:18px; border-top: 1px solid var(--border); padding-top: 15px;">';
+  h+='<div style="font-family:var(--cond);font-size:14px;font-weight:700;color:var(--amber2);">🔍 Reality Check: Did we actually make money?</div>';
+  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-bottom:10px;">Help the model learn by confirming the actual outcome.</div>';
+  h+='<div style="display:flex;gap:10px;">';
+  h+='<button id="btnRealityYes" onclick="recordReality(true)" style="background:var(--green3);border:1px solid var(--green);color:var(--green2);padding:8px 16px;border-radius:5px;font-weight:bold;cursor:pointer;">✅ Yes, Profitable</button>';
+  h+='<button id="btnRealityNo" onclick="recordReality(false)" style="background:var(--red3);border:1px solid var(--red);color:var(--red2);padding:8px 16px;border-radius:5px;font-weight:bold;cursor:pointer;">❌ No, Loss</button>';
+  h+='</div>';
+  h+='<div id="realityMsg" style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:8px;min-height:15px;"></div>';
+  h+='</div>';
+  // ==========================================
+  // END REALITY CHECK
+  // ==========================================
+
+  // Sub-scores
+  h+='<div class="sh '+shClass+'">Operational Sub-Scores</div>';
+  // ... (rest of the file continues)
 
   // Sub-scores
   h+='<div class="sh '+shClass+'">Operational Sub-Scores</div>';
@@ -2781,6 +2804,72 @@ function drawOmega(hv,domain,cfg){
 }
 
 document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='Enter')compute();});
+
+// ==========================================
+// 🛠️ COMPLETE PATCH: History Filter + Reality Check
+// Paste this ENTIRE block before </script>
+// ==========================================
+
+// 1. Global variables to store the latest run data
+let window_lastOmegaResult = null;
+let window_lastInput = null;
+
+// 2. Helper to get unique days (Fixes the "5 clicks in 2 mins" bug)
+function getValidHistoryForTraining() {
+  const allHistory = JSON.parse(localStorage.getItem('uedp_auto_history_v1') || '[]');
+  const uniqueDays = {};
+  
+  allHistory.forEach(entry => {
+    const entryDate = new Date(entry.date).toISOString().split('T')[0]; // YYYY-MM-DD
+    // Keep the most recent entry for each day
+    if (!uniqueDays[entryDate] || new Date(entry.date) > new Date(uniqueDays[entryDate].date)) {
+      uniqueDays[entryDate] = entry;
+    }
+  });
+
+  return Object.values(uniqueDays).sort((a, b) => 
+    new Date(a.date) - new Date(b.date)
+  );
+}
+
+// 3. Function to handle the "Reality Check" button clicks
+function recordReality(isProfitable) {
+  if (!window_lastOmegaResult) {
+    document.getElementById('realityMsg').innerText = "⚠️ Please run a calculation first.";
+    return;
+  }
+  
+  const result = window_lastOmegaResult;
+  const history = JSON.parse(localStorage.getItem('uedp_auto_history_v1') || '[]');
+  
+  // Create the CORRECT record with User Reality
+  const record = {
+    date: new Date().toISOString(),
+    inputs: window_lastInput, // Uses the stored input
+    model_prediction: result.willProfitable,
+    model_predicted_margin: result.netMargin,
+    actual_profitable: isProfitable, // THE USER'S INPUT (True/False)
+    actual_net_margin: isProfitable ? result.netMargin : -Math.abs(result.netProfit || 0),
+    confidence_score: result.confidence || 0
+  };
+
+  history.push(record);
+  // Keep only last 90 days
+  if (history.length > 90) history.splice(0, history.length - 90);
+  localStorage.setItem('uedp_auto_history_v1', JSON.stringify(history));
+
+  document.getElementById('realityMsg').innerText = "✅ Reality recorded! The model will learn from this on the next run.";
+  
+  // Disable buttons to prevent double-clicking
+  const btnYes = document.getElementById('btnRealityYes');
+  const btnNo = document.getElementById('btnRealityNo');
+  if(btnYes) btnYes.disabled = true;
+  if(btnNo) btnNo.disabled = true;
+}
+
+// ==========================================
+// ⚠️ END OF PASTE
+// ==========================================
 </script>
 </body>
 </html>
