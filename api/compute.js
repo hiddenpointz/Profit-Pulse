@@ -206,6 +206,14 @@ const computeOmegaCore = (inp, W) => {
   const sl=inp.salesLeads||0, sc2=inp.salesClosed||0;
   const he=inp.hoursElapsed||8;
   const mix =inp.mixItems||[];
+   // ── External context (non-invasive) ─────────────────────────────
+const demandIndex = inp.demandIndex ?? 1; // external demand signal
+const context = inp.context || {};
+
+const {
+  pipelineRelevant = true,
+  demandCoupling = 'none' // 'none' | 'revenue' | 'pipeline'
+} = context;
 
   const tc=rc+fc;
   const hv=hprod.filter((v)=>!isNaN(v)&&v>=0);
