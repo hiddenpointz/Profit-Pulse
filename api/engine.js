@@ -715,4 +715,4 @@ function runBacktest(history, W) {
   };
 }
 
-module.exports = { computeOmega, computeOmegaCore, generateAlerts, runBacktest, tuneWeights, computeSensitivity, OC, MODEL_ASSUMPTIONS };
+module.exports = { computeOmega, computeOmegaCore, generateAlerts, runBacktest, tuneWeights, computeSensitivity, OC, MODEL_ASSUMPTIONS }; 
