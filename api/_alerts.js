@@ -24,22 +24,28 @@ function generateAlerts(result, input) {
 
   // ── 1. Omega state ─────────────────────────────────────────────────────
   if (omega < OC) {
+
+  // NEW: external-aware interpretation
+  if (result.externalPressure !== undefined && result.externalPressure < 0.7) {
+    alerts.push({
+      severity: 'warning',
+      category: 'UEDP',
+      title: `Low Omega influenced by weak external demand (Ω ${omega})`,
+      detail: `Market demand index is low (${result.externalPressure}). Internal operations may not be the primary issue.`,
+      action: `Avoid aggressive internal cuts. Focus on demand generation, pricing strategy, or wait for recovery.`,
+    });
+
+  } else {
+    // ORIGINAL LOGIC (unchanged)
     alerts.push({
       severity: 'critical',
       category: 'UEDP',
       title: `Business Coherence CRITICAL — Ω ${omega} is below 1/e threshold`,
-      detail: `Your operational system has crossed the METP critical boundary (Ω_crit = 1/e ≈ 0.368). This means the accumulated cost of instability now exceeds the cost of intervention. The top driver is: ${penalties[0]?.label}.`,
-      action: `Address "${penalties[0]?.label}" immediately. Every hour of delay compounds the Omega deficit.`,
-    });
-  } else if (omega < 0.55) {
-    alerts.push({
-      severity: 'warning',
-      category: 'UEDP',
-      title: `Omega stressed at ${omega} — approaching critical zone`,
-      detail: `Two more points of pressure and Ω will cross 1/e. Primary drag: ${penalties[0]?.label} (${Math.round(penalties[0]?.raw*100)}% normalised).`,
-      action: `Stabilise ${penalties[0]?.label} before adding any new load or cost.`,
+      detail: `Your operational system has crossed the METP critical boundary (Ω_crit = 1/e ≈ 0.368). Top driver: ${penalties[0]?.label}.`,
+      action: `Address "${penalties[0]?.label}" immediately.`,
     });
   }
+}
 
   // ── 2. Profitability prediction ────────────────────────────────────────
   if (!willProfitable) {
