@@ -47,6 +47,96 @@ const MODEL_ASSUMPTIONS = {
 
 const OC = MODEL_ASSUMPTIONS.OC.value;
 
+// ── NEW: Automated Continuous Validation & Dynamic Retraining ─────────────
+function autoRetrainAndValidate(history, defaultW, minSamples = 5) {
+  if (!history || history.length < minSamples) {
+    return { 
+      status: 'insufficient_data', 
+      message: `Need ${minSamples} days of historical data for auto-validation. Using static weights.`,
+      weights: defaultW,
+      accuracy: null,
+      retrained: false
+    };
+  }
+
+  // 1. Calculate current model accuracy on the last 'minSamples' days
+  let hits = 0;
+  const details = history.slice(-minSamples).map((h, idx) => {
+    const r = computeOmegaCore(h.inputs, defaultW);
+    const predicted = r.willProfitable;
+    
+    // 👇 THIS IS THE KEY: Compare Prediction vs. USER REALITY
+    const actual = h.actual_profitable; 
+    
+    const correct = predicted === actual;
+    if (correct) hits++;
+    
+    const marginError = Math.abs((r.netMargin || 0) - (h.actual_net_margin || 0));
+    return { day: idx + 1, correct, marginError };
+  });
+
+  const currentAccuracy = (hits / minSamples) * 100;
+
+  // 2. If accuracy is < 75%, try to adjust weights (Simple Optimization)
+  let bestW = { ...defaultW };
+  let bestScore = currentAccuracy;
+  let improved = false;
+  const EPSILON = 0.15; 
+  const keys = Object.keys(defaultW);
+
+  keys.forEach(key => {
+    // Try increasing weight
+    const upW = { ...bestW, [key]: bestW[key] * (1 + EPSILON) };
+    normalizeWeights(upW);
+    
+    let upHits = 0;
+    history.slice(-minSamples).forEach(h => {
+      const r = computeOmegaCore(h.inputs, upW);
+      if (r.willProfitable === h.actual_profitable) upHits++;
+    });
+    const upScore = (upHits / minSamples) * 100;
+
+    // Try decreasing weight
+    const downW = { ...bestW, [key]: bestW[key] * (1 - EPSILON) };
+    normalizeWeights(downW);
+    
+    let downHits = 0;
+    history.slice(-minSamples).forEach(h => {
+      const r = computeOmegaCore(h.inputs, downW);
+      if (r.willProfitable === h.actual_profitable) downHits++;
+    });
+    const downScore = (downHits / minSamples) * 100;
+
+    if (upScore > bestScore || downScore > bestScore) {
+      if (upScore > downScore) {
+        bestW = upW;
+        bestScore = upScore;
+      } else {
+        bestW = downW;
+        bestScore = downScore;
+      }
+      improved = true;
+    }
+  });
+
+  return {
+    status: improved ? 'retrained' : 'stable',
+    message: improved 
+      ? `Auto-retrained weights. Accuracy improved from ${currentAccuracy.toFixed(1)}% to ${bestScore.toFixed(1)}%.` 
+      : `Model stable. Current accuracy: ${currentAccuracy.toFixed(1)}%.`,
+    weights: bestW,
+    accuracy: bestScore,
+    retrained: improved,
+    historySize: history.length
+  };
+}
+
+// Helper to ensure weights sum to 1.0
+function normalizeWeights(w) {
+  const sum = Object.values(w).reduce((a, b) => a + b, 0);
+  Object.keys(w).forEach(k => w[k] /= sum);
+}
+
 // ── Signal primitives ─────────────────────────────────────────────────────
 function mean(x) { return x.length ? x.reduce((s,v)=>s+v,0)/x.length : 0; }
 
@@ -323,26 +413,49 @@ function computeOmega(inp) {
 
   // Caller-supplied weight override (for A/B testing)
   const override = inp.calibration;
-  let W = defaultW;
+    let W = defaultW;
   let calibration_info = { source: 'default', calibrated: false };
 
+  // 1. Priority: Manual Override (Keep this!)
   if (override && typeof override === 'object') {
     const overrideW = { ...defaultW, ...override };
     const sum = Object.values(overrideW).reduce((s,v)=>s+v,0);
     for (const k of Object.keys(overrideW)) overrideW[k] /= sum; // renormalize
     W = overrideW;
     calibration_info = { source: 'caller_override', calibrated: true };
-  } else if (inp.history && Array.isArray(inp.history)) {
-    const tuned = tuneWeights(inp.history, defaultW);
-    W = tuned.W;
-    calibration_info = {
-      source: tuned.calibrated ? 'data_tuned' : 'default',
-      calibrated: tuned.calibrated,
-      history_n: tuned.n,
-      blend_ratio: tuned.blend,
-    };
+  } 
+  // 2. Priority: Auto-Training (Your new logic)
+  else if (inp.history && Array.isArray(inp.history)) {
+    const validation = autoRetrainAndValidate(inp.history, defaultW);
+    
+    if (validation.status === 'retrained') {
+      W = validation.weights;
+      calibration_info = {
+        source: 'auto_retrained',
+        calibrated: true,
+        history_n: validation.historySize,
+        accuracy: validation.accuracy,
+        message: validation.message
+      };
+    } else if (validation.status === 'stable') {
+      calibration_info = {
+        source: 'validated_static',
+        calibrated: true,
+        history_n: validation.historySize,
+        accuracy: validation.accuracy,
+        message: validation.message
+      };
+      W = validation.weights;
+    } else {
+      calibration_info = {
+        source: 'default',
+        calibrated: false,
+        message: validation.message
+      };
+    }
   }
-
+  // If neither override nor history, it stays as defaultW (already set at top)
+  
   const raw = computeOmegaCore(inp, W);
 
   // Rounding helpers
