@@ -1594,36 +1594,55 @@ function generateAlerts(R,inp,domainExtras,cfg){
 
   // 4. Profitability forecast
   // Data-sufficiency label (not statistical confidence — heuristic model per UEDP protocol)
-  // hoursElapsed drives how much of the day's data is available, not model accuracy.
   var dataSufficiency=inp.hoursElapsed>=cfg.projHrs*0.6?'SUFFICIENT':inp.hoursElapsed>=cfg.projHrs*0.4?'PARTIAL':'EARLY';
   var dataSuffNote='[Heuristic model · '+inp.hoursElapsed+'h of '+cfg.projHrs+'h elapsed · data: '+dataSufficiency+']';
-  // Extreme margin guard: when |netMargin|>300, % figure is misleading — show burn rate instead
   var tc_alert=(inp.runningCost||0)+(inp.fixedCost||0);
   var burnRate=inp.hoursElapsed>0?Math.round(tc_alert/inp.hoursElapsed):0;
   var marginDisplay=R.netMargin!==null&&Math.abs(R.netMargin)<=300?r2(R.netMargin)+'%':null;
-  var profitDetail=R.willProfitable
-    ?(marginDisplay!==null?'Net margin '+marginDisplay+' on ₹'+INR(inp.outputValue||0)+' revenue. ':'Revenue ₹'+INR(inp.outputValue||0)+' vs cost ₹'+INR(tc_alert)+'. Break-even met. ')+dataSuffNote
-    :'Burn rate: ₹'+INR(burnRate)+'/hr. Break-even: ₹'+INR(R.breakEven)+'. Gap: ₹'+INR(Math.abs(R.netProfit))+'. '+dataSuffNote;
-  // [FIX-GEN-2]: Profitability action line — suppress "push orders" when unit contribution is negative
-  // or when in construction (billing ≠ revenue). Show correct action per context.
-  var profitAction;
-  if(R.willProfitable){
-    profitAction = 'Maintain pace. Confirm pipeline orders.';
-  } else if(inp.domain==='contractor'){
-    profitAction = 'Cost front-loaded vs billing — assess profitability using Earned Value, not daily billing. Monitor cashflow.';
-  } else if(R.unitLoss&&inp.domain==='general'){
-    profitAction = 'Do NOT push orders — each unit increases loss. Fix unit economics (price/cost) before scaling.';
-  } else if(inp.domain==='education'&&domainExtras&&domainExtras.structuralLoss&&domainExtras.atCapacity){
-    profitAction = 'Enrollment is not a lever — at full capacity. Revise fee structure or reduce cost.';
+
+  // [FIX-CON-PROFIT]: Contractor profitability prediction must use EV vs cumulative cost.
+  // R.willProfitable = (EV − today_cost) > 0 which is ALWAYS true for any large contract.
+  // That is meaningless. Contractor profitability is UNKNOWN without cumulative cost.
+  var profitTitle, profitDetail, profitSev, profitAction;
+  if(inp.domain==='contractor'&&domainExtras){
+    if(domainExtras.evProfitSuppressed){
+      profitSev='warning';
+      profitTitle='Profitability: UNKNOWN — cumulative cost not available';
+      profitDetail='EV = ₹'+INR(Math.round(domainExtras.earnedValue||0))+' ('+inp.conActualPct+'% complete). '
+        +'True profitability = EV vs cumulative cost — NOT EV vs today\'s cost (₹'+INR(tc_alert)+'). '
+        +'Today cash net: ₹'+INR(Math.round((inp.conBillingTodayRaw||0)-tc_alert))+' (cash view only). '+dataSuffNote;
+      profitAction='Enter cumulative work done to get a proxy P&L estimate. Or consult your project cost report for actual cumulative cost vs EV.';
+    } else if(domainExtras.evProfit!==null){
+      var evMg=domainExtras.evMargin||0;
+      profitSev=evMg>=cfg.marginTarget?'ok':evMg>=0?'warning':'critical';
+      profitTitle='EV Profitability (proxy): '+(domainExtras.evProfit>=0?'SURPLUS':'DEFICIT')+' — ~'+evMg+'% margin';
+      profitDetail='EV ₹'+INR(Math.round(domainExtras.earnedValue||0))+' vs estimated cumulative cost ₹'+INR(domainExtras.cumCostEstimate||0)+'. '+domainExtras.cumCostNote+' '+dataSuffNote;
+      profitAction=domainExtras.evProfit>=0?'Monitor schedule and cost. Validate proxy against actual project cost report.':'Cost overrun vs EV — investigate cost drivers and raise variation claims if applicable.';
+    } else {
+      profitSev='warning';
+      profitTitle='Profitability: insufficient data';
+      profitDetail='Enter contract value, completion %, and today\'s costs to begin EV analysis.';
+      profitAction='Add contract and progress data to unlock profitability analysis.';
+    }
   } else {
-    profitAction = 'Reduce variable cost. Focus on highest-margin output.';
+    profitSev=R.willProfitable&&R.netMargin!==null&&R.netMargin>=cfg.marginTarget?'ok':R.willProfitable?'warning':'critical';
+    profitTitle='Profitability outlook (data: '+dataSufficiency+'): '+(R.willProfitable?'PROFITABLE':'LOSS')+' — heuristic, not forecast';
+    profitDetail=R.willProfitable
+      ?(marginDisplay!==null?'Net margin '+marginDisplay+' on ₹'+INR(inp.outputValue||0)+' revenue. ':'Revenue ₹'+INR(inp.outputValue||0)+' vs cost ₹'+INR(tc_alert)+'. Break-even met. ')+dataSuffNote
+      :'Burn rate: ₹'+INR(burnRate)+'/hr. Break-even: ₹'+INR(R.breakEven)+'. Gap: ₹'+INR(Math.abs(R.netProfit))+'. '+dataSuffNote;
+    if(R.willProfitable){
+      profitAction='Maintain pace. Confirm pipeline orders.';
+    } else if(R.unitLoss&&inp.domain==='general'){
+      profitAction='Do NOT push orders — each unit increases loss. Fix unit economics (price/cost) before scaling.';
+    } else if(inp.domain==='education'&&domainExtras&&domainExtras.structuralLoss&&domainExtras.atCapacity){
+      profitAction='Enrollment is not a lever — at full capacity. Revise fee structure or reduce cost.';
+    } else if(inp.domain==='education'&&domainExtras&&domainExtras.structuralLoss){
+      profitAction='Do NOT increase enrollment — each student deepens the loss. Fix fee or cost structure first.';
+    } else {
+      profitAction='Reduce variable cost. Focus on highest-margin output.';
+    }
   }
-  push(
-    R.willProfitable&&R.netMargin!==null&&R.netMargin>=cfg.marginTarget?'ok':R.willProfitable?'warning':'critical',
-    'PREDICTION',
-    'Profitability outlook (data: '+dataSufficiency+'): '+(R.willProfitable?'PROFITABLE':'LOSS')+' — heuristic, not forecast',
-    profitDetail,
-    profitAction);
+  push(profitSev,'PREDICTION',profitTitle,profitDetail,profitAction);
 
   // 5. Thin margin — only fire when margin is in interpretable range
   var tc_thin=(inp.runningCost||0)+(inp.fixedCost||0);
@@ -2404,19 +2423,29 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     var eduInsight='';
     if(domainExtras.structuralLoss){
       if(domainExtras.atCapacity){
-        // [FIX-EDU-INSIGHT]: At full capacity + loss-per-student → enrollment is NOT a lever
-        var beeFee = domainExtras.breakEvenFeePerStudent;
-        var feeGap = domainExtras.feeGapPerStudent;
-        eduInsight = 'STRUCTURAL LOSS at full capacity. '
-          +'Revenue/student: ₹'+Math.abs(domainExtras.earnedPerStudent||0)+'/day vs Cost/student: ₹'+Math.abs(domainExtras.costPerStudent||0)+'/day. '
-          +'Enrollment increase is NOT a lever — institution is already at '+(domainExtras.seatUtilization!==null?domainExtras.seatUtilization+'%':'full')+' capacity. '
-          +(beeFee!==null?'Break-even fee = ₹'+beeFee+'/month (current: ₹'+(inp.monthlyFeePerStudent||0)+'/month). Fee revision or cost reduction required.':'Profitability requires fee revision or cost reduction — not volume.');
+        // At full capacity + structural loss → fee or cost is the ONLY lever
+        var beeFee=domainExtras.breakEvenFeePerStudent;
+        eduInsight='STRUCTURAL LOSS at full capacity. '
+          +'Revenue/student: ₹'+(domainExtras.earnedPerStudent||0)+'/day vs Cost/student: ₹'+(domainExtras.costPerStudent||0)+'/day. '
+          +'Enrollment increase is NOT a lever — already at '+(domainExtras.seatUtilization!==null?domainExtras.seatUtilization+'%':'full')+' capacity. '
+          +(beeFee!==null?'Break-even fee = ₹'+beeFee+'/month (current: ₹'+(inp.monthlyFeePerStudent||0)+'/month). ':'')
+          +'Only levers: fee revision or cost reduction.';
       } else {
-        // Has spare seats, but unit contribution is negative → scaling worsens loss
-        eduInsight = 'Loss per student (₹'+Math.abs(domainExtras.unitContribPerStudent||0)+'/day). '
-          +'⚠ Increasing enrollment will NOT fix this — each additional student adds ₹'+Math.abs(domainExtras.unitContribPerStudent||0)+' loss/day. '
-          +(domainExtras.breakEvenFeePerStudent?'Break-even requires ₹'+domainExtras.breakEvenFeePerStudent+'/student/month. Fee revision or cost reduction is the only lever.':'Fee revision or cost reduction required before scaling.');
+        // [FIX-EDU-SCALE]: Spare capacity but negative unit contribution.
+        // Enrollment WORSENS loss — each additional student adds to the deficit.
+        var beeFee2=domainExtras.breakEvenFeePerStudent;
+        eduInsight='STRUCTURAL LOSS — '+(domainExtras.seatUtilization!==null?(100-domainExtras.seatUtilization)+'% spare capacity, but':'spare capacity exists, but')
+          +' each additional student adds ₹'+Math.abs(domainExtras.unitContribPerStudent||0)+'/day to loss (negative unit contribution). '
+          +'⚠ Increasing enrollment will WORSEN the deficit — not fix it. '
+          +(beeFee2!==null?'Break-even requires ₹'+beeFee2+'/student/month (current: ₹'+(inp.monthlyFeePerStudent||0)+'/month). ':'')
+          +'Fix fee or cost structure BEFORE scaling enrollment.';
       }
+    } else if(domainExtras.canScaleToProfit&&!domainExtras.atCapacity){
+      // Positive unit contribution AND spare capacity → enrollment IS a lever
+      var spotsLeft=inp.eduSeatsAvail>0?(inp.eduSeatsAvail-inp.eduSeatsFilled):null;
+      eduInsight='Positive contribution ₹'+(domainExtras.unitContribPerStudent||0)+'/student/day. '
+        +(spotsLeft?spotsLeft+' seats available — ':'' )
+        +'Increasing enrollment improves total contribution. Focus on fee collection timing and admission conversion.';
     } else if(domainExtras.collectionTimingIssue){
       eduInsight='Deficit is collection timing, not structural. Monthly recovery '+(domainExtras.feeRecovery||'N/A')+'% is healthy. Earned revenue today covers '+(domainExtras.dailyCostCoverage||0)+'% of daily cost.';
     } else if(domainExtras.collectionStructuralIssue){
@@ -2701,7 +2730,7 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
       {key:'fixedCost',    label:'Fixed Overhead −'+Math.round(delta*100)+'%',
        impact: (inp.fixedCost||0)>0?Math.round((inp.fixedCost||0)*delta):null, sign:1, note:'Fixed cost savings — requires structural change'},
       {key:'empPresent',   label:(inp.domain==='education'?'Student Att.':'Attendance')+' +'+Math.round(delta*100)+'%',
-       impact: null, sign:1, note: inp.domain==='education'?'More students → earned revenue up, cost/student down':'Reduces Ω penalty — indirect P&L effect via throughput'},
+       impact: null, sign:1, note: inp.domain==='education'?(domainExtras&&domainExtras.structuralLoss?'Improves operational efficiency but does NOT fix structural unit loss — each student still adds loss. Fee/cost revision required first.':'More students present → more earned revenue. Only helps when unit contribution is positive.'):inp.domain==='contractor'?'Improves site productivity and SPI':'Reduces Ω penalty — indirect P&L effect via throughput'},
       {key:'paymentLeadDays', label:'Payment lead −'+Math.round(delta*100)+'% days',
        impact: null, sign:1, note:'Reduces order pipeline Ω penalty and working capital stress'},
     ];
