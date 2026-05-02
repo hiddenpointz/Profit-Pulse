@@ -1239,22 +1239,51 @@ function computeContractorExtras(inp,base,cfg){
   x.earnedValue = ev;
   x.earnedValueToday = inp.conContractVal>0&&inp.conWorkTarget>0 ?
     (inp.conWorkDone/Math.max(inp.conTotalScope||1,1))*inp.conContractVal : null;
+
+  // ── CUMULATIVE COST ESTIMATE (proxy) ─────────────────────────────────────
+  // [FIX-CON-PROFIT]: EV profit MUST be EV vs cumulative cost — NOT EV vs today's cost.
+  // Comparing 1.2Cr EV (cumulative revenue) against 2.25L (single day cost) = 98% margin.
+  // That is mathematically wrong. Proxy: cost-per-unit × cumulative work done.
+  var todayCost = (inp.conLabCost||0)+(inp.conMatCost||0)+(inp.conEqCost||0);
+  x.todayCost = todayCost;
+  var cumCostEstimate = null, cumCostReliable = false, cumCostNote = '';
+  if(todayCost>0 && inp.conWorkDone>0 && inp.conCumDone>0){
+    cumCostEstimate = Math.round((todayCost/inp.conWorkDone)*inp.conCumDone);
+    cumCostNote = 'Proxy: (today cost ÷ today output) × cumulative output. Enter actual cumulative cost for accuracy.';
+    cumCostReliable = !inp.materialSpike;
+  }
+  x.cumCostEstimate = cumCostEstimate;
+  x.cumCostReliable = cumCostReliable;
+  x.cumCostNote = cumCostNote;
+  // EV-based P&L — only meaningful when both EV and cumCost are available
+  x.evProfit = (ev!==null&&cumCostEstimate!==null) ? ev-cumCostEstimate : null;
+  x.evMargin = (x.evProfit!==null&&ev>0) ? Math.round(x.evProfit/ev*100) : null;
+  // Suppress if margin looks implausible (>60% on proxy = unreliable single-day sample)
+  x.evProfitReliable = cumCostReliable && x.evMargin!==null && Math.abs(x.evMargin)<=60;
+  x.evProfitSuppressed = !cumCostReliable || cumCostEstimate===null || (x.evMargin!==null&&Math.abs(x.evMargin)>60);
+
   // Billing vs EV alignment
   x.billingVsEV = (ev!==null&&inp.conBilledToDate>0) ?
     Math.round(inp.conBilledToDate/ev*100) : null;
   x.overbilled = x.billingVsEV!==null && x.billingVsEV>105;
   x.underbilled = x.billingVsEV!==null && x.billingVsEV<95;
-  // Net cash position today: billing surplus minus retention deduction
-  // Cash expected = billing raised today × (1 − retention rate) — receivable after payLead days
+
+  // [FIX-CON-CASH]: This is receivable AFTER paymentLeadDays — NOT cash in hand today.
   var retentionRate = inp.conContractVal>0 ? inp.conRetention/Math.max(inp.conBilledToDate||1,1) : 0;
   x.retentionRate = Math.round(retentionRate*100);
-  x.cashExpectedToday = inp.outputValue>0 ? Math.round(inp.outputValue*(1-retentionRate)) : 0;
+  x.cashReceivable = inp.outputValue>0 ? Math.round(inp.outputValue*(1-retentionRate)) : 0;
+  x.cashReceivableLabel = 'receivable in ~'+(inp.paymentLeadDays||0)+'d (not today)';
+  // Keep old name for backward compat with render references
+  x.cashExpectedToday = x.cashReceivable;
   x.workingCapitalStress = inp.paymentLeadDays>0&&inp.outputValue>0 ?
-    Math.round(inp.outputValue*inp.paymentLeadDays/30) : 0; // estimated receivable outstanding
-  // Billing alignment with today's execution
+    Math.round(inp.outputValue*inp.paymentLeadDays/30) : 0;
+
+  // [FIX-CON-ALERT]: Suppress billing-execution divergence when EV alignment is confirmed.
+  // If billingVsEV is within ±15%, execution IS aligned — no need to fire this alert.
+  var evAligned = x.billingVsEV!==null && Math.abs(x.billingVsEV-100)<=15;
   var billingAligned = inp.conWorkTarget>0 && inp.conBillingTarget>0 ?
-    Math.abs((inp.conWorkDone/inp.conWorkTarget)-(inp.outputValue/inp.conBillingTarget))<0.15 : null;
-  x.billingExecutionAligned = billingAligned;
+    Math.abs((inp.conWorkDone/inp.conWorkTarget)-(inp.outputValue/Math.max(inp.conBillingTarget||1,1)))<0.15 : null;
+  x.billingExecutionAligned = evAligned ? true : billingAligned;
   // Safety Omega penalty — from CFG, not hardcoded
   x.safetyOmegaPenalty=Math.min(cfg.safetyPenaltyCap,(inp.conSafetyIncidents||0)*cfg.safetyPenalty);
   x.adjustedOmega=Math.max(0,base.omega-x.safetyOmegaPenalty);
@@ -1325,18 +1354,14 @@ function computeEducationExtras(inp,base,cfg){
   x.atCapacity = inp.eduSeatsAvail>0
     ? (inp.eduSeatsFilled >= inp.eduSeatsAvail)
     : false; // unknown capacity → can't confirm full
-  // canScaleToProfit: adding students reduces per-student fixed cost AND unitContrib>0
-  // If unitContrib<0, enrollment increase worsens loss
-  x.canScaleToProfit = !x.atCapacity && x.unitContribPerStudent!==null && x.dailyCostTotal>0
-    ? (x.unitContribPerStudent > 0 || // already profitable per student
-      (x.costPerStudent!==null && x.earnedPerStudent!==null &&
-       // Fixed cost spread scenario: revenue > variable cost (no pure variable here, all fixed)
-       // Since edu cost is entirely fixed, more students always improves per-student cost
-       // BUT only if fee > 0
-       x.earnedPerStudent > 0 && !x.atCapacity))
-    : false;
+  // [FIX-EDU-SCALE]: canScaleToProfit ONLY when NOT at capacity AND unit contribution is POSITIVE.
+  // When unitContrib < 0: each additional student DEEPENS loss — do NOT suggest enrollment.
+  // The old "fixed-cost spread" logic was wrong: with negative contribution, more students
+  // means more loss, not less. Fixed cost per student falls, but variable loss per student rises.
+  x.canScaleToProfit = !x.atCapacity && x.unitContribPerStudent!==null && x.unitContribPerStudent > 0;
   x.structuralLoss = x.unitContribPerStudent!==null && x.unitContribPerStudent < 0;
-  x.enrollmentLeversBlocked = x.atCapacity || (x.structuralLoss && x.earnedPerStudent>0);
+  // enrollmentLeversBlocked: at capacity OR unit contribution is negative (more students = more loss)
+  x.enrollmentLeversBlocked = x.atCapacity || x.structuralLoss;
   // Fee adequacy: what fee per student is needed to break even?
   x.breakEvenFeePerStudent = (x.costPerStudent!==null && inp.workingDays>0)
     ? Math.round(x.costPerStudent * inp.workingDays) : null;
@@ -1756,7 +1781,7 @@ function generateAlerts(R,inp,domainExtras,cfg){
       push('warning','CASHFLOW',
         'Working capital locked: ₹'+fmt(domainExtras.workingCapitalStress)+' in receivables ('+inp.paymentLeadDays+'d delay)',
         'At ₹'+fmt(inp.outputValue||0)+'/day billing with '+inp.paymentLeadDays+'-day payment cycle, approx ₹'+fmt(domainExtras.workingCapitalStress)+' is outstanding. Retention (₹'+fmt(inp.conRetention||0)+') is additional.',
-        'Net cash receivable today (after retention est.): ₹'+fmt(domainExtras.cashExpectedToday||0)+'. Plan working capital accordingly.');
+        'Receivable (est. after '+inp.paymentLeadDays+'d cycle, after retention): ₹'+fmt(domainExtras.cashReceivable||0)+'. This arrives in ~'+inp.paymentLeadDays+' days — NOT today. Plan working capital bridge accordingly.');
     }
     if((inp.conRework||0)>cfg.reworkAlert){
       push('warning','QUALITY',
@@ -1842,7 +1867,9 @@ function generateAlerts(R,inp,domainExtras,cfg){
         push('critical','UNIT ECONOMICS',
           'Loss per student per day: ₹'+Math.abs(domainExtras.unitContribPerStudent)+' — earned revenue below cost per student',
           'Earned revenue/student/day: ₹'+(domainExtras.earnedPerStudent||0)+' (based on ₹'+inp.monthlyFeePerStudent+'/month ÷ '+inp.workingDays+'d). Cost/student/day: ₹'+(domainExtras.costPerStudent||0)+'.',
-          'Review fee structure or reduce cost per student. Increasing enrollment improves fixed-cost spread.');
+          domainExtras.atCapacity
+            ? 'At full capacity — enrollment is NOT a lever. Only fee revision or cost reduction can restore profitability.'
+            : 'Do NOT increase enrollment — each additional student deepens the loss by ₹'+Math.abs(domainExtras.unitContribPerStudent)+'/day. Fix fee or cost structure first.');
       } else {
         push('ok','UNIT ECONOMICS',
           'Positive contribution: ₹'+domainExtras.unitContribPerStudent+'/student/day',
@@ -2199,17 +2226,43 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
 
   // P&L banner
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:9px;margin-bottom:14px;">';
-  var plBg=R.netProfit>=0?'var(--green3)':'var(--red3)', plBorder=R.netProfit>=0?'var(--green)':'var(--red)', plCol=R.netProfit>=0?'var(--green2)':'var(--red2)';
+  // [FIX-CON-PROFIT]: For contractor, never show EV as "Net P/L — Now".
+  // The banner must show: (a) cash net today = billing − today_cost, and (b) EV profitability separately.
+  var plBg, plBorder, plCol, plTitle, plVal, plSub;
+  if(inp.domain==='contractor'&&domainExtras){
+    var conBillingRawBanner = inp.conBillingTodayRaw||0;
+    var cashNetBanner = conBillingRawBanner - (domainExtras.todayCost||0);
+    plBg  = cashNetBanner>=0?'var(--green3)':'var(--red3)';
+    plBorder = cashNetBanner>=0?'var(--green)':'var(--red)';
+    plCol = cashNetBanner>=0?'var(--green2)':'var(--red2)';
+    plTitle = 'Cash Net Today (billing−cost)';
+    plVal   = '₹'+fmt(cashNetBanner);
+    plSub   = 'cash view only · NOT total P&L';
+  } else {
+    plBg=R.netProfit>=0?'var(--green3)':'var(--red3)'; plBorder=R.netProfit>=0?'var(--green)':'var(--red)'; plCol=R.netProfit>=0?'var(--green2)':'var(--red2)';
+    plTitle='Net P/L — Now'; plVal='₹'+fmt(R.netProfit); plSub=(R.netProfit>=0?'Positive':'Loss')+' · '+inp.hoursElapsed+'h elapsed';
+  }
   h+='<div style="background:'+plBg+';border:1px solid '+plBorder+';border-radius:8px;padding:13px 15px;">';
-  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Net P/L — Now</div>';
-  h+='<div style="font-family:var(--mono);font-size:24px;font-weight:600;color:'+plCol+'">₹'+fmt(R.netProfit)+'</div>';
-  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+(R.netProfit>=0?'Positive':'Loss')+' · '+inp.hoursElapsed+'h elapsed</div>';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">'+plTitle+'</div>';
+  h+='<div style="font-family:var(--mono);font-size:24px;font-weight:600;color:'+plCol+'">'+plVal+'</div>';
+  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+plSub+'</div>';
   h+='</div>';
   h+='<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px 15px;">';
   var displayMargin=R.netMargin!==null&&Math.abs(R.netMargin)<=300;
   var tc_banner=(inp.runningCost||0)+(inp.fixedCost||0);
   var burnRateBanner=inp.hoursElapsed>0?Math.round(tc_banner/inp.hoursElapsed):0;
-  if(inp.domain==='education'){
+  if(inp.domain==='contractor'&&domainExtras){
+    // [FIX-CON-PROFIT]: Second card shows EV profitability status — UNKNOWN or proxy range
+    h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">EV Profitability</div>';
+    if(domainExtras.evProfitSuppressed){
+      h+='<div style="font-family:var(--mono);font-size:18px;font-weight:600;color:var(--amber2)">UNKNOWN</div>';
+      h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">enter cumulative cost for P&L</div>';
+    } else {
+      var evMgColor=domainExtras.evMargin>=15?'var(--green2)':domainExtras.evMargin>=0?'var(--amber2)':'var(--red2)';
+      h+='<div style="font-family:var(--mono);font-size:20px;font-weight:600;color:'+evMgColor+'">~'+domainExtras.evMargin+'%</div>';
+      h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">proxy margin · ₹'+fmt(domainExtras.evProfit)+'</div>';
+    }
+  } else if(inp.domain==='education'){
     // [FIX-5]: Education — replace burn rate card with daily cost coverage. Hourly burn is meaningless.
     var eduCovPct = inp.dailyCostCoverage!==null ? inp.dailyCostCoverage : 0;
     var eduCovColor = eduCovPct>=100?'var(--green2)':eduCovPct>=75?'var(--amber2)':'var(--red2)';
@@ -2276,7 +2329,7 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     if(domainExtras.earnedValue!==null&&!evSuppressed)h+=kpi('Earned Value','₹'+fmt(domainExtras.earnedValue||0),domainExtras.earnedValue>=(inp.conBilledToDate||0)?'g':'w','EV = '+inp.conActualPct+'% × contract');
     if(domainExtras.billingVsEV!==null&&!evSuppressed)h+=kpi('Billing/EV',domainExtras.billingVsEV+'%',domainExtras.overbilled?'b':domainExtras.underbilled?'w':'g',domainExtras.overbilled?'⚠ Overbilled':domainExtras.underbilled?'⚠ Underbilled':'✓ Aligned');
     if(evSuppressed)h+=kpi('EV','⚠ Suppressed','b','fix input data');
-    if(domainExtras.cashExpectedToday>0)h+=kpi('Cash Today (est.)','₹'+fmt(domainExtras.cashExpectedToday),'n','after '+domainExtras.retentionRate+'% retention');
+    if(domainExtras.cashReceivable>0)h+=kpi('Receivable (~'+inp.paymentLeadDays+'d)','₹'+fmt(domainExtras.cashReceivable),'n','after '+domainExtras.retentionRate+'% retention · not today');
     h+='</div>';
     h+='<div class="pipe-list" style="margin-top:12px;">';
     h+=pipeBar('Schedule (SPI)',domainExtras.spi*100,domainExtras.spi>=1?'var(--green2)':domainExtras.spi>=CFG.spiCrit?'var(--amber2)':'var(--red2)','SPI '+domainExtras.spi);
@@ -2288,14 +2341,25 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     h+='<div style="margin-top:10px;padding:9px 12px;background:rgba(201,96,32,.06);border:1px solid rgba(201,96,32,.2);border-radius:6px;font-family:var(--mono);font-size:10px;line-height:1.6;">';
     h+='<div style="color:var(--orange2);font-weight:600;margin-bottom:3px;">⚡ PROJECT POSITION INSIGHT</div>';
     var posInsight='';
-    if(domainExtras.earnedValue!==null&&inp.conBilledToDate>0){
-      if(domainExtras.overbilled) posInsight='Billing ahead of earned value — clawback risk if client disputes. Reconcile before next RA bill. Use EV (₹'+fmt(domainExtras.earnedValue||0)+') as true revenue benchmark, not billing.';
-      else if(domainExtras.underbilled) posInsight='Work earned ₹'+fmt(domainExtras.earnedValue||0)+' but only ₹'+fmt(inp.conBilledToDate||0)+' billed — ₹'+fmt(Math.round((domainExtras.earnedValue||0)-(inp.conBilledToDate||0)))+' revenue leakage. Raise RA bill. Cash net today (₹'+fmt((inp.conBillingTodayRaw||0)-((inp.conLabCost||0)+(inp.conMatCost||0)+(inp.conEqCost||0)))+') is a cash view only — does not reflect earned position.';
-      else posInsight='Billing and EV aligned. Cost front-loaded vs billing is normal in construction. Assess profitability using EV (₹'+fmt(domainExtras.earnedValue||0)+'), not daily billing. Cash risk: ₹'+fmt(inp.conRetention||0)+' retention + ₹'+fmt(domainExtras.workingCapitalStress||0)+' receivables in '+inp.paymentLeadDays+'-day cycle.';
+    if(evSuppressed){
+      posInsight='EV analysis suppressed — fix contract value vs billed-to-date data inconsistency first.';
+    } else if(domainExtras.earnedValue!==null&&inp.conBilledToDate>0){
+      if(domainExtras.overbilled) posInsight='Billing ahead of earned value — clawback risk. Reconcile before next RA bill. Use EV (₹'+fmt(domainExtras.earnedValue||0)+') as true revenue benchmark, not billing.';
+      else if(domainExtras.underbilled) posInsight='Work earned ₹'+fmt(domainExtras.earnedValue||0)+' but only ₹'+fmt(inp.conBilledToDate||0)+' billed — ₹'+fmt(Math.round((domainExtras.earnedValue||0)-(inp.conBilledToDate||0)))+' revenue leakage. Raise RA bill.';
+      else {
+        // [FIX-CON-PROFIT]: Aligned ≠ profitable. Cannot determine profitability without cumulative cost.
+        var cashNetInsight = (inp.conBillingTodayRaw||0)-domainExtras.todayCost;
+        posInsight='Billing and EV aligned ✓. '
+          +'Profitability CANNOT be confirmed from today\'s data alone — EV (₹'+fmt(domainExtras.earnedValue||0)+') must be compared to CUMULATIVE cost, not today\'s cost (₹'+fmt(domainExtras.todayCost)+'). '
+          +(domainExtras.evProfitSuppressed
+            ? 'Enter cumulative work done for a proxy estimate, or consult your project cost report. '
+            : 'Proxy EV margin: ~'+domainExtras.evMargin+'% (₹'+fmt(domainExtras.evProfit||0)+'). '+domainExtras.cumCostNote+' ')
+          +'Today cash net: ₹'+fmt(cashNetInsight)+' (cash view only). SPI: '+domainExtras.spi+'.';
+      }
     } else if(domainExtras.earnedValue!==null){
-      posInsight='EV = ₹'+fmt(domainExtras.earnedValue||0)+' ('+inp.conActualPct+'% complete). Cost front-loaded vs billing is normal. Monitor cashflow, but evaluate profitability using EV, not daily billing.';
+      posInsight='EV = ₹'+fmt(domainExtras.earnedValue||0)+' ('+inp.conActualPct+'% complete). Profitability requires EV vs cumulative cost — enter billed-to-date and cumulative work data to assess.';
     } else {
-      posInsight='Enter contract value and completion % to unlock Earned Value analysis.';
+      posInsight='Enter contract value and completion % to unlock Earned Value analysis. Profitability cannot be determined without EV.';
     }
     h+=esc(posInsight);
     h+='</div>';
@@ -2396,7 +2460,9 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
   // END REALITY CHECK
   // ==========================================
 
-  
+  // Sub-scores
+  h+='<div class="sh '+shClass+'">Operational Sub-Scores</div>';
+  // ... (rest of the file continues)
 
   // Sub-scores
   h+='<div class="sh '+shClass+'">Operational Sub-Scores</div>';
@@ -2483,14 +2549,28 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
       h+=plRow('Site Burn Rate','₹'+fmt(burnCon)+'/hr','');
     }
     h+='</div><div class="pl-card">';
-    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--cyan2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">📋 LAYER 2: EARNED VALUE — True Revenue</div>';
-    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-bottom:6px;line-height:1.4;">EV = Completion% × Contract. True revenue, independent of billing timing.</div>';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--cyan2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">📋 LAYER 2: EARNED VALUE — True Revenue Position</div>';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-bottom:6px;line-height:1.4;">EV = Completion% × Contract = true earned revenue. For real P&L: compare EV vs CUMULATIVE cost (not today\'s cost).</div>';
     h+=plRow('Contract Value','₹'+fmt(inp.conContractVal||0),'');
     h+=plRow('Completion %',(inp.conActualPct||0)+'% actual vs '+(inp.conPlannedPct||0)+'% planned','');
     if(domainExtras&&domainExtras.earnedValue!==null&&!evSuppressed){
       h+=plRow('Earned Value (EV)','₹'+fmt(domainExtras.earnedValue||0),'pos');
       if(inp.plannedEV) h+=plRow('Planned EV','₹'+fmt(inp.plannedEV||0),'');
       if(inp.plannedEV){var evVsPlan=Math.round(domainExtras.earnedValue/Math.max(inp.plannedEV,1)*100);h+=plRow('EV vs Plan',evVsPlan+'% '+(evVsPlan>=100?'✓ On/Ahead':'⚠ Behind'),evVsPlan>=100?'pos':'neg');}
+      // [FIX-CON-PROFIT]: Show cumulative cost vs EV — this is the real P&L
+      if(domainExtras.cumCostEstimate!==null){
+        h+='<div class="pl-divider"></div>';
+        h+=plRow('Cum. Cost Estimate (proxy)','₹'+fmt(domainExtras.cumCostEstimate),'neg');
+        if(!domainExtras.evProfitSuppressed&&domainExtras.evProfit!==null){
+          h+='<div class="pl-total"><span class="pl-total-lbl">EV − CumCost (proxy P&L)</span><span class="pl-val '+(domainExtras.evProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(domainExtras.evProfit)+'</span></div>';
+          h+=plRow('Proxy Margin','~'+domainExtras.evMargin+'% (estimate — verify with project cost report)','');
+        } else {
+          h+='<div style="font-family:var(--mono);font-size:9px;color:var(--amber2);background:rgba(212,144,10,.07);border-radius:4px;padding:5px 8px;margin:4px 0;">⚠ Proxy margin unreliable (single-day sample or material spike). Use actual project cost report.</div>';
+        }
+        h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:4px;line-height:1.4;">'+esc(domainExtras.cumCostNote)+'</div>';
+      } else {
+        h+='<div style="font-family:var(--mono);font-size:9px;color:var(--amber2);margin-top:5px;">⚠ Profitability UNKNOWN — enter cumulative work done to estimate cumulative cost vs EV.</div>';
+      }
       if(domainExtras.billingVsEV!==null){
         h+='<div class="pl-divider"></div>';
         h+=plRow('Billed to Date','₹'+fmt(inp.conBilledToDate||0),'');
@@ -2504,13 +2584,13 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     }
     h+='</div></div>';
     h+='<div class="pl-grid" style="margin-top:10px;"><div class="pl-card">';
-    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--purple2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">💰 LAYER 3: CASH POSITION — Receivables & Retention</div>';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--purple2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">💰 LAYER 3: CASH POSITION — Receivables (NOT today\'s cash)</div>';
     h+=plRow('Billing Target Today','₹'+fmt(inp.conBillingTarget||0),'');
     h+=plRow('vs Billing Target',conBillingRaw>=(inp.conBillingTarget||0)?'On Target ✓':'Gap ₹'+fmt(Math.abs((inp.conBillingTarget||0)-conBillingRaw)),conBillingRaw>=(inp.conBillingTarget||0)?'pos':'neg');
     h+=plRow('Retention Held','₹'+fmt(inp.conRetention||0),'neg');
-    if(domainExtras)h+=plRow('Cash Expected Today (est.)','₹'+fmt(domainExtras.cashExpectedToday||0),'pos');
+    if(domainExtras)h+=plRow('Receivable (est. ~'+inp.paymentLeadDays+'d)','₹'+fmt(domainExtras.cashReceivable||0),'pos');
     if(domainExtras&&domainExtras.workingCapitalStress>0)h+=plRow('Receivables Outstanding (est.)','₹'+fmt(domainExtras.workingCapitalStress||0),'neg');
-    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:6px;line-height:1.4;">Cash = billing × (1−retention). Receivable = billing × payment lead ÷ 30. Approx only.</div>';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:6px;line-height:1.4;">Receivable = billing today × (1−retention). Arrives AFTER '+inp.paymentLeadDays+'-day payment cycle — this is NOT cash in hand today.</div>';
     h+='</div></div>';
   } else if(inp.domain==='education'){
     var eduFeeRaw = inp.eduFeeCollectedRaw||0;
@@ -2803,10 +2883,12 @@ function drawOmega(hv,domain,cfg){
 
 document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='Enter')compute();});
 
+
 // ==========================================
 // 🛠️ COMPLETE PATCH: History Filter + Reality Check
-// Paste this ENTIRE block before
+// Paste this ENTIRE block before 
 // ==========================================
+
 
 // 1. Global variables to store the latest run data
 let window_lastOmegaResult = null;
@@ -2868,6 +2950,7 @@ function recordReality(isProfitable) {
 // ==========================================
 // ⚠️ END OF PASTE
 // ==========================================
+
 </script>
 </body>
 </html>
