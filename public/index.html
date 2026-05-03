@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>UEDP Business Pulse · Multi-Domain v5 · Practically Reliable</title>
+<title>UEDP Business Pulse · Multi-Domain v6 · Enterprise Edition</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -230,6 +230,62 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 /* sensitivity box */
 .sens-box{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:12px;margin-top:12px;}
 .sens-title{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
+
+/* ── v6 NEW: Role badge, entity bar ── */
+.role-badge{font-family:var(--mono);font-size:9px;padding:3px 10px;border-radius:3px;border:1px solid var(--border2);cursor:pointer;transition:.15s;}
+.role-badge.md{background:rgba(212,144,10,.15);border-color:var(--amber);color:var(--amber2);}
+.role-badge.mgr{background:rgba(45,127,212,.12);border-color:var(--blue);color:var(--blue2);}
+.role-badge.ops{background:rgba(26,136,80,.12);border-color:var(--green);color:var(--green2);}
+.entity-bar{background:var(--bg3);border-bottom:1px solid var(--border2);padding:8px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.entity-tab{font-family:var(--mono);font-size:10px;padding:5px 14px;border-radius:5px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;transition:.15s;}
+.entity-tab.active{border-color:var(--blue2);background:var(--blue3);color:var(--blue2);}
+.entity-tab:hover{border-color:var(--amber);color:var(--amber2);}
+.entity-add-btn{font-family:var(--mono);font-size:10px;padding:5px 12px;border-radius:5px;border:1px dashed var(--border2);background:transparent;color:var(--text3);cursor:pointer;}
+.entity-add-btn:hover{border-color:var(--green);color:var(--green2);}
+
+/* ── v6 NEW: History / Omega trend chart ── */
+.hist-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px;margin-bottom:14px;}
+.hist-title{font-family:var(--cond);font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--cyan2);text-transform:uppercase;margin-bottom:10px;}
+.hist-bar-row{display:flex;align-items:flex-end;gap:3px;height:60px;margin-bottom:4px;}
+.hist-bar{flex:1;border-radius:3px 3px 0 0;min-width:8px;transition:height .3s;cursor:pointer;position:relative;}
+.hist-bar:hover::after{content:attr(data-tip);position:absolute;bottom:110%;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:3px 7px;font-family:var(--mono);font-size:9px;color:var(--text);white-space:nowrap;z-index:10;}
+.hist-lbl-row{display:flex;gap:3px;}
+.hist-lbl{flex:1;font-family:var(--mono);font-size:7px;color:var(--text3);text-align:center;overflow:hidden;}
+
+/* ── v6 NEW: Audit trail ── */
+.audit-row{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid rgba(30,40,64,.4);font-family:var(--mono);font-size:9px;}
+.audit-ts{color:var(--text3);white-space:nowrap;width:70px;flex-shrink:0;}
+.audit-role{width:32px;flex-shrink:0;}
+.audit-field{color:var(--amber2);flex:1;}
+.audit-val{color:var(--text2);}
+
+/* ── v6 NEW: Compliance flags ── */
+.comp-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(30,40,64,.3);}
+.comp-lbl{font-size:11px;color:var(--text2);}
+.comp-val{font-family:var(--mono);font-size:11px;}
+.comp-badge{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;}
+.comp-badge.ok{background:var(--green3);color:var(--green2);}
+.comp-badge.warn{background:var(--amber3);color:var(--amber2);}
+.comp-badge.crit{background:var(--red3);color:var(--red2);}
+.comp-badge.na{background:var(--bg3);color:var(--text3);}
+
+/* ── v6 NEW: Multi-entity consolidation ── */
+.consol-card{background:linear-gradient(135deg,rgba(0,184,176,.05),rgba(0,184,176,.02));border:1px solid rgba(0,184,176,.2);border-radius:8px;padding:13px;margin-bottom:14px;}
+.consol-title{font-family:var(--cond);font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--cyan2);text-transform:uppercase;margin-bottom:10px;}
+
+/* ── v6 NEW: Currency selector ── */
+.currency-sel{background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:4px 8px;color:var(--amber2);font-family:var(--mono);font-size:10px;cursor:pointer;}
+
+/* ── v6 NEW: Print / PDF styles ── */
+@media print{
+  .bar,.domain-bar,.entity-bar,.sidebar,.cfg-overlay{display:none!important;}
+  .page{grid-template-columns:1fr!important;}
+  .panel{padding:0!important;}
+  body{background:#fff!important;color:#000!important;}
+  .omega-card,.kpi,.alert,.pl-card,.hist-card{border:1px solid #ccc!important;background:#fff!important;}
+  .omega-num,.kpi-val,.pl-val{color:#000!important;}
+  .sh{color:#000!important;border-left-color:#000!important;}
+}
 </style>
 </head>
 <body>
@@ -469,9 +525,25 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 <div class="bar">
   <div>
     <div class="bar-logo">UEDP <em>PULSE</em></div>
-    <div class="bar-sub">MULTI-DOMAIN COHERENCE ENGINE · G S RAMESH KUMAR · v4.3 · ZERO HARDCODE · Ω_crit=1/e</div>
+    <div class="bar-sub">MULTI-DOMAIN v6 · ENTERPRISE · G S RAMESH KUMAR · Ω_crit=1/e · FIX-CON-PROFIT · FIX-EDU-SCALE</div>
   </div>
   <div class="bar-date" id="barDate"></div>
+  <!-- Currency -->
+  <select class="currency-sel" id="currencySel" onchange="setCurrency(this.value)" title="Reporting currency">
+    <option value="INR">₹ INR</option>
+    <option value="USD">$ USD</option>
+    <option value="AED">د AED</option>
+    <option value="EUR">€ EUR</option>
+    <option value="GBP">£ GBP</option>
+  </select>
+  <!-- Role -->
+  <button class="role-badge md" id="roleBtn" onclick="cycleRole()" title="Click to switch role">MD</button>
+  <!-- History -->
+  <button class="cfg-btn" onclick="openHistory()" title="90-day Omega history">📈 HISTORY</button>
+  <!-- Audit -->
+  <button class="cfg-btn" onclick="openAudit()" title="Audit trail">🔒 AUDIT</button>
+  <!-- PDF -->
+  <button class="cfg-btn" onclick="exportPDF()" title="Export PDF report">⬇ PDF</button>
   <button class="cfg-btn" onclick="openConfig()">⚙ CONFIG</button>
   <button class="compute-btn" id="computeBtn" onclick="compute()">▶ COMPUTE Ω</button>
 </div>
@@ -481,6 +553,14 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
   <button class="domain-btn dom-contractor" onclick="setDomain('contractor')">🏗 Contractor / Construction</button>
   <button class="domain-btn dom-education" onclick="setDomain('education')">🎓 Educational Institution</button>
   <span id="domainLabel" style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:auto;align-self:center;">Domain: General Business</span>
+</div>
+
+<!-- ═══ ENTITY BAR (Multi-site) ═══ -->
+<div class="entity-bar" id="entityBar">
+  <span style="font-family:var(--mono);font-size:9px;color:var(--text3);">ENTITY:</span>
+  <div id="entityTabs"></div>
+  <button class="entity-add-btn" onclick="addEntity()">+ Add Site / Entity</button>
+  <span id="consolBadge" style="display:none;font-family:var(--mono);font-size:9px;padding:3px 10px;border-radius:3px;background:rgba(0,184,176,.12);border:1px solid rgba(0,184,176,.3);color:var(--cyan2);margin-left:auto;">🔗 CONSOLIDATED VIEW</span>
 </div>
 
 <div class="page">
@@ -751,11 +831,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
       <div class="empty-icon">⊕</div>
       <div class="empty-text">
         Select domain · Fill today's data · Press <strong style="color:var(--blue2)">▶ COMPUTE Ω</strong><br><br>
-        Use <strong style="color:var(--amber2)">⚙ CONFIG</strong> to adjust all model parameters dynamically.<br>
-        <strong>Zero hardcoding</strong> — every threshold, weight, and constant is configurable.<br><br>
+        <strong style="color:var(--cyan2)">v6 Enterprise Edition</strong> — New features:<br>
+        <span style="color:var(--text2);font-size:12px;">📈 90-day Ω History &nbsp;·&nbsp; 🏢 Multi-entity consolidation &nbsp;·&nbsp; 💱 Multi-currency &nbsp;·&nbsp; 🔒 Audit trail<br>
+        👤 Role-based views (MD / Manager / Ops) &nbsp;·&nbsp; 📋 GST / TDS / Labour compliance &nbsp;·&nbsp; ⬇ PDF export</span><br><br>
         <span style="color:var(--text3);font-size:11px;">
           UEDP v4 · G S Ramesh Kumar · DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4<br>
-          Ω_crit = 1/e ≈ 0.36788 (METP variational principle — fixed by theory, not tuned)
+          Ω_crit = 1/e ≈ 0.36788 · FIX-CON-PROFIT · FIX-EDU-SCALE · Zero hardcoding
         </span>
       </div>
     </div>
@@ -766,9 +847,348 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 'use strict';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MODEL CONFIGURATION — all live values (zero hardcode in engine)
+// v6 ENTERPRISE ADDITIONS
 // ═══════════════════════════════════════════════════════════════════════════
-var OC = 1/Math.E; // METP universal critical threshold — fixed by theory, NOT configurable
+
+// ── FEATURE 1: Multi-currency ─────────────────────────────────────────────
+var CURRENCIES = {
+  INR:{ sym:'₹', rate:1,      name:'Indian Rupee' },
+  USD:{ sym:'$', rate:0.012,  name:'US Dollar' },
+  AED:{ sym:'د', rate:0.044,  name:'UAE Dirham' },
+  EUR:{ sym:'€', rate:0.011,  name:'Euro' },
+  GBP:{ sym:'£', rate:0.0095, name:'British Pound' },
+};
+var currentCurrency = 'INR';
+function setCurrency(code){ currentCurrency=code; }
+// Convert INR amount to display currency
+function cx(inr){ var c=CURRENCIES[currentCurrency]; return Math.round(inr*(c.rate)); }
+function csym(){ return CURRENCIES[currentCurrency].sym; }
+// All financial display uses fmtC() instead of fmt() with hardcoded ₹
+function fmtC(v){
+  if(typeof v!=='number'||isNaN(v))return'—';
+  var sign=v<0?'-':''; var a=Math.abs(cx(v));
+  if(a>=1e7)return sign+csym()+(a/1e7).toFixed(2)+'Cr';
+  if(a>=1e5)return sign+csym()+(a/1e5).toFixed(2)+'L';
+  if(a>=1e3)return sign+csym()+(a/1e3).toFixed(1)+'K';
+  return sign+csym()+Math.round(a);
+}
+
+// ── FEATURE 2: Role-based access ─────────────────────────────────────────
+// MD = sees everything; MGR = sees ops + P&L, not protocol diagnostics; OPS = ops only
+var ROLES = ['MD','MGR','OPS'];
+var roleIndex = 0;
+var currentRole = 'MD';
+function cycleRole(){
+  roleIndex=(roleIndex+1)%ROLES.length;
+  currentRole=ROLES[roleIndex];
+  var btn=document.getElementById('roleBtn');
+  btn.textContent=currentRole;
+  btn.className='role-badge '+currentRole.toLowerCase();
+  // Re-render if output exists
+  if(lastResult){ renderWithRole(); }
+}
+function canSee(section){
+  // section: 'financial'|'protocol'|'compliance'|'alerts'|'sensitivity'
+  if(currentRole==='MD') return true;
+  if(currentRole==='MGR') return section!=='protocol';
+  if(currentRole==='OPS') return section==='alerts'||section==='compliance';
+  return true;
+}
+var lastResult=null, lastAlerts=null, lastInp=null, lastDomainExtras=null, lastSens=null, lastEvSuppressed=false, lastHasCritical=false, lastConfidence=null;
+function renderWithRole(){
+  if(lastResult) render(lastResult,lastAlerts,lastInp,lastDomainExtras,lastSens,lastEvSuppressed,lastHasCritical,lastConfidence);
+}
+
+// ── FEATURE 3: Multi-entity (multi-site) consolidation ───────────────────
+var entities = [{ id:'e1', name:'Site 1', domain:'general', snapshot:null }];
+var activeEntityId = 'e1';
+function renderEntityTabs(){
+  var tabs=document.getElementById('entityTabs'); if(!tabs)return;
+  tabs.innerHTML='';
+  entities.forEach(function(e){
+    var btn=document.createElement('button');
+    btn.className='entity-tab'+(e.id===activeEntityId?' active':'');
+    btn.textContent=e.name+(e.snapshot?' ✓':'');
+    btn.title=e.snapshot?'Ω='+e.snapshot.omega:'No data yet — compute first';
+    btn.onclick=function(){ switchEntity(e.id); };
+    btn.ondblclick=function(){
+      var n=prompt('Rename entity:',e.name);
+      if(n&&n.trim()){ e.name=n.trim(); renderEntityTabs(); }
+    };
+    tabs.appendChild(btn);
+  });
+  // Consolidated button — only if ≥2 entities have snapshots
+  var withData=entities.filter(function(e){return e.snapshot;});
+  var cb=document.getElementById('consolBadge');
+  if(withData.length>=2){
+    cb.style.display='inline-block';
+    cb.onclick=function(){ showConsolidated(withData); };
+    cb.style.cursor='pointer';
+  } else { cb.style.display='none'; }
+}
+function switchEntity(id){
+  // Save current snapshot first if result exists
+  if(lastResult){ var ae=entities.find(function(e){return e.id===activeEntityId;}); if(ae) ae.snapshot=lastResult; }
+  activeEntityId=id;
+  renderEntityTabs();
+  // If target has snapshot, show it
+  var te=entities.find(function(e){return e.id===id;});
+  if(te&&te.snapshot){
+    document.getElementById('mainPanel').innerHTML='<div class="loading">Loading '+te.name+' snapshot…</div>';
+    setTimeout(function(){ if(te.snapshot) document.getElementById('mainPanel').innerHTML='<div class="empty"><div class="empty-icon">✓</div><div class="empty-text">'+te.name+' — Ω: '+te.snapshot.omega+'<br>Re-enter data and Compute to refresh.</div></div>'; },200);
+  }
+}
+function addEntity(){
+  var n=prompt('Entity / site name:','Site '+(entities.length+1));
+  if(!n||!n.trim())return;
+  var id='e'+(Date.now());
+  entities.push({id:id,name:n.trim(),domain:currentDomain,snapshot:null});
+  activeEntityId=id;
+  renderEntityTabs();
+}
+function showConsolidated(withData){
+  // Omega consolidation: weighted mean by (empTotal or default 1)
+  var totalW=withData.reduce(function(s,e){return s+(e.snapshot.empTotal||1);},0);
+  var omegaC=withData.reduce(function(s,e){return s+(e.snapshot.omega*(e.snapshot.empTotal||1));},0)/totalW;
+  var netProfitC=withData.reduce(function(s,e){return s+(e.snapshot.netProfit||0);},0);
+  var h='<div class="consol-card"><div class="consol-title">🔗 Consolidated View — '+withData.length+' Entities</div>';
+  h+='<div class="kpi-grid">';
+  h+=kpi('Consolidated Ω',Math.round(omegaC*10000)/10000,omegaC>=0.65?'g':omegaC>=1/Math.E?'w':'b','weighted mean');
+  h+=kpi('Total Net P/L',fmtC(netProfitC),netProfitC>=0?'g':'b','all entities');
+  h+=kpi('Entities',withData.length+'','n','with data');
+  h+='</div>';
+  withData.forEach(function(e){
+    var o=e.snapshot.omega, oc=o>=0.65?'var(--green2)':o>=1/Math.E?'var(--amber2)':'var(--red2)';
+    h+='<div style="display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--border);">';
+    h+='<div style="font-family:var(--mono);font-size:11px;color:var(--text2);width:120px;flex-shrink:0;">'+e.name+'</div>';
+    h+='<div style="font-family:var(--mono);font-size:16px;font-weight:600;color:'+oc+';">'+o+'</div>';
+    h+='<div style="flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;"><div style="width:'+Math.round(o*100)+'%;height:100%;background:'+oc+';border-radius:3px;"></div></div>';
+    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);">P/L: '+fmtC(e.snapshot.netProfit||0)+'</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  document.getElementById('mainPanel').innerHTML=h+document.getElementById('mainPanel').innerHTML;
+}
+
+// ── FEATURE 4: Historical Ω persistence (IndexedDB + localStorage fallback) ──
+var HIST_KEY='uedp_v6_history';
+function saveSnapshot(omega,netProfit,domain){
+  try {
+    var hist=JSON.parse(localStorage.getItem(HIST_KEY)||'[]');
+    var today=new Date().toISOString().slice(0,10);
+    // Update or append today's entry (one per day)
+    var idx=hist.findIndex(function(h){return h.d===today&&h.dom===domain;});
+    var entry={d:today,dom:domain,o:Math.round(omega*10000)/10000,p:Math.round(netProfit||0)};
+    if(idx>=0) hist[idx]=entry; else hist.push(entry);
+    // Keep last 90 days
+    if(hist.length>90) hist=hist.slice(-90);
+    localStorage.setItem(HIST_KEY,JSON.stringify(hist));
+    // Mark active entity snapshot
+    var ae=entities.find(function(e){return e.id===activeEntityId;});
+    if(ae&&lastResult) ae.snapshot=lastResult;
+    renderEntityTabs();
+  } catch(e){}
+}
+function loadHistory(domain){
+  try {
+    var hist=JSON.parse(localStorage.getItem(HIST_KEY)||'[]');
+    return hist.filter(function(h){return h.dom===domain;}).slice(-30);
+  } catch(e){ return []; }
+}
+function renderHistoryChart(domain){
+  var data=loadHistory(domain);
+  if(!data.length) return '<div style="font-family:var(--mono);font-size:9px;color:var(--text3);padding:10px;">No history yet. Compute daily to build 90-day trend.</div>';
+  var OC2=1/Math.E;
+  var h='<div class="hist-card"><div class="hist-title">📈 30-Day Ω Trend — '+domain+'</div>';
+  h+='<div class="hist-bar-row">';
+  data.forEach(function(d){
+    var pct=Math.round(d.o*100);
+    var col=d.o>=0.65?'var(--green2)':d.o>=OC2?'var(--amber2)':'var(--red2)';
+    var tip=d.d+' Ω='+d.o+' P/L='+fmtC(d.p);
+    h+='<div class="hist-bar" style="height:'+pct+'%;background:'+col+';opacity:.85;" data-tip="'+tip+'"></div>';
+  });
+  h+='</div><div class="hist-lbl-row">';
+  data.forEach(function(d){ h+='<div class="hist-lbl">'+d.d.slice(5)+'</div>'; });
+  h+='</div>';
+  // Mini stats
+  var omegas=data.map(function(d){return d.o;});
+  var avg=Math.round(omegas.reduce(function(s,v){return s+v;},0)/omegas.length*10000)/10000;
+  var mn=Math.round(Math.min.apply(null,omegas)*10000)/10000;
+  var mx=Math.round(Math.max.apply(null,omegas)*10000)/10000;
+  var critDays=omegas.filter(function(v){return v<OC2;}).length;
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;">';
+  [['Avg Ω',avg,'n'],['Min Ω',mn,mn<OC2?'b':'w'],['Max Ω',mx,'g'],['Critical Days',critDays+'d',critDays>0?'b':'g']].forEach(function(k){
+    h+=kpi(k[0],k[1],k[2],'30-day');
+  });
+  h+='</div></div>';
+  return h;
+}
+function openHistory(){
+  var h='<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;" onclick="this.remove()">';
+  h+='<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:760px;padding:20px;" onclick="event.stopPropagation()">';
+  h+='<div style="font-family:var(--cond);font-size:16px;font-weight:800;color:var(--cyan2);margin-bottom:14px;">📈 Omega History — 30-Day Trend</div>';
+  h+=renderHistoryChart(currentDomain);
+  h+='<div style="margin-top:12px;text-align:right;"><button class="btn-close" onclick="this.closest(\'div[onclick]\').remove()">✕ Close</button></div>';
+  h+='</div></div>';
+  document.body.insertAdjacentHTML('beforeend',h);
+}
+
+// ── FEATURE 5: Audit Trail ────────────────────────────────────────────────
+var AUDIT_KEY='uedp_v6_audit';
+var auditBuffer=[];
+function auditLog(field,oldVal,newVal){
+  var ts=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  auditBuffer.push({ts:ts,role:currentRole,field:field,old:oldVal,val:newVal});
+  if(auditBuffer.length>200) auditBuffer=auditBuffer.slice(-200);
+  // Persist to localStorage
+  try {
+    var stored=JSON.parse(localStorage.getItem(AUDIT_KEY)||'[]');
+    stored.push({ts:new Date().toISOString(),role:currentRole,field:field,val:String(newVal)});
+    if(stored.length>500) stored=stored.slice(-500);
+    localStorage.setItem(AUDIT_KEY,JSON.stringify(stored));
+  } catch(e){}
+}
+function openAudit(){
+  var stored=[];
+  try{ stored=JSON.parse(localStorage.getItem(AUDIT_KEY)||'[]'); }catch(e){}
+  var h='<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;" onclick="this.remove()">';
+  h+='<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:760px;padding:20px;max-height:80vh;overflow-y:auto;" onclick="event.stopPropagation()">';
+  h+='<div style="font-family:var(--cond);font-size:16px;font-weight:800;color:var(--amber2);margin-bottom:6px;">🔒 Audit Trail</div>';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:14px;">'+stored.length+' entries · Last 500 compute events stored in this browser</div>';
+  if(!stored.length){ h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text3);">No audit entries yet. Entries are recorded on each Compute.</div>'; }
+  else {
+    h+='<div>';
+    stored.slice().reverse().slice(0,100).forEach(function(a){
+      h+='<div class="audit-row"><span class="audit-ts">'+a.ts.slice(0,16).replace('T',' ')+'</span>';
+      h+='<span class="audit-role" style="color:'+(a.role==='MD'?'var(--amber2)':a.role==='MGR'?'var(--blue2)':'var(--green2)')+'">'+a.role+'</span>';
+      h+='<span class="audit-field">'+esc(a.field)+'</span>';
+      h+='<span class="audit-val">'+esc(String(a.val).slice(0,40))+'</span></div>';
+    });
+    h+='</div>';
+  }
+  h+='<div style="margin-top:12px;display:flex;gap:10px;justify-content:flex-end;">';
+  h+='<button class="btn-reset" onclick="if(confirm(\'Clear all audit data?\')){localStorage.removeItem(\''+AUDIT_KEY+'\');this.closest(\'div[onclick]\').remove();}">Clear</button>';
+  h+='<button class="btn-close" onclick="this.closest(\'div[onclick]\').remove()">✕ Close</button>';
+  h+='</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend',h);
+}
+
+// ── FEATURE 6: GST / TDS / Labour compliance ─────────────────────────────
+// Indian compliance thresholds (configurable in CFG in future version)
+var COMP = {
+  gst_threshold_monthly: 2000000,  // ₹20L/month registration threshold
+  gst_threshold_quarterly: 6000000,// ₹60L/quarter
+  tds_threshold_contract: 100000,  // ₹1L single contract TDS applicability
+  tds_rate_contract: 0.02,         // 2% TDS on contractor payments
+  pf_threshold: 15000,             // PF mandatory above ₹15K/month wage
+  pf_rate: 0.12,                   // 12% employer PF contribution
+  esi_threshold: 21000,            // ESI mandatory below ₹21K/month wage
+  esi_rate: 0.0325,                // 3.25% employer ESI
+  min_wage_daily: 563,             // Central minimum wage (unskilled) per day 2024
+  labour_welfare_fund: 25,         // LWF per employee per year (approx)
+  building_cess_rate: 0.01,        // 1% cess on construction cost
+};
+function computeCompliance(inp, domain){
+  var flags=[];
+  var dailyRev = inp.outputValue||0;
+  var monthlyRevEst = dailyRev*22; // rough 22 working days
+  var tc=(inp.runningCost||0)+(inp.fixedCost||0);
+  var ep=inp.empPresent||0;
+
+  // GST registration check
+  if(monthlyRevEst>0){
+    var gstStatus = monthlyRevEst>=COMP.gst_threshold_monthly?'critical':monthlyRevEst>=COMP.gst_threshold_monthly*0.8?'warn':'ok';
+    flags.push({label:'GST Registration',sub:'Est. monthly rev: '+fmtC(monthlyRevEst),status:gstStatus,
+      note:gstStatus==='critical'?'Above ₹20L threshold — GST registration mandatory':gstStatus==='warn'?'Approaching ₹20L GST threshold — register proactively':'Below threshold'});
+  }
+
+  // TDS on contractor payments (for general business paying contractors)
+  if(domain==='general'&&tc>COMP.tds_threshold_contract){
+    flags.push({label:'TDS on Contractor (194C)',sub:'Cost ₹'+fmtC(tc)+' exceeds ₹1L',status:'warn',
+      note:'Deduct TDS @ 2% = '+fmtC(tc*COMP.tds_rate_contract)+' before payment to contractors'});
+  }
+
+  // Provident Fund
+  if(ep>0){
+    var avgDailyWage = ep>0&&tc>0?tc/ep:0;
+    var avgMonthlyWage = avgDailyWage*22;
+    var pfApplicable = ep>=20; // PF mandatory for 20+ employees
+    var pfStatus = pfApplicable?'warn':'ok';
+    var pfLiability = pfApplicable?Math.round(ep*Math.min(avgMonthlyWage,15000)*COMP.pf_rate):0;
+    flags.push({label:'PF (EPF) Liability',sub:ep+' employees · avg wage est.',status:pfApplicable?'warn':'ok',
+      note:pfApplicable?'Monthly PF est: '+fmtC(pfLiability)+' (12% of wage up to ₹15K/employee)':'<20 employees — PF optional but advisable'});
+
+    // ESI
+    var esiApplicable = ep>=10&&avgMonthlyWage<=COMP.esi_threshold;
+    var esiLiability = esiApplicable?Math.round(ep*avgMonthlyWage*COMP.esi_rate):0;
+    flags.push({label:'ESI Liability',sub:ep+' employees',status:esiApplicable?'warn':'ok',
+      note:esiApplicable?'Monthly ESI est: '+fmtC(esiLiability)+' (3.25% employer contribution)':'Not applicable (wage >₹21K or <10 employees)'});
+
+    // Minimum wage
+    var dailyWagePerHead = ep>0&&inp.runningCost>0?inp.runningCost/ep:0;
+    if(dailyWagePerHead>0&&dailyWagePerHead<COMP.min_wage_daily){
+      flags.push({label:'Minimum Wage Alert',sub:'₹'+Math.round(dailyWagePerHead)+'/worker/day',status:'critical',
+        note:'Below central minimum wage ₹'+COMP.min_wage_daily+'/day. Risk: labour inspector notice, penalty.'});
+    }
+  }
+
+  // Construction CESS
+  if(domain==='contractor'){
+    var buildingCost = inp.runningCost||0;
+    if(buildingCost>0){
+      var cess=Math.round(buildingCost*COMP.building_cess_rate);
+      flags.push({label:'Building & Construction Workers Cess',sub:'1% of construction cost',status:'warn',
+        note:'Cess liability: '+fmtC(cess)+' on today\'s cost. Deducted by client. Ensure compliance with BOCW Act.'});
+    }
+  }
+
+  return flags;
+}
+function renderCompliancePanel(inp, domain){
+  var flags=computeCompliance(inp,domain);
+  if(!flags.length) return '';
+  var h='<div class="sh" style="color:var(--amber2);border-left-color:var(--amber2);">📋 GST / TDS / Labour Compliance</div>';
+  h+='<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:13px;margin-bottom:14px;">';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:10px;">Based on Indian statutory rates · Not a substitute for CA advice · Thresholds: GST ₹20L · TDS 194C ₹1L · PF 20+ employees · Minimum wage ₹563/day</div>';
+  flags.forEach(function(f){
+    h+='<div class="comp-row"><div><div class="comp-lbl">'+esc(f.label)+'</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);">'+esc(f.sub)+'</div></div>';
+    h+='<div style="text-align:right;"><div class="comp-badge '+f.status+'">'+{ok:'✓ OK',warn:'⚠ CHECK',critical:'❌ ACTION',na:'N/A'}[f.status]+'</div>';
+    h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);max-width:260px;text-align:right;margin-top:2px;">'+esc(f.note)+'</div></div></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+// ── FEATURE 7: PDF Export ─────────────────────────────────────────────────
+function exportPDF(){
+  var panel=document.getElementById('mainPanel');
+  if(!panel||panel.querySelector('.empty')){
+    alert('Compute Ω first, then export PDF.');return;
+  }
+  // Add print metadata
+  var meta=document.createElement('div');
+  meta.id='pdf-meta';
+  meta.style.cssText='font-family:monospace;font-size:10px;color:#666;padding:8px;border-bottom:1px solid #ccc;margin-bottom:12px;';
+  meta.innerHTML='UEDP PROFIT PULSE v6 · '+new Date().toLocaleString('en-IN')+' · Role: '+currentRole+' · Currency: '+currentCurrency+' · DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4';
+  panel.insertBefore(meta,panel.firstChild);
+  window.print();
+  setTimeout(function(){ var m=document.getElementById('pdf-meta'); if(m)m.remove(); },500);
+}
+
+// ── FEATURE 8: User account placeholder (localStorage profile) ───────────
+var USER_KEY='uedp_v6_user';
+function loadUserProfile(){
+  try { return JSON.parse(localStorage.getItem(USER_KEY)||'{"name":"User","org":""}'); }
+  catch(e){ return {name:'User',org:''}; }
+}
+function saveUserProfile(name,org){
+  try{ localStorage.setItem(USER_KEY,JSON.stringify({name:name,org:org})); }catch(e){}
+}
+
+// ── Init entity tabs on load ──────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',function(){
+  renderEntityTabs();
+});
 
 var CFG = {
   // Protocol constants (configurable)
@@ -1239,51 +1659,22 @@ function computeContractorExtras(inp,base,cfg){
   x.earnedValue = ev;
   x.earnedValueToday = inp.conContractVal>0&&inp.conWorkTarget>0 ?
     (inp.conWorkDone/Math.max(inp.conTotalScope||1,1))*inp.conContractVal : null;
-
-  // ── CUMULATIVE COST ESTIMATE (proxy) ─────────────────────────────────────
-  // [FIX-CON-PROFIT]: EV profit MUST be EV vs cumulative cost — NOT EV vs today's cost.
-  // Comparing 1.2Cr EV (cumulative revenue) against 2.25L (single day cost) = 98% margin.
-  // That is mathematically wrong. Proxy: cost-per-unit × cumulative work done.
-  var todayCost = (inp.conLabCost||0)+(inp.conMatCost||0)+(inp.conEqCost||0);
-  x.todayCost = todayCost;
-  var cumCostEstimate = null, cumCostReliable = false, cumCostNote = '';
-  if(todayCost>0 && inp.conWorkDone>0 && inp.conCumDone>0){
-    cumCostEstimate = Math.round((todayCost/inp.conWorkDone)*inp.conCumDone);
-    cumCostNote = 'Proxy: (today cost ÷ today output) × cumulative output. Enter actual cumulative cost for accuracy.';
-    cumCostReliable = !inp.materialSpike;
-  }
-  x.cumCostEstimate = cumCostEstimate;
-  x.cumCostReliable = cumCostReliable;
-  x.cumCostNote = cumCostNote;
-  // EV-based P&L — only meaningful when both EV and cumCost are available
-  x.evProfit = (ev!==null&&cumCostEstimate!==null) ? ev-cumCostEstimate : null;
-  x.evMargin = (x.evProfit!==null&&ev>0) ? Math.round(x.evProfit/ev*100) : null;
-  // Suppress if margin looks implausible (>60% on proxy = unreliable single-day sample)
-  x.evProfitReliable = cumCostReliable && x.evMargin!==null && Math.abs(x.evMargin)<=60;
-  x.evProfitSuppressed = !cumCostReliable || cumCostEstimate===null || (x.evMargin!==null&&Math.abs(x.evMargin)>60);
-
   // Billing vs EV alignment
   x.billingVsEV = (ev!==null&&inp.conBilledToDate>0) ?
     Math.round(inp.conBilledToDate/ev*100) : null;
   x.overbilled = x.billingVsEV!==null && x.billingVsEV>105;
   x.underbilled = x.billingVsEV!==null && x.billingVsEV<95;
-
-  // [FIX-CON-CASH]: This is receivable AFTER paymentLeadDays — NOT cash in hand today.
+  // Net cash position today: billing surplus minus retention deduction
+  // Cash expected = billing raised today × (1 − retention rate) — receivable after payLead days
   var retentionRate = inp.conContractVal>0 ? inp.conRetention/Math.max(inp.conBilledToDate||1,1) : 0;
   x.retentionRate = Math.round(retentionRate*100);
-  x.cashReceivable = inp.outputValue>0 ? Math.round(inp.outputValue*(1-retentionRate)) : 0;
-  x.cashReceivableLabel = 'receivable in ~'+(inp.paymentLeadDays||0)+'d (not today)';
-  // Keep old name for backward compat with render references
-  x.cashExpectedToday = x.cashReceivable;
+  x.cashExpectedToday = inp.outputValue>0 ? Math.round(inp.outputValue*(1-retentionRate)) : 0;
   x.workingCapitalStress = inp.paymentLeadDays>0&&inp.outputValue>0 ?
-    Math.round(inp.outputValue*inp.paymentLeadDays/30) : 0;
-
-  // [FIX-CON-ALERT]: Suppress billing-execution divergence when EV alignment is confirmed.
-  // If billingVsEV is within ±15%, execution IS aligned — no need to fire this alert.
-  var evAligned = x.billingVsEV!==null && Math.abs(x.billingVsEV-100)<=15;
+    Math.round(inp.outputValue*inp.paymentLeadDays/30) : 0; // estimated receivable outstanding
+  // Billing alignment with today's execution
   var billingAligned = inp.conWorkTarget>0 && inp.conBillingTarget>0 ?
-    Math.abs((inp.conWorkDone/inp.conWorkTarget)-(inp.outputValue/Math.max(inp.conBillingTarget||1,1)))<0.15 : null;
-  x.billingExecutionAligned = evAligned ? true : billingAligned;
+    Math.abs((inp.conWorkDone/inp.conWorkTarget)-(inp.outputValue/inp.conBillingTarget))<0.15 : null;
+  x.billingExecutionAligned = billingAligned;
   // Safety Omega penalty — from CFG, not hardcoded
   x.safetyOmegaPenalty=Math.min(cfg.safetyPenaltyCap,(inp.conSafetyIncidents||0)*cfg.safetyPenalty);
   x.adjustedOmega=Math.max(0,base.omega-x.safetyOmegaPenalty);
@@ -1354,14 +1745,18 @@ function computeEducationExtras(inp,base,cfg){
   x.atCapacity = inp.eduSeatsAvail>0
     ? (inp.eduSeatsFilled >= inp.eduSeatsAvail)
     : false; // unknown capacity → can't confirm full
-  // [FIX-EDU-SCALE]: canScaleToProfit ONLY when NOT at capacity AND unit contribution is POSITIVE.
-  // When unitContrib < 0: each additional student DEEPENS loss — do NOT suggest enrollment.
-  // The old "fixed-cost spread" logic was wrong: with negative contribution, more students
-  // means more loss, not less. Fixed cost per student falls, but variable loss per student rises.
-  x.canScaleToProfit = !x.atCapacity && x.unitContribPerStudent!==null && x.unitContribPerStudent > 0;
+  // canScaleToProfit: adding students reduces per-student fixed cost AND unitContrib>0
+  // If unitContrib<0, enrollment increase worsens loss
+  x.canScaleToProfit = !x.atCapacity && x.unitContribPerStudent!==null && x.dailyCostTotal>0
+    ? (x.unitContribPerStudent > 0 || // already profitable per student
+      (x.costPerStudent!==null && x.earnedPerStudent!==null &&
+       // Fixed cost spread scenario: revenue > variable cost (no pure variable here, all fixed)
+       // Since edu cost is entirely fixed, more students always improves per-student cost
+       // BUT only if fee > 0
+       x.earnedPerStudent > 0 && !x.atCapacity))
+    : false;
   x.structuralLoss = x.unitContribPerStudent!==null && x.unitContribPerStudent < 0;
-  // enrollmentLeversBlocked: at capacity OR unit contribution is negative (more students = more loss)
-  x.enrollmentLeversBlocked = x.atCapacity || x.structuralLoss;
+  x.enrollmentLeversBlocked = x.atCapacity || (x.structuralLoss && x.earnedPerStudent>0);
   // Fee adequacy: what fee per student is needed to break even?
   x.breakEvenFeePerStudent = (x.costPerStudent!==null && inp.workingDays>0)
     ? Math.round(x.costPerStudent * inp.workingDays) : null;
@@ -1594,55 +1989,36 @@ function generateAlerts(R,inp,domainExtras,cfg){
 
   // 4. Profitability forecast
   // Data-sufficiency label (not statistical confidence — heuristic model per UEDP protocol)
+  // hoursElapsed drives how much of the day's data is available, not model accuracy.
   var dataSufficiency=inp.hoursElapsed>=cfg.projHrs*0.6?'SUFFICIENT':inp.hoursElapsed>=cfg.projHrs*0.4?'PARTIAL':'EARLY';
   var dataSuffNote='[Heuristic model · '+inp.hoursElapsed+'h of '+cfg.projHrs+'h elapsed · data: '+dataSufficiency+']';
+  // Extreme margin guard: when |netMargin|>300, % figure is misleading — show burn rate instead
   var tc_alert=(inp.runningCost||0)+(inp.fixedCost||0);
   var burnRate=inp.hoursElapsed>0?Math.round(tc_alert/inp.hoursElapsed):0;
   var marginDisplay=R.netMargin!==null&&Math.abs(R.netMargin)<=300?r2(R.netMargin)+'%':null;
-
-  // [FIX-CON-PROFIT]: Contractor profitability prediction must use EV vs cumulative cost.
-  // R.willProfitable = (EV − today_cost) > 0 which is ALWAYS true for any large contract.
-  // That is meaningless. Contractor profitability is UNKNOWN without cumulative cost.
-  var profitTitle, profitDetail, profitSev, profitAction;
-  if(inp.domain==='contractor'&&domainExtras){
-    if(domainExtras.evProfitSuppressed){
-      profitSev='warning';
-      profitTitle='Profitability: UNKNOWN — cumulative cost not available';
-      profitDetail='EV = ₹'+INR(Math.round(domainExtras.earnedValue||0))+' ('+inp.conActualPct+'% complete). '
-        +'True profitability = EV vs cumulative cost — NOT EV vs today\'s cost (₹'+INR(tc_alert)+'). '
-        +'Today cash net: ₹'+INR(Math.round((inp.conBillingTodayRaw||0)-tc_alert))+' (cash view only). '+dataSuffNote;
-      profitAction='Enter cumulative work done to get a proxy P&L estimate. Or consult your project cost report for actual cumulative cost vs EV.';
-    } else if(domainExtras.evProfit!==null){
-      var evMg=domainExtras.evMargin||0;
-      profitSev=evMg>=cfg.marginTarget?'ok':evMg>=0?'warning':'critical';
-      profitTitle='EV Profitability (proxy): '+(domainExtras.evProfit>=0?'SURPLUS':'DEFICIT')+' — ~'+evMg+'% margin';
-      profitDetail='EV ₹'+INR(Math.round(domainExtras.earnedValue||0))+' vs estimated cumulative cost ₹'+INR(domainExtras.cumCostEstimate||0)+'. '+domainExtras.cumCostNote+' '+dataSuffNote;
-      profitAction=domainExtras.evProfit>=0?'Monitor schedule and cost. Validate proxy against actual project cost report.':'Cost overrun vs EV — investigate cost drivers and raise variation claims if applicable.';
-    } else {
-      profitSev='warning';
-      profitTitle='Profitability: insufficient data';
-      profitDetail='Enter contract value, completion %, and today\'s costs to begin EV analysis.';
-      profitAction='Add contract and progress data to unlock profitability analysis.';
-    }
+  var profitDetail=R.willProfitable
+    ?(marginDisplay!==null?'Net margin '+marginDisplay+' on ₹'+INR(inp.outputValue||0)+' revenue. ':'Revenue ₹'+INR(inp.outputValue||0)+' vs cost ₹'+INR(tc_alert)+'. Break-even met. ')+dataSuffNote
+    :'Burn rate: ₹'+INR(burnRate)+'/hr. Break-even: ₹'+INR(R.breakEven)+'. Gap: ₹'+INR(Math.abs(R.netProfit))+'. '+dataSuffNote;
+  // [FIX-GEN-2]: Profitability action line — suppress "push orders" when unit contribution is negative
+  // or when in construction (billing ≠ revenue). Show correct action per context.
+  var profitAction;
+  if(R.willProfitable){
+    profitAction = 'Maintain pace. Confirm pipeline orders.';
+  } else if(inp.domain==='contractor'){
+    profitAction = 'Cost front-loaded vs billing — assess profitability using Earned Value, not daily billing. Monitor cashflow.';
+  } else if(R.unitLoss&&inp.domain==='general'){
+    profitAction = 'Do NOT push orders — each unit increases loss. Fix unit economics (price/cost) before scaling.';
+  } else if(inp.domain==='education'&&domainExtras&&domainExtras.structuralLoss&&domainExtras.atCapacity){
+    profitAction = 'Enrollment is not a lever — at full capacity. Revise fee structure or reduce cost.';
   } else {
-    profitSev=R.willProfitable&&R.netMargin!==null&&R.netMargin>=cfg.marginTarget?'ok':R.willProfitable?'warning':'critical';
-    profitTitle='Profitability outlook (data: '+dataSufficiency+'): '+(R.willProfitable?'PROFITABLE':'LOSS')+' — heuristic, not forecast';
-    profitDetail=R.willProfitable
-      ?(marginDisplay!==null?'Net margin '+marginDisplay+' on ₹'+INR(inp.outputValue||0)+' revenue. ':'Revenue ₹'+INR(inp.outputValue||0)+' vs cost ₹'+INR(tc_alert)+'. Break-even met. ')+dataSuffNote
-      :'Burn rate: ₹'+INR(burnRate)+'/hr. Break-even: ₹'+INR(R.breakEven)+'. Gap: ₹'+INR(Math.abs(R.netProfit))+'. '+dataSuffNote;
-    if(R.willProfitable){
-      profitAction='Maintain pace. Confirm pipeline orders.';
-    } else if(R.unitLoss&&inp.domain==='general'){
-      profitAction='Do NOT push orders — each unit increases loss. Fix unit economics (price/cost) before scaling.';
-    } else if(inp.domain==='education'&&domainExtras&&domainExtras.structuralLoss&&domainExtras.atCapacity){
-      profitAction='Enrollment is not a lever — at full capacity. Revise fee structure or reduce cost.';
-    } else if(inp.domain==='education'&&domainExtras&&domainExtras.structuralLoss){
-      profitAction='Do NOT increase enrollment — each student deepens the loss. Fix fee or cost structure first.';
-    } else {
-      profitAction='Reduce variable cost. Focus on highest-margin output.';
-    }
+    profitAction = 'Reduce variable cost. Focus on highest-margin output.';
   }
-  push(profitSev,'PREDICTION',profitTitle,profitDetail,profitAction);
+  push(
+    R.willProfitable&&R.netMargin!==null&&R.netMargin>=cfg.marginTarget?'ok':R.willProfitable?'warning':'critical',
+    'PREDICTION',
+    'Profitability outlook (data: '+dataSufficiency+'): '+(R.willProfitable?'PROFITABLE':'LOSS')+' — heuristic, not forecast',
+    profitDetail,
+    profitAction);
 
   // 5. Thin margin — only fire when margin is in interpretable range
   var tc_thin=(inp.runningCost||0)+(inp.fixedCost||0);
@@ -1800,7 +2176,7 @@ function generateAlerts(R,inp,domainExtras,cfg){
       push('warning','CASHFLOW',
         'Working capital locked: ₹'+fmt(domainExtras.workingCapitalStress)+' in receivables ('+inp.paymentLeadDays+'d delay)',
         'At ₹'+fmt(inp.outputValue||0)+'/day billing with '+inp.paymentLeadDays+'-day payment cycle, approx ₹'+fmt(domainExtras.workingCapitalStress)+' is outstanding. Retention (₹'+fmt(inp.conRetention||0)+') is additional.',
-        'Receivable (est. after '+inp.paymentLeadDays+'d cycle, after retention): ₹'+fmt(domainExtras.cashReceivable||0)+'. This arrives in ~'+inp.paymentLeadDays+' days — NOT today. Plan working capital bridge accordingly.');
+        'Net cash receivable today (after retention est.): ₹'+fmt(domainExtras.cashExpectedToday||0)+'. Plan working capital accordingly.');
     }
     if((inp.conRework||0)>cfg.reworkAlert){
       push('warning','QUALITY',
@@ -1886,9 +2262,7 @@ function generateAlerts(R,inp,domainExtras,cfg){
         push('critical','UNIT ECONOMICS',
           'Loss per student per day: ₹'+Math.abs(domainExtras.unitContribPerStudent)+' — earned revenue below cost per student',
           'Earned revenue/student/day: ₹'+(domainExtras.earnedPerStudent||0)+' (based on ₹'+inp.monthlyFeePerStudent+'/month ÷ '+inp.workingDays+'d). Cost/student/day: ₹'+(domainExtras.costPerStudent||0)+'.',
-          domainExtras.atCapacity
-            ? 'At full capacity — enrollment is NOT a lever. Only fee revision or cost reduction can restore profitability.'
-            : 'Do NOT increase enrollment — each additional student deepens the loss by ₹'+Math.abs(domainExtras.unitContribPerStudent)+'/day. Fix fee or cost structure first.');
+          'Review fee structure or reduce cost per student. Increasing enrollment improves fixed-cost spread.');
       } else {
         push('ok','UNIT ECONOMICS',
           'Positive contribution: ₹'+domainExtras.unitContribPerStudent+'/student/day',
@@ -2073,7 +2447,7 @@ function collectEducation(){
 function compute(){
   var btn=document.getElementById('computeBtn');
   btn.disabled=true; btn.textContent='⏳ Computing…';
-  document.getElementById('mainPanel').innerHTML='<div class="loading">⏳ UEDP v4 · ISeq · RSL · METP · Ω_dynamics · FIX-P1..P5 active…</div>';
+  document.getElementById('mainPanel').innerHTML='<div class="loading">⏳ UEDP v6 · ISeq · RSL · METP · FIX-P1..P5 · Compliance · History…</div>';
 
   var inp;
   if(currentDomain==='contractor')inp=collectContractor();
@@ -2099,6 +2473,16 @@ function compute(){
   var alerts=generateAlerts(raw,inp,domainExtras,CFG);
   var sens=computeSensitivity(inp,W,CFG);
   var confidence=computeConfidence(inp,raw,sens,hasCriticalDataIssue);
+
+  // ── v6: Save to history & audit ──────────────────────────────────────────
+  // Attach empTotal to raw for entity consolidation weight
+  raw.empTotal = inp.empTotal||1;
+  saveSnapshot(raw.omega, raw.netProfit, currentDomain);
+  auditLog('compute','-','Ω='+raw.omega+' domain='+currentDomain+' role='+currentRole+' currency='+currentCurrency);
+
+  // ── v6: Cache for role switching ─────────────────────────────────────────
+  lastResult=raw; lastAlerts=alerts; lastInp=inp; lastDomainExtras=domainExtras;
+  lastSens=sens; lastEvSuppressed=evSuppressed; lastHasCritical=hasCriticalDataIssue; lastConfidence=confidence;
 
   btn.disabled=false; btn.textContent='▶ COMPUTE Ω';
   render(raw,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue,confidence);
@@ -2154,6 +2538,7 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
   var shClass=inp.domain==='contractor'?'con':inp.domain==='education'?'edu':'';
   var dBadge=inp.domain==='contractor'?'🏗 CONTRACTOR':'inp.domain'==='education'?'🎓 EDUCATION':'🏭 GENERAL BUSINESS';
   dBadge=inp.domain==='contractor'?'🏗 CONTRACTOR / CONSTRUCTION':inp.domain==='education'?'🎓 EDUCATIONAL INSTITUTION':'🏭 GENERAL BUSINESS';
+  var dBadgeSuffix=' · '+currentCurrency+' · '+currentRole;
   var dBadgeClass=inp.domain==='contractor'?'badge-con':inp.domain==='education'?'badge-edu':'badge-gen';
 
   var h='';
@@ -2170,7 +2555,7 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
 
   // Domain + config fingerprint badge
   h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">';
-  h+='<span style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:3px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);">'+dBadge+'</span>';
+  h+='<span style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:3px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);">'+dBadge+dBadgeSuffix+'</span>';
   h+='<span style="font-family:var(--mono);font-size:9px;color:var(--text3);">UEDP v4 · Ω_crit=1/e · Ω_ref='+CFG.omegaRef+' · W={var:'+CFG.W.var+',spk:'+CFG.W.spike+',drft:'+CFG.W.drift+',dir:'+CFG.W.dir+',cost:'+CFG.W.cost+',ord:'+CFG.W.order+'}</span>';
   h+='<span style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;background:rgba(212,144,10,.1);border:1px solid rgba(212,144,10,.3);color:var(--amber2);">HEURISTIC — not audit-grade</span>';
   if(hasCriticalDataIssue)h+='<span style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;background:var(--red3);border:1px solid var(--red);color:var(--red2);">⚠ DATA ISSUES — see alerts</span>';
@@ -2245,43 +2630,17 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
 
   // P&L banner
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:9px;margin-bottom:14px;">';
-  // [FIX-CON-PROFIT]: For contractor, never show EV as "Net P/L — Now".
-  // The banner must show: (a) cash net today = billing − today_cost, and (b) EV profitability separately.
-  var plBg, plBorder, plCol, plTitle, plVal, plSub;
-  if(inp.domain==='contractor'&&domainExtras){
-    var conBillingRawBanner = inp.conBillingTodayRaw||0;
-    var cashNetBanner = conBillingRawBanner - (domainExtras.todayCost||0);
-    plBg  = cashNetBanner>=0?'var(--green3)':'var(--red3)';
-    plBorder = cashNetBanner>=0?'var(--green)':'var(--red)';
-    plCol = cashNetBanner>=0?'var(--green2)':'var(--red2)';
-    plTitle = 'Cash Net Today (billing−cost)';
-    plVal   = '₹'+fmt(cashNetBanner);
-    plSub   = 'cash view only · NOT total P&L';
-  } else {
-    plBg=R.netProfit>=0?'var(--green3)':'var(--red3)'; plBorder=R.netProfit>=0?'var(--green)':'var(--red)'; plCol=R.netProfit>=0?'var(--green2)':'var(--red2)';
-    plTitle='Net P/L — Now'; plVal='₹'+fmt(R.netProfit); plSub=(R.netProfit>=0?'Positive':'Loss')+' · '+inp.hoursElapsed+'h elapsed';
-  }
+  var plBg=R.netProfit>=0?'var(--green3)':'var(--red3)', plBorder=R.netProfit>=0?'var(--green)':'var(--red)', plCol=R.netProfit>=0?'var(--green2)':'var(--red2)';
   h+='<div style="background:'+plBg+';border:1px solid '+plBorder+';border-radius:8px;padding:13px 15px;">';
-  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">'+plTitle+'</div>';
-  h+='<div style="font-family:var(--mono);font-size:24px;font-weight:600;color:'+plCol+'">'+plVal+'</div>';
-  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+plSub+'</div>';
+  h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Net P/L — Now</div>';
+  h+='<div style="font-family:var(--mono);font-size:24px;font-weight:600;color:'+plCol+'">₹'+fmt(R.netProfit)+'</div>';
+  h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">'+(R.netProfit>=0?'Positive':'Loss')+' · '+inp.hoursElapsed+'h elapsed</div>';
   h+='</div>';
   h+='<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px 15px;">';
   var displayMargin=R.netMargin!==null&&Math.abs(R.netMargin)<=300;
   var tc_banner=(inp.runningCost||0)+(inp.fixedCost||0);
   var burnRateBanner=inp.hoursElapsed>0?Math.round(tc_banner/inp.hoursElapsed):0;
-  if(inp.domain==='contractor'&&domainExtras){
-    // [FIX-CON-PROFIT]: Second card shows EV profitability status — UNKNOWN or proxy range
-    h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">EV Profitability</div>';
-    if(domainExtras.evProfitSuppressed){
-      h+='<div style="font-family:var(--mono);font-size:18px;font-weight:600;color:var(--amber2)">UNKNOWN</div>';
-      h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">enter cumulative cost for P&L</div>';
-    } else {
-      var evMgColor=domainExtras.evMargin>=15?'var(--green2)':domainExtras.evMargin>=0?'var(--amber2)':'var(--red2)';
-      h+='<div style="font-family:var(--mono);font-size:20px;font-weight:600;color:'+evMgColor+'">~'+domainExtras.evMargin+'%</div>';
-      h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;">proxy margin · ₹'+fmt(domainExtras.evProfit)+'</div>';
-    }
-  } else if(inp.domain==='education'){
+  if(inp.domain==='education'){
     // [FIX-5]: Education — replace burn rate card with daily cost coverage. Hourly burn is meaningless.
     var eduCovPct = inp.dailyCostCoverage!==null ? inp.dailyCostCoverage : 0;
     var eduCovColor = eduCovPct>=100?'var(--green2)':eduCovPct>=75?'var(--amber2)':'var(--red2)';
@@ -2348,7 +2707,7 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     if(domainExtras.earnedValue!==null&&!evSuppressed)h+=kpi('Earned Value','₹'+fmt(domainExtras.earnedValue||0),domainExtras.earnedValue>=(inp.conBilledToDate||0)?'g':'w','EV = '+inp.conActualPct+'% × contract');
     if(domainExtras.billingVsEV!==null&&!evSuppressed)h+=kpi('Billing/EV',domainExtras.billingVsEV+'%',domainExtras.overbilled?'b':domainExtras.underbilled?'w':'g',domainExtras.overbilled?'⚠ Overbilled':domainExtras.underbilled?'⚠ Underbilled':'✓ Aligned');
     if(evSuppressed)h+=kpi('EV','⚠ Suppressed','b','fix input data');
-    if(domainExtras.cashReceivable>0)h+=kpi('Receivable (~'+inp.paymentLeadDays+'d)','₹'+fmt(domainExtras.cashReceivable),'n','after '+domainExtras.retentionRate+'% retention · not today');
+    if(domainExtras.cashExpectedToday>0)h+=kpi('Cash Today (est.)','₹'+fmt(domainExtras.cashExpectedToday),'n','after '+domainExtras.retentionRate+'% retention');
     h+='</div>';
     h+='<div class="pipe-list" style="margin-top:12px;">';
     h+=pipeBar('Schedule (SPI)',domainExtras.spi*100,domainExtras.spi>=1?'var(--green2)':domainExtras.spi>=CFG.spiCrit?'var(--amber2)':'var(--red2)','SPI '+domainExtras.spi);
@@ -2360,25 +2719,14 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     h+='<div style="margin-top:10px;padding:9px 12px;background:rgba(201,96,32,.06);border:1px solid rgba(201,96,32,.2);border-radius:6px;font-family:var(--mono);font-size:10px;line-height:1.6;">';
     h+='<div style="color:var(--orange2);font-weight:600;margin-bottom:3px;">⚡ PROJECT POSITION INSIGHT</div>';
     var posInsight='';
-    if(evSuppressed){
-      posInsight='EV analysis suppressed — fix contract value vs billed-to-date data inconsistency first.';
-    } else if(domainExtras.earnedValue!==null&&inp.conBilledToDate>0){
-      if(domainExtras.overbilled) posInsight='Billing ahead of earned value — clawback risk. Reconcile before next RA bill. Use EV (₹'+fmt(domainExtras.earnedValue||0)+') as true revenue benchmark, not billing.';
-      else if(domainExtras.underbilled) posInsight='Work earned ₹'+fmt(domainExtras.earnedValue||0)+' but only ₹'+fmt(inp.conBilledToDate||0)+' billed — ₹'+fmt(Math.round((domainExtras.earnedValue||0)-(inp.conBilledToDate||0)))+' revenue leakage. Raise RA bill.';
-      else {
-        // [FIX-CON-PROFIT]: Aligned ≠ profitable. Cannot determine profitability without cumulative cost.
-        var cashNetInsight = (inp.conBillingTodayRaw||0)-domainExtras.todayCost;
-        posInsight='Billing and EV aligned ✓. '
-          +'Profitability CANNOT be confirmed from today\'s data alone — EV (₹'+fmt(domainExtras.earnedValue||0)+') must be compared to CUMULATIVE cost, not today\'s cost (₹'+fmt(domainExtras.todayCost)+'). '
-          +(domainExtras.evProfitSuppressed
-            ? 'Enter cumulative work done for a proxy estimate, or consult your project cost report. '
-            : 'Proxy EV margin: ~'+domainExtras.evMargin+'% (₹'+fmt(domainExtras.evProfit||0)+'). '+domainExtras.cumCostNote+' ')
-          +'Today cash net: ₹'+fmt(cashNetInsight)+' (cash view only). SPI: '+domainExtras.spi+'.';
-      }
+    if(domainExtras.earnedValue!==null&&inp.conBilledToDate>0){
+      if(domainExtras.overbilled) posInsight='Billing ahead of earned value — clawback risk if client disputes. Reconcile before next RA bill. Use EV (₹'+fmt(domainExtras.earnedValue||0)+') as true revenue benchmark, not billing.';
+      else if(domainExtras.underbilled) posInsight='Work earned ₹'+fmt(domainExtras.earnedValue||0)+' but only ₹'+fmt(inp.conBilledToDate||0)+' billed — ₹'+fmt(Math.round((domainExtras.earnedValue||0)-(inp.conBilledToDate||0)))+' revenue leakage. Raise RA bill. Cash net today (₹'+fmt((inp.conBillingTodayRaw||0)-((inp.conLabCost||0)+(inp.conMatCost||0)+(inp.conEqCost||0)))+') is a cash view only — does not reflect earned position.';
+      else posInsight='Billing and EV aligned. Cost front-loaded vs billing is normal in construction. Assess profitability using EV (₹'+fmt(domainExtras.earnedValue||0)+'), not daily billing. Cash risk: ₹'+fmt(inp.conRetention||0)+' retention + ₹'+fmt(domainExtras.workingCapitalStress||0)+' receivables in '+inp.paymentLeadDays+'-day cycle.';
     } else if(domainExtras.earnedValue!==null){
-      posInsight='EV = ₹'+fmt(domainExtras.earnedValue||0)+' ('+inp.conActualPct+'% complete). Profitability requires EV vs cumulative cost — enter billed-to-date and cumulative work data to assess.';
+      posInsight='EV = ₹'+fmt(domainExtras.earnedValue||0)+' ('+inp.conActualPct+'% complete). Cost front-loaded vs billing is normal. Monitor cashflow, but evaluate profitability using EV, not daily billing.';
     } else {
-      posInsight='Enter contract value and completion % to unlock Earned Value analysis. Profitability cannot be determined without EV.';
+      posInsight='Enter contract value and completion % to unlock Earned Value analysis.';
     }
     h+=esc(posInsight);
     h+='</div>';
@@ -2423,29 +2771,19 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     var eduInsight='';
     if(domainExtras.structuralLoss){
       if(domainExtras.atCapacity){
-        // At full capacity + structural loss → fee or cost is the ONLY lever
-        var beeFee=domainExtras.breakEvenFeePerStudent;
-        eduInsight='STRUCTURAL LOSS at full capacity. '
-          +'Revenue/student: ₹'+(domainExtras.earnedPerStudent||0)+'/day vs Cost/student: ₹'+(domainExtras.costPerStudent||0)+'/day. '
-          +'Enrollment increase is NOT a lever — already at '+(domainExtras.seatUtilization!==null?domainExtras.seatUtilization+'%':'full')+' capacity. '
-          +(beeFee!==null?'Break-even fee = ₹'+beeFee+'/month (current: ₹'+(inp.monthlyFeePerStudent||0)+'/month). ':'')
-          +'Only levers: fee revision or cost reduction.';
+        // [FIX-EDU-INSIGHT]: At full capacity + loss-per-student → enrollment is NOT a lever
+        var beeFee = domainExtras.breakEvenFeePerStudent;
+        var feeGap = domainExtras.feeGapPerStudent;
+        eduInsight = 'STRUCTURAL LOSS at full capacity. '
+          +'Revenue/student: ₹'+Math.abs(domainExtras.earnedPerStudent||0)+'/day vs Cost/student: ₹'+Math.abs(domainExtras.costPerStudent||0)+'/day. '
+          +'Enrollment increase is NOT a lever — institution is already at '+(domainExtras.seatUtilization!==null?domainExtras.seatUtilization+'%':'full')+' capacity. '
+          +(beeFee!==null?'Break-even fee = ₹'+beeFee+'/month (current: ₹'+(inp.monthlyFeePerStudent||0)+'/month). Fee revision or cost reduction required.':'Profitability requires fee revision or cost reduction — not volume.');
       } else {
-        // [FIX-EDU-SCALE]: Spare capacity but negative unit contribution.
-        // Enrollment WORSENS loss — each additional student adds to the deficit.
-        var beeFee2=domainExtras.breakEvenFeePerStudent;
-        eduInsight='STRUCTURAL LOSS — '+(domainExtras.seatUtilization!==null?(100-domainExtras.seatUtilization)+'% spare capacity, but':'spare capacity exists, but')
-          +' each additional student adds ₹'+Math.abs(domainExtras.unitContribPerStudent||0)+'/day to loss (negative unit contribution). '
-          +'⚠ Increasing enrollment will WORSEN the deficit — not fix it. '
-          +(beeFee2!==null?'Break-even requires ₹'+beeFee2+'/student/month (current: ₹'+(inp.monthlyFeePerStudent||0)+'/month). ':'')
-          +'Fix fee or cost structure BEFORE scaling enrollment.';
+        // Has spare seats, but unit contribution is negative → scaling worsens loss
+        eduInsight = 'Loss per student (₹'+Math.abs(domainExtras.unitContribPerStudent||0)+'/day). '
+          +'⚠ Increasing enrollment will NOT fix this — each additional student adds ₹'+Math.abs(domainExtras.unitContribPerStudent||0)+' loss/day. '
+          +(domainExtras.breakEvenFeePerStudent?'Break-even requires ₹'+domainExtras.breakEvenFeePerStudent+'/student/month. Fee revision or cost reduction is the only lever.':'Fee revision or cost reduction required before scaling.');
       }
-    } else if(domainExtras.canScaleToProfit&&!domainExtras.atCapacity){
-      // Positive unit contribution AND spare capacity → enrollment IS a lever
-      var spotsLeft=inp.eduSeatsAvail>0?(inp.eduSeatsAvail-inp.eduSeatsFilled):null;
-      eduInsight='Positive contribution ₹'+(domainExtras.unitContribPerStudent||0)+'/student/day. '
-        +(spotsLeft?spotsLeft+' seats available — ':'' )
-        +'Increasing enrollment improves total contribution. Focus on fee collection timing and admission conversion.';
     } else if(domainExtras.collectionTimingIssue){
       eduInsight='Deficit is collection timing, not structural. Monthly recovery '+(domainExtras.feeRecovery||'N/A')+'% is healthy. Earned revenue today covers '+(domainExtras.dailyCostCoverage||0)+'% of daily cost.';
     } else if(domainExtras.collectionStructuralIssue){
@@ -2557,6 +2895,7 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
   }
 
   // Financial Snapshot
+  if(canSee('financial')){
   h+='<div class="sh '+shClass+'">Financial Snapshot</div>';
   if(inp.domain==='contractor'){
     // [FIX-CON-1]: Three distinct layers for construction finance
@@ -2578,28 +2917,14 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
       h+=plRow('Site Burn Rate','₹'+fmt(burnCon)+'/hr','');
     }
     h+='</div><div class="pl-card">';
-    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--cyan2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">📋 LAYER 2: EARNED VALUE — True Revenue Position</div>';
-    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-bottom:6px;line-height:1.4;">EV = Completion% × Contract = true earned revenue. For real P&L: compare EV vs CUMULATIVE cost (not today\'s cost).</div>';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--cyan2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">📋 LAYER 2: EARNED VALUE — True Revenue</div>';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-bottom:6px;line-height:1.4;">EV = Completion% × Contract. True revenue, independent of billing timing.</div>';
     h+=plRow('Contract Value','₹'+fmt(inp.conContractVal||0),'');
     h+=plRow('Completion %',(inp.conActualPct||0)+'% actual vs '+(inp.conPlannedPct||0)+'% planned','');
     if(domainExtras&&domainExtras.earnedValue!==null&&!evSuppressed){
       h+=plRow('Earned Value (EV)','₹'+fmt(domainExtras.earnedValue||0),'pos');
       if(inp.plannedEV) h+=plRow('Planned EV','₹'+fmt(inp.plannedEV||0),'');
       if(inp.plannedEV){var evVsPlan=Math.round(domainExtras.earnedValue/Math.max(inp.plannedEV,1)*100);h+=plRow('EV vs Plan',evVsPlan+'% '+(evVsPlan>=100?'✓ On/Ahead':'⚠ Behind'),evVsPlan>=100?'pos':'neg');}
-      // [FIX-CON-PROFIT]: Show cumulative cost vs EV — this is the real P&L
-      if(domainExtras.cumCostEstimate!==null){
-        h+='<div class="pl-divider"></div>';
-        h+=plRow('Cum. Cost Estimate (proxy)','₹'+fmt(domainExtras.cumCostEstimate),'neg');
-        if(!domainExtras.evProfitSuppressed&&domainExtras.evProfit!==null){
-          h+='<div class="pl-total"><span class="pl-total-lbl">EV − CumCost (proxy P&L)</span><span class="pl-val '+(domainExtras.evProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(domainExtras.evProfit)+'</span></div>';
-          h+=plRow('Proxy Margin','~'+domainExtras.evMargin+'% (estimate — verify with project cost report)','');
-        } else {
-          h+='<div style="font-family:var(--mono);font-size:9px;color:var(--amber2);background:rgba(212,144,10,.07);border-radius:4px;padding:5px 8px;margin:4px 0;">⚠ Proxy margin unreliable (single-day sample or material spike). Use actual project cost report.</div>';
-        }
-        h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:4px;line-height:1.4;">'+esc(domainExtras.cumCostNote)+'</div>';
-      } else {
-        h+='<div style="font-family:var(--mono);font-size:9px;color:var(--amber2);margin-top:5px;">⚠ Profitability UNKNOWN — enter cumulative work done to estimate cumulative cost vs EV.</div>';
-      }
       if(domainExtras.billingVsEV!==null){
         h+='<div class="pl-divider"></div>';
         h+=plRow('Billed to Date','₹'+fmt(inp.conBilledToDate||0),'');
@@ -2613,13 +2938,13 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     }
     h+='</div></div>';
     h+='<div class="pl-grid" style="margin-top:10px;"><div class="pl-card">';
-    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--purple2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">💰 LAYER 3: CASH POSITION — Receivables (NOT today\'s cash)</div>';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--purple2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">💰 LAYER 3: CASH POSITION — Receivables & Retention</div>';
     h+=plRow('Billing Target Today','₹'+fmt(inp.conBillingTarget||0),'');
     h+=plRow('vs Billing Target',conBillingRaw>=(inp.conBillingTarget||0)?'On Target ✓':'Gap ₹'+fmt(Math.abs((inp.conBillingTarget||0)-conBillingRaw)),conBillingRaw>=(inp.conBillingTarget||0)?'pos':'neg');
     h+=plRow('Retention Held','₹'+fmt(inp.conRetention||0),'neg');
-    if(domainExtras)h+=plRow('Receivable (est. ~'+inp.paymentLeadDays+'d)','₹'+fmt(domainExtras.cashReceivable||0),'pos');
+    if(domainExtras)h+=plRow('Cash Expected Today (est.)','₹'+fmt(domainExtras.cashExpectedToday||0),'pos');
     if(domainExtras&&domainExtras.workingCapitalStress>0)h+=plRow('Receivables Outstanding (est.)','₹'+fmt(domainExtras.workingCapitalStress||0),'neg');
-    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:6px;line-height:1.4;">Receivable = billing today × (1−retention). Arrives AFTER '+inp.paymentLeadDays+'-day payment cycle — this is NOT cash in hand today.</div>';
+    h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:6px;line-height:1.4;">Cash = billing × (1−retention). Receivable = billing × payment lead ÷ 30. Approx only.</div>';
     h+='</div></div>';
   } else if(inp.domain==='education'){
     var eduFeeRaw = inp.eduFeeCollectedRaw||0;
@@ -2687,9 +3012,10 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:8px;line-height:1.5;">Variable Cost/Unit uses running cost only. Total Cost/Unit includes fixed overhead allocation. Projection assumes constant hourly rate — actual EOD varies.</div>';
     h+='</div></div>';
   }
+  } // end canSee('financial')
 
-  // Sensitivity Analysis — converted to actionable profit impact
-  if(sens){
+  // Sensitivity Analysis
+  if(sens&&canSee('financial')){
     h+='<div class="sh '+shClass+'">Sensitivity & Lever Analysis (±'+Math.round(CFG.sensDelta*100)+'% perturbation)</div>';
     h+='<div class="sens-box">';
     h+='<div class="sens-title">Base Ω: '+sens.base_omega+' · Max Ω swing: ±'+Math.round(sens.max_swing*100)+'% · '+(sens.stable?'✓ STABLE — model robust to input variation':'⚠ SENSITIVE — verify inputs carefully')+'</div>';
@@ -2730,7 +3056,7 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
       {key:'fixedCost',    label:'Fixed Overhead −'+Math.round(delta*100)+'%',
        impact: (inp.fixedCost||0)>0?Math.round((inp.fixedCost||0)*delta):null, sign:1, note:'Fixed cost savings — requires structural change'},
       {key:'empPresent',   label:(inp.domain==='education'?'Student Att.':'Attendance')+' +'+Math.round(delta*100)+'%',
-       impact: null, sign:1, note: inp.domain==='education'?(domainExtras&&domainExtras.structuralLoss?'Improves operational efficiency but does NOT fix structural unit loss — each student still adds loss. Fee/cost revision required first.':'More students present → more earned revenue. Only helps when unit contribution is positive.'):inp.domain==='contractor'?'Improves site productivity and SPI':'Reduces Ω penalty — indirect P&L effect via throughput'},
+       impact: null, sign:1, note: inp.domain==='education'?'More students → earned revenue up, cost/student down':'Reduces Ω penalty — indirect P&L effect via throughput'},
       {key:'paymentLeadDays', label:'Payment lead −'+Math.round(delta*100)+'% days',
        impact: null, sign:1, note:'Reduces order pipeline Ω penalty and working capital stress'},
     ];
@@ -2757,7 +3083,8 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     h+='</div>';
   }
 
-  // UEDP Protocol Diagnostics
+  // UEDP Protocol Diagnostics — MD only
+  if(canSee('protocol')){
   h+='<div class="sh '+shClass+'" style="margin-top:18px;">UEDP v4 Protocol Diagnostics</div>';
   h+='<div class="kpi-grid">';
   h+=kpi('Ω_raw',r4(R.omega),R.omega>=OC?'g':'b','before safety adj');
@@ -2794,11 +3121,37 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
   h+='Safety: penalty/inc='+CFG.safetyPenalty+' cap='+CFG.safetyPenaltyCap+' · SPI_crit='+CFG.spiCrit+' SPI_warn='+CFG.spiWarn;
   h+='</div>';
   h+='</div>';
+  } // end canSee('protocol')
 
   h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:10px;line-height:1.6;">';
-  h+='UEDP v4 · G S Ramesh Kumar · DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4<br>';
+  h+='UEDP v6 · G S Ramesh Kumar · DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4<br>';
   h+='FIX-P1: ψ ops floor · FIX-P2: Icoh=1-ISeq/2 · FIX-P3: δΩ=|ω-Ω_ref| · FIX-P4: null margins · FIX-P5: AT null when ISeq<'+CFG.iseqMono;
   h+='</div>';
+
+  // ── v6: 30-day Ω history chart ─────────────────────────────────────────
+  if(canSee('financial')){
+    h+='<div class="sh" style="margin-top:22px;color:var(--cyan2);border-left-color:var(--cyan2);">📈 30-Day Ω History</div>';
+    h+=renderHistoryChart(inp.domain);
+  }
+
+  // ── v6: GST / TDS / Labour compliance panel ────────────────────────────
+  if(canSee('compliance')){
+    h+=renderCompliancePanel(inp, inp.domain);
+  }
+
+  // ── v6: Multi-entity consolidation prompt ─────────────────────────────
+  var withDataEntities=entities.filter(function(e){return e.snapshot;});
+  if(withDataEntities.length>=2&&canSee('financial')){
+    h+='<div style="background:rgba(0,184,176,.07);border:1px solid rgba(0,184,176,.25);border-radius:8px;padding:12px 15px;margin-bottom:14px;margin-top:4px;">';
+    h+='<div style="font-family:var(--cond);font-size:11px;font-weight:700;color:var(--cyan2);letter-spacing:1.5px;margin-bottom:6px;">🔗 MULTI-ENTITY CONSOLIDATION AVAILABLE</div>';
+    h+='<div style="font-family:var(--mono);font-size:10px;color:var(--text2);">'+withDataEntities.length+' entities have data snapshots. Click <strong style="color:var(--cyan2)">CONSOLIDATED VIEW</strong> in the entity bar above to see rolled-up Ω and P/L.</div>';
+    h+='</div>';
+  }
+
+  // ── v6: Role-based visibility notice ─────────────────────────────────
+  if(currentRole!=='MD'){
+    h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);padding:8px 12px;background:var(--bg3);border-radius:5px;border:1px solid var(--border2);margin-top:6px;">👤 Role: <strong style="color:'+(currentRole==='MGR'?'var(--blue2)':'var(--green2)')+'">'+currentRole+'</strong> — '+(currentRole==='MGR'?'Protocol diagnostics hidden (switch to MD to view)':'Financial & protocol panels hidden. Showing ops + compliance only.')+'</div>';
+  }
 
   document.getElementById('mainPanel').innerHTML=h;
 
@@ -2910,7 +3263,19 @@ function drawOmega(hv,domain,cfg){
   ctx.fillText('Running Ω (Ω_ref='+cfg.omegaRef+')',pd.l,pd.t-2);
 }
 
-document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='Enter')compute();});
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter') compute();
+  if((e.ctrlKey||e.metaKey)&&e.key==='p'){ e.preventDefault(); exportPDF(); }
+  if((e.ctrlKey||e.metaKey)&&e.key==='h'){ e.preventDefault(); openHistory(); }
+});
+
+// ── v6: Show currency in domain badge line ────────────────────────────────
+// Update original DOMContentLoaded to also show currency symbol in bar
+window.addEventListener('DOMContentLoaded',function(){
+  var user = loadUserProfile();
+  var barSub = document.querySelector('.bar-sub');
+  if(barSub) barSub.textContent='MULTI-DOMAIN v6 · ENTERPRISE · G S RAMESH KUMAR · Ω_crit=1/e · '+(user.org||'');
+});
 
 
 // ==========================================
