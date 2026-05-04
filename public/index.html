@@ -846,6 +846,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 <script>
 'use strict';
 
+var OC = 1/Math.E; // METP universal critical threshold — fixed by theory, NOT configurable
+
 // ═══════════════════════════════════════════════════════════════════════════
 // v6 ENTERPRISE ADDITIONS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -998,12 +1000,12 @@ function loadHistory(domain){
 function renderHistoryChart(domain){
   var data=loadHistory(domain);
   if(!data.length) return '<div style="font-family:var(--mono);font-size:9px;color:var(--text3);padding:10px;">No history yet. Compute daily to build 90-day trend.</div>';
-  var OC2=1/Math.E;
+  
   var h='<div class="hist-card"><div class="hist-title">📈 30-Day Ω Trend — '+domain+'</div>';
   h+='<div class="hist-bar-row">';
   data.forEach(function(d){
     var pct=Math.round(d.o*100);
-    var col=d.o>=0.65?'var(--green2)':d.o>=OC2?'var(--amber2)':'var(--red2)';
+    var col=d.o>=0.65?'var(--green2)':d.o>=OC?'var(--amber2)':'var(--red2)';
     var tip=d.d+' Ω='+d.o+' P/L='+fmtC(d.p);
     h+='<div class="hist-bar" style="height:'+pct+'%;background:'+col+';opacity:.85;" data-tip="'+tip+'"></div>';
   });
@@ -1015,9 +1017,9 @@ function renderHistoryChart(domain){
   var avg=Math.round(omegas.reduce(function(s,v){return s+v;},0)/omegas.length*10000)/10000;
   var mn=Math.round(Math.min.apply(null,omegas)*10000)/10000;
   var mx=Math.round(Math.max.apply(null,omegas)*10000)/10000;
-  var critDays=omegas.filter(function(v){return v<OC2;}).length;
+  var critDays=omegas.filter(function(v){return v<OC;}).length;
   h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;">';
-  [['Avg Ω',avg,'n'],['Min Ω',mn,mn<OC2?'b':'w'],['Max Ω',mx,'g'],['Critical Days',critDays+'d',critDays>0?'b':'g']].forEach(function(k){
+  [['Avg Ω',avg,'n'],['Min Ω',mn,mn<OC?'b':'w'],['Max Ω',mx,'g'],['Critical Days',critDays+'d',critDays>0?'b':'g']].forEach(function(k){
     h+=kpi(k[0],k[1],k[2],'30-day');
   });
   h+='</div></div>';
@@ -1186,9 +1188,7 @@ function saveUserProfile(name,org){
 }
 
 // ── Init entity tabs on load ──────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded',function(){
-  renderEntityTabs();
-});
+// DOMContentLoaded: see consolidated handler below
 
 var CFG = {
   // Protocol constants (configurable)
@@ -1254,14 +1254,7 @@ var PERIOD_SLOTS = ['Period 1','Period 2','Period 3','Period 4','Period 5','Peri
 var currentDomain = 'general';
 
 // ── Init ─────────────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', function(){
-  document.getElementById('barDate').textContent =
-    new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-  buildHrTable('hrBody', SLOTS, '');
-  buildHrTable('hrBodyCon', SLOTS, 'Con');
-  buildHrTable('hrBodyEdu', PERIOD_SLOTS, 'Edu');
-  updateHrsLabel(); updateConHrsLabel(); updateEduHrsLabel();
-});
+;
 
 function buildHrTable(tbodyId, slots, pfx){
   var tb = document.getElementById(tbodyId);
@@ -1659,6 +1652,27 @@ function computeContractorExtras(inp,base,cfg){
   x.earnedValue = ev;
   x.earnedValueToday = inp.conContractVal>0&&inp.conWorkTarget>0 ?
     (inp.conWorkDone/Math.max(inp.conTotalScope||1,1))*inp.conContractVal : null;
+
+  // ── CUMULATIVE COST ESTIMATE (FIX-CON-PROFIT) ────────────────────────────
+  // EV profit MUST compare against cumulative cost — NOT today's cost alone.
+  // EV(1.2Cr) − today_cost(2.25L) = 98% margin is WRONG.
+  // Proxy: (today cost ÷ today work output) × cumulative work done.
+  var todayCost = (inp.conLabCost||0)+(inp.conMatCost||0)+(inp.conEqCost||0);
+  x.todayCost = todayCost;
+  var cumCostEstimate = null, cumCostReliable = false, cumCostNote = '';
+  if(todayCost>0 && inp.conWorkDone>0 && inp.conCumDone>0){
+    cumCostEstimate = Math.round((todayCost/inp.conWorkDone)*inp.conCumDone);
+    cumCostNote = 'Proxy: (today cost ÷ today output) × cumulative output. Enter actual cumulative cost for accuracy.';
+    cumCostReliable = !inp.materialSpike;
+  }
+  x.cumCostEstimate = cumCostEstimate;
+  x.cumCostReliable = cumCostReliable;
+  x.cumCostNote = cumCostNote;
+  x.evProfit = (ev!==null && cumCostEstimate!==null) ? ev - cumCostEstimate : null;
+  x.evMargin = (x.evProfit!==null && ev>0) ? Math.round(x.evProfit/ev*100) : null;
+  x.evProfitReliable = cumCostReliable && x.evMargin!==null && Math.abs(x.evMargin)<=60;
+  x.evProfitSuppressed = !cumCostReliable || cumCostEstimate===null || (x.evMargin!==null && Math.abs(x.evMargin)>60);
+
   // Billing vs EV alignment
   x.billingVsEV = (ev!==null&&inp.conBilledToDate>0) ?
     Math.round(inp.conBilledToDate/ev*100) : null;
@@ -1668,13 +1682,17 @@ function computeContractorExtras(inp,base,cfg){
   // Cash expected = billing raised today × (1 − retention rate) — receivable after payLead days
   var retentionRate = inp.conContractVal>0 ? inp.conRetention/Math.max(inp.conBilledToDate||1,1) : 0;
   x.retentionRate = Math.round(retentionRate*100);
-  x.cashExpectedToday = inp.outputValue>0 ? Math.round(inp.outputValue*(1-retentionRate)) : 0;
+  x.cashReceivable = inp.outputValue>0 ? Math.round(inp.outputValue*(1-retentionRate)) : 0;
+  x.cashExpectedToday = x.cashReceivable; // backward compat alias
+  x.cashReceivableLabel = 'receivable in ~'+(inp.paymentLeadDays||0)+'d (not today cash)';
   x.workingCapitalStress = inp.paymentLeadDays>0&&inp.outputValue>0 ?
     Math.round(inp.outputValue*inp.paymentLeadDays/30) : 0; // estimated receivable outstanding
   // Billing alignment with today's execution
+  // [FIX-CON-ALERT]: suppress false 4000% divergence when billingVsEV is aligned
+  var evAligned = x.billingVsEV!==null && Math.abs(x.billingVsEV-100)<=15;
   var billingAligned = inp.conWorkTarget>0 && inp.conBillingTarget>0 ?
-    Math.abs((inp.conWorkDone/inp.conWorkTarget)-(inp.outputValue/inp.conBillingTarget))<0.15 : null;
-  x.billingExecutionAligned = billingAligned;
+    Math.abs((inp.conWorkDone/inp.conWorkTarget)-(inp.outputValue/Math.max(inp.conBillingTarget||1,1)))<0.15 : null;
+  x.billingExecutionAligned = evAligned ? true : billingAligned;
   // Safety Omega penalty — from CFG, not hardcoded
   x.safetyOmegaPenalty=Math.min(cfg.safetyPenaltyCap,(inp.conSafetyIncidents||0)*cfg.safetyPenalty);
   x.adjustedOmega=Math.max(0,base.omega-x.safetyOmegaPenalty);
@@ -3271,11 +3289,7 @@ document.addEventListener('keydown',function(e){
 
 // ── v6: Show currency in domain badge line ────────────────────────────────
 // Update original DOMContentLoaded to also show currency symbol in bar
-window.addEventListener('DOMContentLoaded',function(){
-  var user = loadUserProfile();
-  var barSub = document.querySelector('.bar-sub');
-  if(barSub) barSub.textContent='MULTI-DOMAIN v6 · ENTERPRISE · G S RAMESH KUMAR · Ω_crit=1/e · '+(user.org||'');
-});
+;
 
 
 // ==========================================
@@ -3344,6 +3358,23 @@ function recordReality(isProfitable) {
 // ==========================================
 // ⚠️ END OF PASTE
 // ==========================================
+
+
+window.addEventListener('DOMContentLoaded', function(){
+  // Bar date
+  document.getElementById('barDate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  // Hourly tables
+  buildHrTable('hrBody', SLOTS, '');
+  buildHrTable('hrBodyCon', SLOTS, 'Con');
+  buildHrTable('hrBodyEdu', PERIOD_SLOTS, 'Edu');
+  updateHrsLabel(); updateConHrsLabel(); updateEduHrsLabel();
+  // Entity tabs
+  renderEntityTabs();
+  // User profile in bar
+  var user = loadUserProfile();
+  var barSub = document.querySelector('.bar-sub');
+  if(barSub) barSub.textContent = 'MULTI-DOMAIN v6 · ENTERPRISE · G S RAMESH KUMAR · Ω_crit=1/e · ' + (user.org || '');
+});
 
 </script>
 </body>
