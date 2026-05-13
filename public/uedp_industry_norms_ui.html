@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>UEDP Industry Norms — Weight Presets</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090f;--bg2:#0d1018;--bg3:#131720;--bg4:#1a2030;
+  --border:#1e2840;--border2:#28344a;
+  --blue:#2d7fd4;--blue2:#5aacf0;--blue3:#0a2a50;
+  --amber:#d4900a;--amber2:#f5b830;--amber3:#3a2200;
+  --red:#c03030;--red2:#f07070;--red3:#280808;
+  --green:#1a8850;--green2:#40d080;--green3:#062018;
+  --cyan:#00b8b0;--cyan2:#40d8d0;
+  --purple:#7c5cbf;--purple2:#b09ae0;
+  --orange:#c96020;--orange2:#f09050;
+  --text:#c8d4e8;--text2:#8aaccc;--text3:#4a6080;
+  --mono:'IBM Plex Mono',monospace;
+  --cond:'Barlow Condensed',sans-serif;
+  --sans:'Barlow',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(45,127,212,.04) 0%,transparent 60%);}
+
+.topbar{height:50px;background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;padding:0 24px;position:sticky;top:0;z-index:100;}
+.tl{font-family:var(--cond);font-size:18px;font-weight:800;letter-spacing:3px;color:var(--blue2);}
+.tl em{color:var(--amber2);font-style:normal;}
+.ts{font-family:var(--mono);font-size:9px;color:var(--text3);}
+.copy-btn{margin-left:auto;background:var(--green3);border:1px solid var(--green);color:var(--green2);
+  padding:6px 14px;border-radius:4px;font-family:var(--cond);font-size:12px;font-weight:700;
+  letter-spacing:1px;cursor:pointer;transition:.2s;}
+.copy-btn:hover{background:rgba(26,136,80,.25);}
+
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 50px);}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:16px 0 40px;}
+.main{overflow-y:auto;padding:20px;}
+
+.sb-head{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;
+  letter-spacing:1.5px;padding:0 14px 8px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+
+.ind-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;
+  border-left:3px solid transparent;transition:.15s;width:100%;}
+.ind-btn:hover{background:rgba(45,127,212,.06);}
+.ind-btn.active{background:rgba(45,127,212,.08);border-left-color:var(--blue2);}
+.ind-icon{font-size:18px;flex-shrink:0;}
+.ind-label{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--text);}
+.ind-id{font-family:var(--mono);font-size:8px;color:var(--text3);}
+
+.section-head{font-family:var(--cond);font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:2px;color:var(--blue);border-left:3px solid var(--blue);padding-left:10px;
+  margin:20px 0 12px;}
+.section-head:first-child{margin-top:0;}
+
+/* WEIGHT RADAR / BAR CHART */
+.weight-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.weight-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.weight-card-title{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:12px;}
+.w-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.w-bar-lbl{font-family:var(--mono);font-size:9px;color:var(--text2);width:100px;flex-shrink:0;}
+.w-bar-lbl span{font-size:8px;color:var(--text3);display:block;}
+.w-bar-track{flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;position:relative;}
+.w-bar-fill{height:100%;border-radius:4px;transition:width .4s;}
+.w-bar-val{font-family:var(--mono);font-size:11px;font-weight:500;width:36px;text-align:right;flex-shrink:0;}
+.w-bar-default{position:absolute;top:0;height:100%;width:2px;background:rgba(255,255,255,.15);}
+
+/* COMPARE TABLE */
+.compare-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;margin-bottom:20px;}
+.compare-table th{text-align:left;padding:6px 10px;color:var(--text3);font-size:8px;text-transform:uppercase;
+  letter-spacing:.5px;border-bottom:1px solid var(--border);font-weight:400;}
+.compare-table td{padding:6px 10px;border-bottom:1px solid rgba(28,42,63,.5);}
+.compare-table tr:hover td{background:rgba(45,127,212,.03);}
+.w-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+
+/* BENCHMARK PANEL */
+.benchmark-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px;}
+.bm-card{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:11px 13px;}
+.bm-lbl{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:4px;}
+.bm-val{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--blue2);line-height:1;}
+.bm-unit{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px;}
+
+/* RATIONALE */
+.rationale-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.rat-row{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:11px 13px;
+  display:flex;gap:12px;}
+.rat-weight{font-family:var(--mono);font-size:22px;font-weight:500;flex-shrink:0;line-height:1;margin-top:2px;}
+.rat-key{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.rat-text{font-size:11px;color:var(--text2);line-height:1.6;}
+
+/* COPY OUTPUT */
+.copy-block{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:14px;
+  margin-bottom:20px;font-family:var(--mono);font-size:10px;color:var(--cyan2);line-height:1.7;
+  white-space:pre;overflow-x:auto;}
+
+/* THRESHOLD TABLE */
+.thresh-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;margin-bottom:8px;}
+.thresh-table th{text-align:left;padding:5px 8px;color:var(--text3);font-size:8px;text-transform:uppercase;
+  letter-spacing:.5px;border-bottom:1px solid var(--border);font-weight:400;}
+.thresh-table td{padding:5px 8px;border-bottom:1px solid rgba(28,42,63,.4);color:var(--text2);}
+.thresh-table td:first-child{color:var(--text);}
+
+/* SOURCE NOTE */
+.source-note{font-family:var(--mono);font-size:8px;color:var(--text3);line-height:1.6;
+  border-top:1px solid var(--border);padding-top:8px;margin-top:4px;}
+
+.all-compare{overflow-x:auto;margin-bottom:20px;}
+.all-compare table{border-collapse:collapse;font-family:var(--mono);font-size:9px;white-space:nowrap;}
+.all-compare th{padding:6px 10px;color:var(--text3);font-size:8px;text-transform:uppercase;letter-spacing:.5px;
+  border-bottom:1px solid var(--border);font-weight:400;text-align:center;}
+.all-compare th:first-child{text-align:left;}
+.all-compare td{padding:5px 10px;border-bottom:1px solid rgba(28,42,63,.4);text-align:center;}
+.all-compare td:first-child{text-align:left;color:var(--text);}
+
+.heat{border-radius:2px;padding:2px 6px;font-size:9px;}
+.h0{color:var(--text3);}
+.h1{background:rgba(45,127,212,.12);color:var(--blue2);}
+.h2{background:rgba(245,184,48,.12);color:var(--amber2);}
+.h3{background:rgba(240,112,112,.14);color:var(--red2);}
+
+.footer{font-family:var(--mono);font-size:8px;color:var(--text3);text-align:center;
+  padding:16px;border-top:1px solid var(--border);margin-top:16px;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tl">UEDP <em>NORMS</em></div>
+  <div class="ts">INDUSTRY WEIGHT PRESETS · G S RAMESH KUMAR · 10 INDUSTRIES</div>
+  <button class="copy-btn" id="copyBtn" onclick="copyPreset()">⎘ COPY PRESET FOR THIS INDUSTRY</button>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-head">SELECT INDUSTRY</div>
+    <div id="industryList"></div>
+  </div>
+  <div class="main" id="mainPanel"></div>
+</div>
+
+<script>
+/* ── Inline norms data (self-contained — no external dependency) ── */
+var OC = 1/Math.E;
+
+var PRESETS = {
+  manufacturing:{id:'manufacturing',label:'Discrete Manufacturing',icon:'🏭',
+    description:'Batch/unit production. Variance and machine spikes are the primary Omega suppressors. Margins wide enough to withstand some cost pressure; DSO typically 30–60d.',
+    W:{var:0.25,spike:0.20,drift:0.15,dir:0.15,cost:0.15,order:0.10},
+    omegaRef:0.70,omegaWarnHi:0.55,omegaStableFloor:0.70,payMax:60,spikeDiv:3,projHrs:10,
+    attCrit:70,attWarn:85,marginThin:10,marginTarget:20,confirmWarn:65,convWarn:45,payWarn:60,driftAlert:-0.5,revEffWarn:65,
+    benchmarks:{grossMarginLow:20,grossMarginTyp:30,grossMarginHigh:40,netMarginTyp:8,netMarginTarget:20,dsoTypical:45,dsoAlert:60,oeeLow:55,oeeTyp:75,oeeWorldClass:85,attendanceCrit:70,varianceAlert:0.12,source:'SMRP OEE Standards, Damodaran India Manufacturing Margins, D&B DSO'},
+    rationale:{var:'Batch consistency = quality and rework cost. CV² is the leading indicator of defect rate.',spike:'Machine downtime events are the canonical loss driver in manufacturing.',drift:'Fatigue, material rundown, or thermal degradation creates measurable OLS decline.',dir:'Workforce-to-output alignment matters but shifts are mostly fixed; less leverage.',cost:'Margins allow some cost pressure; not the primary Omega driver.',order:'B2B orders with 30–60d DSO; pipeline health moderately important.'}},
+
+  retail:{id:'retail',label:'Retail / Distribution',icon:'🛒',
+    description:'High-velocity, low-margin. Cost pressure and staff-revenue alignment dominate. Declining trend is the most dangerous signal since missed sales are irrecoverable.',
+    W:{var:0.10,spike:0.10,drift:0.20,dir:0.20,cost:0.25,order:0.15},
+    omegaRef:0.68,omegaWarnHi:0.50,omegaStableFloor:0.68,payMax:15,spikeDiv:3,projHrs:10,
+    attCrit:72,attWarn:85,marginThin:2,marginTarget:6,confirmWarn:70,convWarn:50,payWarn:15,driftAlert:-0.4,revEffWarn:70,
+    benchmarks:{grossMarginLow:25,grossMarginTyp:38,grossMarginHigh:55,netMarginTyp:3,netMarginTarget:6,dsoTypical:7,dsoAlert:20,attendanceCrit:72,varianceAlert:0.20,source:'Damodaran India Retail Margins, CRISIL Retail Report, D&B'},
+    rationale:{var:'Hourly footfall varies naturally — variance is not a strong Omega signal in retail.',spike:'No machine downtime equivalent; POS failures are brief. Low weight.',drift:'Declining day performance = permanently missed revenue. Critical signal.',dir:'Staff-to-sales alignment is the key lever — understaffing and overstaffing both hurt.',cost:'Net margins of 2–5% mean any cost overrun is immediately structural. Highest weight.',order:'Reorder pipeline and payment terms matter for working capital.'}},
+
+  contractor:{id:'contractor',label:'Construction / Contractor',icon:'🏗',
+    description:'Project-based, thin margins. Schedule slippage compounds exponentially. Payment cert delay and retention create sustained cashflow risk that dwarfs daily P&L.',
+    W:{var:0.10,spike:0.20,drift:0.20,dir:0.10,cost:0.15,order:0.25},
+    omegaRef:0.68,omegaWarnHi:0.52,omegaStableFloor:0.68,payMax:90,spikeDiv:2.5,projHrs:9,
+    attCrit:68,attWarn:82,marginThin:3,marginTarget:7,confirmWarn:60,convWarn:40,payWarn:60,driftAlert:-0.3,revEffWarn:60,
+    benchmarks:{grossMarginTyp:12,netMarginLow:2,netMarginTyp:5,netMarginHigh:8,netMarginTarget:7,dsoTypical:60,dsoAlert:90,spiCrit:0.90,spiWarn:0.97,reworkAlert:8,attendanceCrit:68,source:'RERA payment norms, NIC Construction Index, CRISIL Infrastructure'},
+    rationale:{var:'Day-to-day site output varies by weather, crew — lower weight.',spike:'Safety incidents and material non-delivery stop the project completely. High weight.',drift:'Schedule slippage compounds: 1 day behind becomes 5 days by month end. Critical.',dir:'Labour tracking vs billing alignment matters but is less granular at daily level.',cost:'Margins thin but fairly predictable; not the primary daily signal.',order:'Cert approval, retention, and 60–90d payment lead create sustained cashflow crisis. Highest.'}},
+
+  education:{id:'education',label:'Educational Institution',icon:'🎓',
+    description:'Fixed-cost heavy; fee collection is the only revenue lever. No real hourly production variance signal. Pipeline = admissions + fee recovery cycle.',
+    W:{var:0.10,spike:0.10,drift:0.15,dir:0.15,cost:0.25,order:0.25},
+    omegaRef:0.68,omegaWarnHi:0.50,omegaStableFloor:0.68,payMax:30,spikeDiv:3,projHrs:8,
+    attCrit:75,attWarn:85,marginThin:8,marginTarget:15,confirmWarn:60,convWarn:30,payWarn:30,driftAlert:-0.4,revEffWarn:65,
+    studAttCrit:75,studAttWarn:85,classDelAlert:90,passRateCrit:70,feeRecovWarn:60,syllabusHigh:2,syllabusModerate:1,
+    benchmarks:{grossMarginTyp:40,netMarginLow:8,netMarginTyp:15,netMarginHigh:25,netMarginTarget:15,dsoTypical:15,dsoAlert:30,studentAttCrit:75,classDeliveryCrit:90,passRateCrit:70,source:'NAAC Quality Indicators, UGC Attendance Norms, CRISIL Education'},
+    rationale:{var:'Period delivery naturally varies — not a strong signal.',spike:'Teacher absence is the only real spike; recoverable. Low weight.',drift:'Syllabus coverage trend and attendance trend matter moderately.',dir:'Teacher-student alignment moderately important.',cost:'Fixed salary + ops cost against fee collection: any shortfall is structural. High.',order:'Admission pipeline and fee recovery cycle drive institutional viability. Equal highest.'}},
+
+  logistics:{id:'logistics',label:'Logistics / Supply Chain',icon:'🚚',
+    description:'SLA-driven. Delivery time variance and missed delivery spikes directly destroy client relationships and trigger penalties.',
+    W:{var:0.25,spike:0.20,drift:0.15,dir:0.20,cost:0.15,order:0.05},
+    omegaRef:0.70,omegaWarnHi:0.55,omegaStableFloor:0.70,payMax:45,spikeDiv:2.5,projHrs:10,
+    attCrit:78,attWarn:90,marginThin:2,marginTarget:6,confirmWarn:75,convWarn:55,payWarn:45,driftAlert:-0.5,revEffWarn:70,
+    benchmarks:{grossMarginTyp:18,netMarginLow:2,netMarginTyp:4,netMarginHigh:7,netMarginTarget:5,dsoTypical:30,dsoAlert:45,onTimeDeliveryTarget:95,onTimeDeliveryWarn:88,vehicleUtilTarget:80,attendanceCrit:78,source:'ATKearney Logistics Index, CRISIL India Logistics, SHRM'},
+    rationale:{var:'Delivery time variance destroys SLA compliance scores. Highest weight.',spike:'Missed deliveries trigger client penalties and churn. High weight.',drift:'Fleet efficiency or route optimisation declining trend. Moderate.',dir:'Vehicle/driver utilisation vs revenue per km: critical operational ratio.',cost:'Fuel + driver cost as % of revenue: thin margin but somewhat predictable.',order:'Usually long-term contracts; pipeline uncertainty is lower. Low weight.'}},
+
+  healthcare:{id:'healthcare',label:'Healthcare / Clinic',icon:'🏥',
+    description:'Appointment + consultation model. Doctor utilisation vs consultation revenue is the core ratio.',
+    W:{var:0.15,spike:0.20,drift:0.10,dir:0.25,cost:0.25,order:0.05},
+    omegaRef:0.68,omegaWarnHi:0.52,omegaStableFloor:0.68,payMax:30,spikeDiv:2.5,projHrs:9,
+    attCrit:75,attWarn:88,marginThin:8,marginTarget:18,confirmWarn:70,convWarn:55,payWarn:30,driftAlert:-0.4,revEffWarn:68,
+    benchmarks:{grossMarginTyp:35,netMarginLow:8,netMarginTyp:18,netMarginHigh:30,netMarginTarget:18,dsoTypical:15,dsoAlert:30,bedOccupancyTarget:80,doctorUtilTarget:70,noShowWarn:15,source:'CRISIL Health Sector Report, NHA India, JCI Standards'},
+    rationale:{var:'Appointment adherence varies — some natural variation acceptable.',spike:'No-shows, emergency surges, doctor absences = irrecoverable revenue loss.',drift:'Patient load is fairly stable; drift is less meaningful.',dir:'Doctor utilisation vs consultation revenue: the single most important ratio.',cost:'Consumables + staff + rent with tight insurance reimbursements. Critical.',order:'Walk-in/appointment model, not B2B order pipeline. Minimal weight.'}},
+
+  technology:{id:'technology',label:'Technology / SaaS',icon:'💻',
+    description:'Sprint velocity and MRR/ARR pipeline dominate. Declining delivery velocity and pipeline churn are the existential signals.',
+    W:{var:0.10,spike:0.15,drift:0.20,dir:0.20,cost:0.10,order:0.25},
+    omegaRef:0.72,omegaWarnHi:0.55,omegaStableFloor:0.72,payMax:30,spikeDiv:3,projHrs:9,
+    attCrit:80,attWarn:90,marginThin:12,marginTarget:28,confirmWarn:70,convWarn:25,payWarn:30,driftAlert:-0.3,revEffWarn:70,
+    benchmarks:{grossMarginLow:60,grossMarginTyp:72,grossMarginHigh:85,netMarginLow:10,netMarginTyp:25,netMarginHigh:40,netMarginTarget:25,dsoTypical:14,dsoAlert:30,mrrGrowthTarget:10,churnWarn:3,nrrTarget:105,source:'Bessemer BVP SaaS Index, KeyBanc SaaS Survey, Baremetrics'},
+    rationale:{var:'Sprint velocity naturally varies; not a strong daily signal.',spike:'Production incidents, deployment failures cause revenue/reputation damage.',drift:'Declining velocity = delivery risk and team health issue. Critical leading indicator.',dir:'Developer capacity vs feature/revenue output: core engineering efficiency ratio.',cost:'Cloud + salary margins can be high; cost pressure less acute than other industries.',order:'MRR/ARR pipeline = survival. Churn + pipeline together are the existential signal.'}},
+
+  food_beverage:{id:'food_beverage',label:'Food & Beverage',icon:'🍽',
+    description:'Shift-based, perishable inventory. Food cost % is the primary KPI. Rush-hour spikes are irrecoverable.',
+    W:{var:0.15,spike:0.20,drift:0.10,dir:0.20,cost:0.30,order:0.05},
+    omegaRef:0.65,omegaWarnHi:0.50,omegaStableFloor:0.65,payMax:7,spikeDiv:2.5,projHrs:10,
+    attCrit:75,attWarn:88,marginThin:3,marginTarget:8,confirmWarn:75,convWarn:55,payWarn:15,driftAlert:-0.5,revEffWarn:72,
+    benchmarks:{foodCostTarget:28,foodCostWarn:35,laborCostTarget:30,laborCostWarn:38,grossMarginTyp:68,netMarginLow:3,netMarginTyp:6,netMarginHigh:12,netMarginTarget:7,dsoTypical:1,dsoAlert:7,tableTurnTarget:3,source:'NRA Restaurant Industry Report, FSSAI India, Technopak F&B India'},
+    rationale:{var:'Kitchen output varies shift to shift — moderate signal.',spike:'Rush-hour preparation failures and no-shows are irrecoverable revenue losses.',drift:'Service quality decline trend — moderate importance.',dir:'Staff/revenue alignment per shift is the primary operating lever.',cost:'Food cost % is THE primary F&B KPI. Cost pressure gets highest weight.',order:'Mostly walk-in; supplier orders short-cycle. Low pipeline uncertainty.'}},
+
+  professional_services:{id:'professional_services',label:'Professional Services',icon:'📋',
+    description:'Billable utilisation is everything. Pipeline (proposals + retainers) and direction (billable vs available hours) dominate.',
+    W:{var:0.08,spike:0.12,drift:0.15,dir:0.30,cost:0.15,order:0.20},
+    omegaRef:0.70,omegaWarnHi:0.55,omegaStableFloor:0.70,payMax:45,spikeDiv:3,projHrs:9,
+    attCrit:80,attWarn:90,marginThin:12,marginTarget:22,confirmWarn:70,convWarn:40,payWarn:45,driftAlert:-0.3,revEffWarn:70,
+    benchmarks:{grossMarginTyp:45,netMarginLow:12,netMarginTyp:22,netMarginHigh:35,netMarginTarget:22,dsoTypical:30,dsoAlert:45,billableUtilTarget:75,billableUtilWarn:65,realisationTarget:90,source:'SHRM Consulting Benchmarks, SPI Research PS Maturity Benchmark'},
+    rationale:{var:'Project hours vary by nature; not a meaningful daily Omega signal.',spike:'Key person absence causes delivery gap; moderate impact.',drift:'Declining project progress rate is a delivery risk signal.',dir:'Billable utilisation vs total available hours is THE metric. Highest weight.',cost:'Salary + overhead vs billing rate: moderate pressure, manageable margins.',order:'Proposal pipeline + retainer renewal: survival signal. High weight.'}},
+
+  process_manufacturing:{id:'process_manufacturing',label:'Process Manufacturing',icon:'⚗',
+    description:'Continuous process. Variance IS the quality signal (GMP/GLP). Drift and spikes critical. Direction less relevant (automated lines).',
+    W:{var:0.30,spike:0.25,drift:0.20,dir:0.08,cost:0.12,order:0.05},
+    omegaRef:0.72,omegaWarnHi:0.58,omegaStableFloor:0.72,payMax:60,spikeDiv:2,projHrs:12,
+    attCrit:80,attWarn:90,marginThin:10,marginTarget:20,confirmWarn:70,convWarn:50,payWarn:60,driftAlert:-0.2,revEffWarn:72,
+    benchmarks:{grossMarginTyp:40,netMarginLow:10,netMarginTyp:20,netMarginHigh:35,netMarginTarget:20,dsoTypical:45,dsoAlert:60,batchVarianceAlert:0.05,oeeWorldClass:85,source:'WHO GMP Guidelines, CRISIL Pharma India, Damodaran FMCG Margins'},
+    rationale:{var:'Batch variance IS the quality/compliance signal in process industries. Highest weight.',spike:'Batch failure, reactor excursion, contamination event. Very high weight.',drift:'Gradual process drift before OOS (out-of-spec) event. Critical early warning.',dir:'Automated process lines — workforce direction less granular. Low weight.',cost:'Raw material cost + utility cost: moderate pressure, somewhat predictable.',order:'Long production runs with known demand; pipeline uncertainty low.'}}
+};
+
+var W_LABELS = {var:'Variance (CV²)',spike:'Spikes (3σ)',drift:'Drift (OLS)',dir:'Direction (LER)',cost:'Cost Pressure',order:'Order Pipeline'};
+var W_COLORS = {var:'#5aacf0',spike:'#f07070',drift:'#f5b830',dir:'#40d080',cost:'#f09050',order:'#b09ae0'};
+var currentId = 'manufacturing';
+
+function r2(v){return Math.round(v*100)/100;}
+
+/* ── Build sidebar ── */
+function buildSidebar(){
+  var el = document.getElementById('industryList');
+  el.innerHTML = Object.keys(PRESETS).map(function(id){
+    var p = PRESETS[id];
+    return '<div class="ind-btn'+(id===currentId?' active':'')+'" onclick="selectIndustry(\''+id+'\')">'
+      +'<div class="ind-icon">'+p.icon+'</div>'
+      +'<div><div class="ind-label">'+p.label+'</div><div class="ind-id">'+id+'</div></div>'
+      +'</div>';
+  }).join('');
+}
+
+function selectIndustry(id){
+  currentId = id;
+  document.querySelectorAll('.ind-btn').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.ind-btn').forEach(function(b){
+    if(b.querySelector('.ind-id').textContent===id) b.classList.add('active');
+  });
+  renderMain(id);
+}
+
+/* ── Render main panel ── */
+function renderMain(id){
+  var p = PRESETS[id];
+  var h = '';
+
+  /* Header */
+  h += '<div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:20px;flex-wrap:wrap;">';
+  h += '<div style="font-size:40px;line-height:1;">'+p.icon+'</div>';
+  h += '<div><div style="font-family:var(--cond);font-size:22px;font-weight:800;letter-spacing:2px;color:var(--text);margin-bottom:4px;">'+p.label+'</div>';
+  h += '<div style="font-size:11px;color:var(--text2);max-width:600px;line-height:1.6;">'+p.description+'</div></div>';
+  h += '</div>';
+
+  /* Copy block */
+  h += '<div class="section-head">COPY → PASTE INTO UEDP CONFIG</div>';
+  h += '<div class="copy-block" id="copyBlock">'+buildCopyBlock(p)+'</div>';
+
+  /* Weight bars */
+  h += '<div class="section-head">PENALTY WEIGHT PROFILE</div>';
+  h += '<div class="weight-card" style="margin-bottom:20px;">';
+  h += '<div class="weight-card-title">Weight vs UEDP default (0.20 / 0.15 / 0.10 / 0.20 / 0.20 / 0.15) — dashed line = default</div>';
+  var defaults = {var:0.20,spike:0.15,drift:0.10,dir:0.20,cost:0.20,order:0.15};
+  Object.keys(W_LABELS).forEach(function(k){
+    var val = p.W[k];
+    var def = defaults[k];
+    var pct = Math.round(val*100);
+    var defPct = Math.round(def*100);
+    var col = W_COLORS[k];
+    h += '<div class="w-bar-row">';
+    h += '<div class="w-bar-lbl">'+W_LABELS[k]+'<span>W.'+k+' = '+val+'</span></div>';
+    h += '<div class="w-bar-track">';
+    h += '<div class="w-bar-fill" style="width:'+pct*2+'%;background:'+col+';opacity:0.85;"></div>';
+    h += '<div class="w-bar-default" style="left:'+defPct*2+'%;"></div>';
+    h += '</div>';
+    h += '<div class="w-bar-val" style="color:'+col+'">'+val+'</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+
+  /* Rationale */
+  h += '<div class="section-head">WHY THESE WEIGHTS — RATIONALE</div>';
+  h += '<div class="rationale-list">';
+  Object.keys(W_LABELS).forEach(function(k){
+    var val = p.W[k];
+    var col = W_COLORS[k];
+    var emphasis = val >= 0.25 ? '— HIGH' : val <= 0.10 ? '— LOW' : '— MODERATE';
+    h += '<div class="rat-row">';
+    h += '<div style="flex-shrink:0;width:70px;">';
+    h += '<div class="rat-weight" style="color:'+col+'">'+val+'</div>';
+    h += '<div style="font-family:var(--mono);font-size:8px;color:'+col+';margin-top:2px;">'+emphasis+'</div>';
+    h += '</div>';
+    h += '<div>';
+    h += '<div class="rat-key">'+W_LABELS[k]+' (W.'+k+')</div>';
+    h += '<div class="rat-text">'+p.rationale[k]+'</div>';
+    h += '</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+
+  /* Thresholds */
+  h += '<div class="section-head">THRESHOLD OVERRIDES</div>';
+  h += '<table class="thresh-table">';
+  h += '<thead><tr><th>Parameter</th><th>This Industry</th><th>UEDP Default</th><th>Rationale</th></tr></thead><tbody>';
+  var threshDefs = {
+    omegaRef:    {def:0.70, note:'RSL reference coherence'},
+    omegaWarnHi: {def:0.55, note:'Stressed state upper boundary'},
+    payMax:      {def:90,   note:'DSO ceiling (days) — industry norm'},
+    spikeDiv:    {def:3,    note:'σ multiple for acute event detection'},
+    attCrit:     {def:65,   note:'Attendance critical threshold (%)'},
+    attWarn:     {def:80,   note:'Attendance warning threshold (%)'},
+    marginThin:  {def:8,    note:'Net margin thin-alert (%)'},
+    marginTarget:{def:15,   note:'Net margin healthy target (%)'},
+    payWarn:     {def:60,   note:'Payment lead cashflow warning (days)'},
+    driftAlert:  {def:-0.5, note:'OLS slope alert threshold'},
+  };
+  Object.keys(threshDefs).forEach(function(k){
+    var industryVal = p[k];
+    if(industryVal === undefined) return;
+    var def = threshDefs[k].def;
+    var changed = industryVal !== def;
+    var col = changed ? 'var(--amber2)' : 'var(--text3)';
+    h += '<tr><td>'+k+'</td>';
+    h += '<td style="color:'+col+';font-weight:'+(changed?'600':'400')+'">'+industryVal+(changed?' ←':'')+'</td>';
+    h += '<td style="color:var(--text3)">'+def+'</td>';
+    h += '<td style="color:var(--text3);font-size:9px;">'+threshDefs[k].note+'</td></tr>';
+  });
+  h += '</tbody></table>';
+
+  /* Benchmarks */
+  if(p.benchmarks){
+    h += '<div class="section-head">INDUSTRY BENCHMARK NORMS</div>';
+    h += '<div class="benchmark-grid">';
+    var bm = p.benchmarks;
+    var bmFields = [
+      {k:'netMarginTarget',  label:'Net Margin Target',   unit:'%'},
+      {k:'netMarginLow',     label:'Net Margin Low',      unit:'%'},
+      {k:'grossMarginTyp',   label:'Gross Margin Typical',unit:'%'},
+      {k:'dsoTypical',       label:'DSO Typical',         unit:'days'},
+      {k:'dsoAlert',         label:'DSO Alert',           unit:'days'},
+      {k:'oeeLow',           label:'OEE Low',             unit:'%'},
+      {k:'oeeWorldClass',    label:'OEE World-Class',     unit:'%'},
+      {k:'attendanceCrit',   label:'Attendance Critical', unit:'%'},
+      {k:'billableUtilTarget',label:'Billable Util Target',unit:'%'},
+      {k:'onTimeDeliveryTarget',label:'On-Time Delivery', unit:'%'},
+      {k:'foodCostTarget',   label:'Food Cost Target',    unit:'%'},
+      {k:'foodCostWarn',     label:'Food Cost Alert',     unit:'%'},
+      {k:'mrrGrowthTarget',  label:'MRR Growth Target',   unit:'%/mo'},
+      {k:'churnWarn',        label:'Churn Alert',         unit:'%/mo'},
+      {k:'doctorUtilTarget', label:'Doctor Util Target',  unit:'%'},
+      {k:'spiCrit',          label:'SPI Critical',        unit:''},
+      {k:'batchVarianceAlert',label:'Batch Variance Alert',unit:'CV'},
+    ];
+    bmFields.forEach(function(f){
+      if(bm[f.k]===undefined) return;
+      h += '<div class="bm-card">';
+      h += '<div class="bm-lbl">'+f.label+'</div>';
+      h += '<div class="bm-val">'+bm[f.k]+'</div>';
+      h += '<div class="bm-unit">'+f.unit+'</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+    h += '<div class="source-note">Source: '+bm.source+'</div>';
+  }
+
+  /* All-industry comparison table */
+  h += '<div class="section-head" style="margin-top:28px;">ALL INDUSTRIES — WEIGHT COMPARISON MATRIX</div>';
+  h += buildAllCompare(id);
+
+  h += '<div class="footer">UEDP Industry Norms · G S Ramesh Kumar · Protocol DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4 · Paper DOI: 10.61113/ijiap.v3i12.1223<br>These weights are suggested starting points based on published industry benchmarks. Calibrate against 30-day operational history for your specific business.</div>';
+
+  document.getElementById('mainPanel').innerHTML = h;
+}
+
+function buildCopyBlock(p){
+  var lines = [
+    '// UEDP Industry Preset: ' + p.label,
+    '// Source: UEDP_NORMS · G S Ramesh Kumar · DOI: 10.61113/ijiap.v3i12.1223',
+    '// Note: Ω_crit = 1/e is fixed by METP theory — not changed by this preset.',
+    '',
+    '// In your UEDP app, open ⚙ CONFIG and set:',
+    '',
+    'CFG.W = {',
+    '  var:   ' + p.W.var   + ',  // ' + W_LABELS.var,
+    '  spike: ' + p.W.spike + ',  // ' + W_LABELS.spike,
+    '  drift: ' + p.W.drift + ',  // ' + W_LABELS.drift,
+    '  dir:   ' + p.W.dir   + ',  // ' + W_LABELS.dir,
+    '  cost:  ' + p.W.cost  + ',  // ' + W_LABELS.cost,
+    '  order: ' + p.W.order + ',  // ' + W_LABELS.order,
+    '};',
+    '',
+    '// Threshold overrides:',
+    'CFG.omegaRef    = ' + p.omegaRef   + ';',
+    'CFG.omegaWarnHi = ' + p.omegaWarnHi + ';',
+    'CFG.payMax      = ' + p.payMax     + '; // DSO ceiling (days)',
+    'CFG.spikeDiv    = ' + p.spikeDiv   + '; // σ multiple',
+    'CFG.attCrit     = ' + p.attCrit    + '; // attendance critical %',
+    'CFG.attWarn     = ' + p.attWarn    + '; // attendance warning %',
+    'CFG.marginThin  = ' + p.marginThin + '; // net margin thin alert %',
+    'CFG.marginTarget= ' + p.marginTarget + '; // net margin target %',
+    'CFG.payWarn     = ' + p.payWarn    + '; // payment lead warning (days)',
+    'CFG.driftAlert  = ' + p.driftAlert + '; // OLS slope alert',
+  ];
+  if(p.studAttCrit) lines.push('CFG.studAttCrit = '+p.studAttCrit+'; // student attendance critical %');
+  return lines.join('\n');
+}
+
+function buildAllCompare(activeId){
+  var ids = Object.keys(PRESETS);
+  var wKeys = ['var','spike','drift','dir','cost','order'];
+  var h = '<div class="all-compare"><table>';
+  h += '<thead><tr><th>Industry</th>';
+  wKeys.forEach(function(k){ h += '<th style="color:'+W_COLORS[k]+'">'+k+'</th>'; });
+  h += '<th>Ω_ref</th><th>DSO</th><th>Margin%</th></tr></thead><tbody>';
+  ids.forEach(function(id){
+    var p = PRESETS[id];
+    var isActive = id === activeId;
+    h += '<tr style="'+(isActive?'background:rgba(45,127,212,.07)':'')+';">';
+    h += '<td style="font-size:10px;">'+(isActive?'<strong>':'')+''+p.icon+' '+p.label+(isActive?'</strong>':'')+'</td>';
+    wKeys.forEach(function(k){
+      var v = p.W[k];
+      var cls = v>=0.25?'h3':v>=0.18?'h2':v>=0.12?'h1':'h0';
+      h += '<td><span class="heat '+cls+'">'+v+'</span></td>';
+    });
+    h += '<td style="color:var(--text2)">'+p.omegaRef+'</td>';
+    h += '<td style="color:var(--text2)">'+p.payMax+'d</td>';
+    h += '<td style="color:var(--text2)">'+p.marginTarget+'%</td>';
+    h += '</tr>';
+  });
+  h += '</tbody></table></div>';
+  h += '<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:6px;">';
+  h += '<span class="heat h3">0.25+</span> High weight &nbsp; <span class="heat h2">0.18–0.24</span> Medium &nbsp; <span class="heat h1">0.12–0.17</span> Low &nbsp; <span class="heat h0">&lt;0.12</span> Minimal';
+  h += '</div>';
+  return h;
+}
+
+function copyPreset(){
+  var p = PRESETS[currentId];
+  var text = buildCopyBlock(p);
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){
+      var btn = document.getElementById('copyBtn');
+      btn.textContent = '✓ COPIED!';
+      btn.style.background = 'rgba(26,136,80,.3)';
+      setTimeout(function(){ btn.textContent='⎘ COPY PRESET FOR THIS INDUSTRY'; btn.style.background=''; }, 2000);
+    });
+  } else {
+    var el = document.createElement('textarea');
+    el.value = text; document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+    document.getElementById('copyBtn').textContent='✓ COPIED!';
+    setTimeout(function(){document.getElementById('copyBtn').textContent='⎘ COPY PRESET FOR THIS INDUSTRY';},2000);
+  }
+}
+
+buildSidebar();
+renderMain(currentId);
+</script>
+</body>
+</html>
