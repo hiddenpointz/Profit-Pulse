@@ -577,6 +577,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
   <!-- PDF -->
   <button class="cfg-btn" onclick="exportPDF()" title="Export PDF report">⬇ PDF</button>
   <button class="cfg-btn" onclick="openConfig()">⚙ CONFIG</button>
+  <button class="cfg-btn" onclick="openNorms()">
+  📘 NORMS
+   </button>
   <button class="compute-btn" id="computeBtn" onclick="compute()">▶ COMPUTE Ω</button>
 </div>
 
@@ -1378,6 +1381,9 @@ function setDomain(d){
 function openConfig(){
   syncConfigToUI();
   document.getElementById('cfgOverlay').classList.add('open');
+}
+  function openNorms(){
+  window.open('uedp_industry_norms_ui.html', '_blank');
 }
 function closeConfig(){ document.getElementById('cfgOverlay').classList.remove('open'); }
 
