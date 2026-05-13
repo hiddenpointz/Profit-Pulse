@@ -286,6 +286,38 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
   .omega-num,.kpi-val,.pl-val{color:#000!important;}
   .sh{color:#000!important;border-left-color:#000!important;}
 }
+/* v4.1 ADDITIONS */
+.insight-banner{border-radius:8px;padding:14px 16px;margin-bottom:14px;border-left:5px solid var(--amber);
+  background:linear-gradient(135deg,rgba(212,144,10,.1),rgba(212,144,10,.03));}
+.insight-banner.loss{border-left-color:var(--red2);background:linear-gradient(135deg,rgba(192,48,48,.1),rgba(192,48,48,.03));}
+.insight-banner.ok{border-left-color:var(--green2);background:linear-gradient(135deg,rgba(26,136,80,.1),rgba(26,136,80,.03));}
+.insight-head{font-family:var(--cond);font-size:14px;font-weight:700;letter-spacing:1px;margin-bottom:5px;}
+.insight-banner .insight-head{color:var(--amber2);}
+.insight-banner.loss .insight-head{color:var(--red2);}
+.insight-banner.ok .insight-head{color:var(--green2);}
+.insight-body{font-size:11px;color:var(--text2);line-height:1.7;}
+.insight-body strong{color:var(--text);}
+.tl-bar{display:flex;gap:0;margin-bottom:14px;border-radius:6px;overflow:hidden;border:1px solid var(--border2);}
+.tl-seg{flex:1;padding:8px 10px;text-align:center;border-right:1px solid var(--border2);}
+.tl-seg:last-child{border-right:none;}
+.tl-seg.tl-today{background:rgba(26,136,80,.07);}
+.tl-seg.tl-project{background:rgba(45,127,212,.05);}
+.tl-seg.tl-month{background:rgba(124,92,191,.05);}
+.tl-lbl{font-family:var(--mono);font-size:7px;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
+.tl-seg.tl-today .tl-lbl{color:var(--green2);}
+.tl-seg.tl-project .tl-lbl{color:var(--blue2);}
+.tl-seg.tl-month .tl-lbl{color:var(--purple2);}
+.tl-val{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text);}
+.tl-sub{font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:2px;}
+.burn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.burn-card{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;border-left:4px solid var(--red);}
+.burn-card.ok{border-left-color:var(--green);}
+.burn-lbl{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;}
+.burn-val{font-family:var(--mono);font-size:20px;font-weight:500;margin-bottom:3px;}
+.burn-val.neg{color:var(--red2);}.burn-val.pos{color:var(--green2);}.burn-val.warn{color:var(--amber2);}
+.burn-sub{font-family:var(--mono);font-size:9px;color:var(--text2);line-height:1.5;}
+@media(max-width:640px){.charts-row{grid-template-columns:1fr;}.pl-grid{grid-template-columns:1fr;}.ss-row{grid-template-columns:1fr;}.cfg-grid{grid-template-columns:1fr;}.cfg-grid3{grid-template-columns:1fr 1fr;}.burn-row{grid-template-columns:1fr;}.tl-bar{flex-direction:column;}.tl-seg{border-right:none;border-bottom:1px solid var(--border2);}}
+
 </style>
 </head>
 <body>
@@ -296,8 +328,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
     <div class="cfg-title">⚙ MODEL CONFIGURATION</div>
     <div class="cfg-sub">
       All parameters that drive the UEDP v4 engine. <strong>Zero hardcoding</strong> — every number here flows directly into the math.<br>
-      Protocol: G S Ramesh Kumar · DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4
-    </div>
+      Protocol: G S Ramesh Kumar · Protocol DOI: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4
+     · Paper DOI: 10.61113/ijiap.v3i12.1223</div>
 
     <!-- PROTOCOL CONSTANTS -->
     <div class="cfg-section">
@@ -844,6 +876,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 </div>
 
 <script>
+'use strict';
+
 'use strict';
 
 var OC = 1/Math.E; // METP universal critical threshold — fixed by theory, NOT configurable
@@ -1571,6 +1605,15 @@ function computeOmegaCore(inp, W, cfg){
     {key:'order_pipeline', score:W.order*nOrder,raw:nOrder,label:'Order/Pipeline Health',        validated:'industry-ref',assumption:'PAY_MAX='+cfg.payMax+'d stress ceiling'},
   ].sort(function(a,b){return b.score-a.score;});
 
+  // ── v4.1 additive fields — zero effect on omega/penalty ──────────
+  var burnRate       = he>0 ? Math.round(tc/he) : null;
+  var revPerHr       = (oval>0&&he>0) ? Math.round(oval/he) : null;
+  var dailyBurnGap   = Math.max(0, tc-oval);
+  var contribMargin  = oval-rc;
+  var contribMarginPct = oval>0 ? (oval-rc)/oval*100 : null;
+  var recoveryHrs    = (np<0&&oval>0&&he>0) ? Math.round((tc-oval)/(oval/he)*10)/10 : null;
+  var partialDayFlag = (he<=4 && oval<tc*0.4 && tc>0);
+
   return {
     omega:omega,Iseq:Iseq,Rmod:Rmod,Phi:Phi,Gamma:Gamma,AT:AT,
     isAnados:AT!==null?AT>1:null,psi:psi,preRevMode:preRevMode,penalty:penalty,drift:dslope,
@@ -1584,6 +1627,9 @@ function computeOmegaCore(inp, W, cfg){
     willProfitable:np>0,breakEven:Math.round(tc),
     nVar:nVar,nSpike:nSpike,nDrift:nDrift,nDir:nDir,nCost:nCost,nOrder:nOrder,
     penalties:pens,hv:hv,
+    burnRate:burnRate,revPerHr:revPerHr,dailyBurnGap:dailyBurnGap,
+    contribMargin:contribMargin,contribMarginPct:contribMarginPct,
+    recoveryHrs:recoveryHrs,partialDayFlag:partialDayFlag,
   };
 }
 
@@ -1607,12 +1653,12 @@ function computeSensitivity(inp,W,cfg){
       inpHi.outputValue = inp.dailyFeeRatePerStudent * (bv*(1+DELTA));
       inpLo.outputValue = inp.dailyFeeRatePerStudent * (bv*(1-DELTA));
     }
-    var hi=computeOmegaCore(inpHi,W,cfg).omega;
-    var lo=computeOmegaCore(inpLo,W,cfg).omega;
-    var sw=Math.abs(hi-lo);
     // Merge eduStudPresent result into empPresent key for display
     var displayKey = k==='eduStudPresent'?'empPresent':(k==='earnedRevenueToday'?'outputValue':k);
-    if(!swings[displayKey]||sw>swings[displayKey]) swings[displayKey]=Math.round(sw*10000)/10000;
+    var hiR=computeOmegaCore(inpHi,W,cfg), loR=computeOmegaCore(inpLo,W,cfg);
+    var sw=Math.abs(hiR.omega-loR.omega);
+    var profitSwing=Math.abs((hiR.netProfit||0)-(loR.netProfit||0));
+    if(!swings[displayKey]||sw>(swings[displayKey]&&swings[displayKey].omSwing||swings[displayKey]||0)) swings[displayKey]={omSwing:Math.round(sw*10000)/10000,profitSwing:Math.round(profitSwing)};
     if(sw>maxSwing)maxSwing=sw;
   });
   return{
@@ -1830,6 +1876,15 @@ function computeEducationExtras(inp,base,cfg){
   // Daily cost coverage label
   x.dailyCostCoverageLabel = x.dailyCostCoverage===null?'N/A':
     x.dailyCostCoverage>=100?'COVERED':x.dailyCostCoverage>=75?'PARTIAL':'DEFICIT';
+  // v4.1: fee earned vs collected transparency
+  var daysInMonth = inp.eduWorkingDays||26;
+  x.feeEarnedPerStudentPerDay = (inp.eduFeeTotalMonth>0&&inp.eduStudTotal>0) ? Math.round(inp.eduFeeTotalMonth/inp.eduStudTotal/daysInMonth) : null;
+  x.feeEarnedToday = x.feeEarnedPerStudentPerDay ? Math.round(x.feeEarnedPerStudentPerDay*(inp.eduStudPresent||0)) : null;
+  x.feeCollectedVsEarned = (x.feeEarnedToday&&(inp.eduFeeCollected||0)>0) ? Math.round(((inp.eduFeeCollected||0)/x.feeEarnedToday)*100) : null;
+  x.collectionTimingNote = x.feeCollectedVsEarned!==null ?
+    (x.feeCollectedVsEarned>=80?'Collection aligned with earning rate.':
+     x.feeCollectedVsEarned>=30?'Low today — likely timing (fees due on specific date), not a performance gap.':
+     'Very low collection — check if fee date is today or if dues are accumulating.') : null;
   return x;
 }
 
@@ -2693,6 +2748,58 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
   h+='</div></details>';
   h+='</div>';
 
+  // ── v4.1: Unit Economics Insight Banner ─────────────────────────────────
+  var INR=function(v){return Math.round(v).toLocaleString('en-IN');};
+  var tc_rend=(inp.runningCost||0)+(inp.fixedCost||0);
+  var burnRend=inp.hoursElapsed>0?Math.round(tc_rend/inp.hoursElapsed):0;
+  var showMarg=R.netMargin!==null&&Math.abs(R.netMargin)<=300;
+  var unitLossFlag = R.unitLoss>0;  // v6 unitLoss = loss per unit (0 if profitable)
+  if(unitLossFlag){
+    h+='<div class="insight-banner loss">';
+    h+='<div class="insight-head">⚠ UNIT ECONOMICS: Scaling output deepens loss</div>';
+    h+='<div class="insight-body">Variable cost/unit = '+csym()+fmt(R.varCostPerUnit||0)+' · Total cost/unit = '+csym()+fmt(R.costPerUnit||0)+' · Revenue/unit = '+csym()+fmt(R.revPerUnit||0)+'.<br>';
+    h+='<strong>Every additional unit produced loses '+csym()+fmt(R.unitLoss)+' at current price and cost structure.</strong><br>';
+    h+='Fix unit economics first — reduce variable cost or increase price — before increasing volume.';
+    h+='</div></div>';
+  } else if(R.revPerUnit!==null&&R.varCostPerUnit!==null&&R.revPerUnit>R.varCostPerUnit){
+    var contribPU=R.revPerUnit-R.varCostPerUnit;
+    h+='<div class="insight-banner ok">';
+    h+='<div class="insight-head">✓ UNIT ECONOMICS: Contribution positive — scaling helps</div>';
+    h+='<div class="insight-body">Variable cost/unit = '+csym()+fmt(R.varCostPerUnit)+' · Revenue/unit = '+csym()+fmt(R.revPerUnit)+' · Contribution/unit = '+csym()+fmt(contribPU)+'.<br>';
+    h+='Each extra unit contributes '+csym()+fmt(contribPU)+' toward fixed overhead of '+csym()+fmt(inp.fixedCost||0)+'. Break-even volume ≈ '+fmt(Math.ceil(tc_rend/Math.max(contribPU,1)))+' units.';
+    h+='</div></div>';
+  }
+
+  // ── v4.1: Time-layer bar (TODAY / PROJECT_OR_MONTH / BREAK-EVEN) ─────────
+  var tlRevLabel=inp.domain==='contractor'?'BILLING TODAY':inp.domain==='education'?'FEE COLLECTED':'REVENUE TODAY';
+  var tlL2=inp.domain==='contractor'?'PROJECT':inp.domain==='education'?'THIS MONTH':'DAY TARGET';
+  var tlV2=inp.domain==='contractor'?csym()+fmt(inp.conBilledToDate||0):inp.domain==='education'?csym()+fmt(inp.eduFeeTotalMonth||0):csym()+fmt(inp.targetValue||0);
+  var tlS2=inp.domain==='contractor'?'billed to date':inp.domain==='education'?'monthly fee target':'daily revenue target';
+  h+='<div class="tl-bar">';
+  h+='<div class="tl-seg tl-today"><div class="tl-lbl">TODAY — ACTUALS</div><div class="tl-val">'+csym()+fmt(inp.outputValue||0)+'</div><div class="tl-sub">'+tlRevLabel+' · '+inp.hoursElapsed+'h elapsed</div></div>';
+  h+='<div class="tl-seg tl-project"><div class="tl-lbl">'+tlL2+'</div><div class="tl-val">'+tlV2+'</div><div class="tl-sub">'+tlS2+'</div></div>';
+  h+='<div class="tl-seg tl-month"><div class="tl-lbl">BREAK-EVEN</div><div class="tl-val">'+csym()+fmt(R.breakEven)+'</div><div class="tl-sub">'+(R.willProfitable?'✓ met today':'gap: '+csym()+fmt(Math.abs(R.netProfit)))+'</div></div>';
+  h+='</div>';
+
+  // ── v4.1: Burn-rate cards (₹/hr spending vs earning) ─────────────────────
+  if(inp.domain!=='education'){
+    h+='<div class="burn-row">';
+    h+='<div class="burn-card '+(R.willProfitable?'ok':'')+'"><div class="burn-lbl">Burn Rate (spending)</div>';
+    h+='<div class="burn-val '+(R.willProfitable?'warn':'neg')+'">'+csym()+fmt(burnRend)+'/hr</div>';
+    h+='<div class="burn-sub">Total cost '+csym()+fmt(tc_rend)+' ÷ '+inp.hoursElapsed+'h<br>Variable: '+csym()+fmt(inp.runningCost||0)+' · Fixed: '+csym()+fmt(inp.fixedCost||0)+'</div></div>';
+    h+='<div class="burn-card '+(R.willProfitable?'ok':'')+'"><div class="burn-lbl">Revenue Rate (earning)</div>';
+    h+='<div class="burn-val '+(R.willProfitable?'pos':'neg')+'">'+csym()+(R.revPerHr?fmt(R.revPerHr):'—')+'/hr</div>';
+    h+='<div class="burn-sub">Revenue '+csym()+fmt(inp.outputValue||0)+' ÷ '+inp.hoursElapsed+'h elapsed'+(R.recoveryHrs?' · Break-even in '+R.recoveryHrs+'h more at this rate':R.willProfitable?' · Ahead of burn rate':'')+'</div></div>';
+    h+='</div>';
+  }
+
+  // ── v4.1: Partial-day note ────────────────────────────────────────────────
+  if(R.partialDayFlag){
+    h+='<div style="background:rgba(212,144,10,.07);border:1px solid rgba(212,144,10,.2);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--amber2);line-height:1.6;">';
+    h+='⏱ <strong style="color:var(--text)">Early-day data:</strong> Only '+inp.hoursElapsed+'h elapsed. Revenue typically underrepresents the day at this stage. Omega and margin will improve as transactions occur. FIX-P1 active.';
+    h+='</div>';
+  }
+
   // P&L banner
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:9px;margin-bottom:14px;">';
   var plBg=R.netProfit>=0?'var(--green3)':'var(--red3)', plBorder=R.netProfit>=0?'var(--green)':'var(--red)', plCol=R.netProfit>=0?'var(--green2)':'var(--red2)';
@@ -3030,6 +3137,13 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     h+=plRow('Fee Target Today','₹'+fmt(inp.eduFeeTarget||0),'');
     h+=plRow('Today Cash Gap',inp.eduFeeTarget>0?'₹'+fmt(Math.abs((inp.eduFeeTarget||0)-eduFeeRaw)):'—',(eduFeeRaw>=(inp.eduFeeTarget||0))?'pos':'neg');
     h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:6px;line-height:1.5;">⚠ Accrual deficit = structural position. Cash gap = collection timing. Both are shown separately above.</div>';
+    // v4.1: collection timing note from domainExtras
+    if(domainExtras&&domainExtras.feeCollectedVsEarned!==null){
+      h+='<div style="background:rgba(124,92,191,.08);border:1px solid rgba(124,92,191,.2);border-radius:5px;padding:8px 12px;margin:6px 0;font-family:var(--mono);font-size:9px;color:var(--purple2);line-height:1.6;">';
+      h+='Fee Earned Today (accrual): ₹'+fmt(domainExtras.feeEarnedToday||0)+' · Collected: '+(domainExtras.feeCollectedVsEarned)+'% of earning rate<br>';
+      h+=domainExtras.collectionTimingNote||'';
+      h+='</div>';
+    }
     h+='</div><div class="pl-card">';
     h+='<div style="font-family:var(--mono);font-size:8px;color:var(--purple2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border2);padding-bottom:4px;">📅 MONTH — Receivables Context</div>';
     h+=plRow('Monthly Fee Target','₹'+fmt(inp.eduFeeTotalMonth||0),'');
@@ -3047,6 +3161,7 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     h+='<div class="pl-divider"></div>';
     h+=plRow('Gross Profit','₹'+fmt(R.grossProfit),R.grossProfit>=0?'pos':'neg');
     h+=plRow('Gross Margin',R.grossMargin!==null&&Math.abs(R.grossMargin)<=300?r2(R.grossMargin)+'%':'See Burn Rate','');
+    h+=plRow('Contribution Margin (Rev−VarCost)','₹'+fmt(R.contribMargin||0),(R.contribMargin>=0?'pos':'neg'));
     h+=plRow('Fixed Overhead','−₹'+fmt(inp.fixedCost||0),'neg');
     h+='<div class="pl-divider"></div>';
     h+='<div class="pl-total"><span class="pl-total-lbl">Net Profit (Today)</span><span class="pl-val '+(R.netProfit>=0?'pos hi':'neg hi')+'">₹'+fmt(R.netProfit)+'</span></div>';
@@ -3070,7 +3185,7 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
     }
     h+='<div class="pl-divider"></div>';
     if(R.ratePerHr!==null)  h+=plRow('Units/Hour',r2(R.ratePerHr),'');
-    if(R.projEOD!==null)    h+=plRow('Proj. EOD Volume',r0(R.projEOD)+' '+inp.prodUnit,'');
+    if(R.projEOD!==null)    h+=plRow('Proj. EOD Volume — if rate holds',r0(R.projEOD)+' '+inp.prodUnit+' @ '+CFG.projHrs+'h','');
     if(R.projMargin!==null&&Math.abs(R.projMargin)<=300) h+=plRow('Proj. Margin',r2(R.projMargin)+'%',R.projMargin>=CFG.marginTarget?'pos':'');
     if(R.targetGap!==null)  h+=plRow('Target Gap',R.targetGap<=0?'Target Met ✓':'₹'+fmt(R.targetGap),R.targetGap<=0?'pos':'neg');
     h+=plRow('Break-even Revenue','₹'+fmt(R.breakEven),'');
@@ -3099,13 +3214,16 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
       {key:'paymentLeadDays', label:'Payment Lead ±'+Math.round(CFG.sensDelta*100)+'%'},
     ];
     swingEntries.forEach(function(se){
-      var sw=sens.swings[se.key]||0;
+      var swRaw=sens.swings[se.key]||0;
+      var sw=(swRaw&&typeof swRaw==='object')?swRaw.omSwing:swRaw;
+      var pSwing=(swRaw&&typeof swRaw==='object')?swRaw.profitSwing:null;
       var swPct=Math.round(sw*100);
       var swColor=sw===0?'var(--text3)':sw<0.05?'var(--green2)':sw<0.10?'var(--amber2)':'var(--red2)';
       h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">';
-      h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);width:170px;flex-shrink:0;">'+esc(se.label)+'</div>';
+      h+='<div style="font-family:var(--mono);font-size:9px;color:var(--text2);width:160px;flex-shrink:0;">'+esc(se.label)+'</div>';
       h+='<div style="flex:1;height:5px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;"><div style="width:'+Math.min(100,sw*1000)+'%;height:100%;border-radius:3px;background:'+swColor+'"></div></div>';
-      h+='<div style="font-family:var(--mono);font-size:10px;color:'+swColor+';text-align:right;width:90px;flex-shrink:0;">Ω ±'+swPct+'%</div>';
+      h+='<div style="font-family:var(--mono);font-size:10px;color:'+swColor+';text-align:right;width:50px;flex-shrink:0;">Ω±'+swPct+'%</div>';
+      h+=(pSwing&&pSwing>0?'<div style="font-family:var(--mono);font-size:10px;color:var(--amber2);text-align:right;width:80px;flex-shrink:0;">₹'+fmt(pSwing)+'</div>':'<div style="width:80px;flex-shrink:0;"></div>');
       h+='</div>';
     });
     // Actionable lever translations
@@ -3422,6 +3540,7 @@ window.addEventListener('DOMContentLoaded', function(){
   var barSub = document.querySelector('.bar-sub');
   if(barSub) barSub.textContent = 'MULTI-DOMAIN v6 · ENTERPRISE · G S RAMESH KUMAR · Ω_crit=1/e · ' + (user.org || '');
 });
+
 
 </script>
 </body>
