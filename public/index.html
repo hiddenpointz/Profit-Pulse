@@ -318,6 +318,50 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .burn-sub{font-family:var(--mono);font-size:9px;color:var(--text2);line-height:1.5;}
 @media(max-width:640px){.charts-row{grid-template-columns:1fr;}.pl-grid{grid-template-columns:1fr;}.ss-row{grid-template-columns:1fr;}.cfg-grid{grid-template-columns:1fr;}.cfg-grid3{grid-template-columns:1fr 1fr;}.burn-row{grid-template-columns:1fr;}.tl-bar{flex-direction:column;}.tl-seg{border-right:none;border-bottom:1px solid var(--border2);}}
 
+
+/* ── UEDP Industry Norms Modal ── */
+.norms-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;backdrop-filter:blur(4px);}
+.norms-overlay.open{display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;}
+.norms-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:860px;padding:24px;}
+.norms-title{font-family:var(--cond);font-size:18px;font-weight:800;letter-spacing:2px;color:var(--cyan2);margin-bottom:6px;}
+.norms-sub{font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:18px;line-height:1.6;}
+.norms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:18px;}
+.norms-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:13px 14px;cursor:pointer;transition:.15s;}
+.norms-card:hover,.norms-card.active{border-color:var(--cyan2);background:rgba(64,216,208,.06);}
+.norms-card-icon{font-size:22px;margin-bottom:6px;}
+.norms-card-label{font-family:var(--cond);font-size:13px;font-weight:700;letter-spacing:.5px;color:var(--text);margin-bottom:4px;}
+.norms-card-desc{font-family:var(--mono);font-size:8px;color:var(--text3);line-height:1.5;}
+.norms-detail{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:16px;margin-bottom:14px;display:none;}
+.norms-detail.visible{display:block;}
+.norms-detail-title{font-family:var(--cond);font-size:14px;font-weight:700;color:var(--cyan2);margin-bottom:10px;}
+.norms-w-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:12px;}
+.norms-w-cell{background:var(--bg2);border-radius:6px;padding:10px 8px;text-align:center;}
+.norms-w-key{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.norms-w-val{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--cyan2);}
+.norms-w-rat{font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:4px;line-height:1.4;}
+.norms-bench-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px;}
+.norms-bench-row:last-child{border-bottom:none;}
+.norms-bench-lbl{color:var(--text2);}
+.norms-bench-val{font-family:var(--mono);font-size:11px;color:var(--cyan2);}
+.norms-apply-btn{background:linear-gradient(135deg,rgba(0,184,176,.15),rgba(0,184,176,.25));border:1px solid var(--cyan);color:var(--cyan2);border-radius:5px;padding:10px 22px;font-family:var(--cond);font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;margin-right:10px;}
+.norms-apply-btn:hover{background:rgba(0,184,176,.35);}
+.norms-reset-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;padding:10px 16px;font-family:var(--cond);font-size:13px;font-weight:700;cursor:pointer;}
+.norms-badge{font-family:var(--mono);font-size:9px;padding:3px 9px;border-radius:2px;background:rgba(0,184,176,.12);color:var(--cyan2);border:1px solid rgba(0,184,176,.25);letter-spacing:.5px;}
+.norms-btn{background:var(--bg3);color:var(--cyan2);border:1px solid rgba(0,184,176,.3);border-radius:5px;padding:8px 14px;font-family:var(--cond);font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:.2s;}
+.norms-btn:hover{background:rgba(0,184,176,.12);}
+.industry-benchmark-panel{background:linear-gradient(135deg,rgba(0,184,176,.06),rgba(0,184,176,.02));border:1px solid rgba(0,184,176,.2);border-radius:9px;padding:16px;margin-bottom:14px;}
+.ibp-title{font-family:var(--cond);font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan2);margin-bottom:12px;}
+.ibp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:10px;}
+.ibp-cell{background:var(--bg3);border-radius:5px;padding:8px 10px;text-align:center;}
+.ibp-lbl{font-family:var(--mono);font-size:7px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.ibp-val{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--cyan2);}
+.ibp-act{font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:2px;}
+.ibp-vs{font-family:var(--mono);font-size:9px;padding:3px 7px;border-radius:2px;margin-left:5px;}
+.ibp-vs.above{background:rgba(26,136,80,.12);color:var(--green2);}
+.ibp-vs.below{background:rgba(192,48,48,.1);color:var(--red2);}
+.ibp-vs.near{background:rgba(212,144,10,.1);color:var(--amber2);}
+.ibp-source{font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:8px;line-height:1.5;border-top:1px solid var(--border);padding-top:6px;}
+
 </style>
 </head>
 <body>
@@ -411,6 +455,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
         <input class="w-inp" type="number" id="w_order" value="0.15" step="0.01" min="0" max="1" oninput="updateWSum()">
       </div>
       <div class="w-sum" id="wSumDisplay">Sum: 1.000 ✓</div>
+      <div id="normsRationaleInConfig" style="display:none;margin-top:10px;padding:10px;background:var(--bg2);border-radius:6px;border:1px solid rgba(0,184,176,.2);">
+        <div style="font-family:var(--mono);font-size:8px;color:var(--cyan2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;" id="normsRatTitle"></div>
+        <div id="normsRatBody" style="font-size:10px;color:var(--text2);line-height:1.7;"></div>
+      </div>
     </div>
 
     <!-- ALERT THRESHOLDS -->
@@ -576,10 +624,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
   <button class="cfg-btn" onclick="openAudit()" title="Audit trail">🔒 AUDIT</button>
   <!-- PDF -->
   <button class="cfg-btn" onclick="exportPDF()" title="Export PDF report">⬇ PDF</button>
+  <button class="norms-btn" onclick="openNormsModal()" id="normsBtn">📊 INDUSTRY NORMS</button>
+  <span id="normsBadge" style="display:none"></span>
   <button class="cfg-btn" onclick="openConfig()">⚙ CONFIG</button>
-  <button class="cfg-btn" onclick="openNorms()">
-  📘 NORMS
-   </button>
   <button class="compute-btn" id="computeBtn" onclick="compute()">▶ COMPUTE Ω</button>
 </div>
 
@@ -878,6 +925,840 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
+
+<script>
+// UEDP Industry Norms Dataset — embedded
+/**
+ * UEDP Industry Norms Dataset
+ * ──────────────────────────────────────────────────────────────────────────
+ * Author  : G S Ramesh Kumar
+ * Protocol: dx.doi.org/10.17504/protocols.io.14egnr5yml5d/v4
+ * Paper   : DOI 10.61113/ijiap.v3i12.1223
+ *
+ * PURPOSE:
+ *   Industry-specific penalty weight presets and threshold norms for the
+ *   UEDP v4 engine. These are SUGGESTED starting points derived from
+ *   published industry benchmarks (OEE, DSO, margin norms, LER standards).
+ *   They are NOT empirically validated against UEDP Omega outcomes.
+ *   Users should calibrate against their own 30-day history.
+ *
+ * HOW TO USE:
+ *   1. Load this file before your UEDP engine.
+ *   2. Call UEDP_NORMS.getPreset('manufacturing') to get a CFG-compatible object.
+ *   3. Pass it to computeOmegaCore(inp, preset.W, preset) as the W and cfg args.
+ *   4. The preset overrides ONLY W and threshold values — Ω_crit = 1/e is FIXED.
+ *
+ * WEIGHT LOGIC:
+ *   Each weight answers: "How much does THIS failure mode drive loss in THIS industry?"
+ *   W.var   = Hourly variance (CV²)          — process consistency
+ *   W.spike = Sudden drops (3σ events)        — acute disruptions
+ *   W.drift = Declining trend (OLS slope)     — slow degradation
+ *   W.dir   = Workforce/revenue alignment     — Labour Efficiency Ratio
+ *   W.cost  = Cost vs revenue pressure        — margin sensitivity
+ *   W.order = Order pipeline + payment lead   — cashflow predictability
+ *   All weights sum to 1.000 (enforced).
+ *
+ * SOURCES FOR BENCHMARK VALUES:
+ *   - OEE world-class targets: SMRP (Society for Maintenance & Reliability Professionals)
+ *   - DSO norms: D&B India SME report, RBI MSME data
+ *   - Margin benchmarks: Dun & Bradstreet India industry averages, Damodaran NYU
+ *   - Labor efficiency: SHRM Benchmarking Reports
+ *   - Construction: RERA payment timelines, NIC construction productivity norms
+ *   - Education: NAAC quality indicators, UGC norms
+ *   - Food & Beverage: NRA (National Restaurant Association) cost benchmarks
+ *   - Healthcare: CRISIL Health sector analysis
+ *   - Logistics: CRISIL Logistics India, ATKearney
+ *   - Technology/SaaS: Bessemer Venture Partners SaaS benchmarks, KeyBanc
+ * ──────────────────────────────────────────────────────────────────────────
+ */
+
+'use strict';
+
+var UEDP_NORMS = (function() {
+
+  // ── OMEGA_CRIT: FIXED BY METP THEORY — DO NOT CHANGE ──────────────────
+  var OC = 1 / Math.E; // 0.36788...
+
+  // ── INDUSTRY PRESETS ────────────────────────────────────────────────────
+
+  var PRESETS = {
+
+    // ── 1. DISCRETE MANUFACTURING ─────────────────────────────────────────
+    manufacturing: {
+      id: 'manufacturing',
+      label: 'Discrete Manufacturing',
+      icon: '🏭',
+      description: 'Batch/unit production. Variance and machine spikes are the primary Omega suppressors. Margins wide enough to withstand some cost pressure; DSO typically 30–60d.',
+
+      W: { var:0.25, spike:0.20, drift:0.15, dir:0.15, cost:0.15, order:0.10 },
+
+      // Threshold norms (override CFG values)
+      omegaRef:          0.70,
+      omegaWarnHi:       0.55,
+      omegaStableFloor:  0.70,
+      payMax:            60,    // D&B India manufacturing DSO norm: 45–60d
+      spikeDiv:          3,     // 3σ machine downtime threshold standard
+      projHrs:           10,
+      attCrit:           70,    // Shift manning: below 70% = line risk
+      attWarn:           85,
+      marginThin:        10,    // Manufacturing net margin below 10% = thin
+      marginTarget:      20,    // World-class net margin target
+      confirmWarn:       65,
+      convWarn:          45,
+      payWarn:           60,
+      driftAlert:        -0.5,
+      revEffWarn:        65,
+
+      // Industry-specific benchmarks (informational — shown in UI)
+      benchmarks: {
+        oeeLow:           55,   // OEE% below this = poor (SMRP)
+        oeeMedium:        75,   // OEE% typical
+        oeeWorldClass:    85,   // OEE% world-class
+        grossMarginLow:   20,
+        grossMarginTyp:   30,
+        grossMarginHigh:  40,
+        netMarginTyp:     8,
+        dsoTypical:       45,   // days
+        dsoAlert:         60,
+        attendanceCrit:   70,   // % shift crew
+        varianceAlert:    0.12, // CV² above 0.12 = process instability
+        source: 'SMRP OEE Standards, Damodaran India Manufacturing Margins, D&B DSO'
+      },
+
+      rationale: {
+        var:   'Batch consistency = quality and rework cost. CV² is the leading indicator of defect rate.',
+        spike: 'Machine downtime events are the canonical loss driver in manufacturing.',
+        drift: 'Fatigue, material rundown, or thermal degradation creates measurable OLS decline.',
+        dir:   'Workforce-to-output alignment matters but shifts are mostly fixed; less leverage.',
+        cost:  'Margins allow some cost pressure; not the primary Omega driver.',
+        order: 'B2B orders with 30–60d DSO; pipeline health moderately important.'
+      }
+    },
+
+    // ── 2. RETAIL / DISTRIBUTION ──────────────────────────────────────────
+    retail: {
+      id: 'retail',
+      label: 'Retail / Distribution',
+      icon: '🛒',
+      description: 'High-velocity, low-margin. Cost pressure and staff-revenue alignment dominate. Declining trend is the most dangerous signal since missed sales are irrecoverable.',
+
+      W: { var:0.10, spike:0.10, drift:0.20, dir:0.20, cost:0.25, order:0.15 },
+
+      omegaRef:          0.68,
+      omegaWarnHi:       0.50,
+      omegaStableFloor:  0.68,
+      payMax:            30,    // Retail DSO very low — credit card, POS
+      spikeDiv:          3,
+      projHrs:           10,
+      attCrit:           72,
+      attWarn:           85,
+      marginThin:        4,     // Net margin below 4% = structural risk
+      marginTarget:      8,
+      confirmWarn:       70,
+      convWarn:          50,
+      payWarn:           30,
+      driftAlert:        -0.4,  // Retail tolerates less drift
+      revEffWarn:        70,
+
+      benchmarks: {
+        grossMarginLow:   25,
+        grossMarginTyp:   38,
+        grossMarginHigh:  55,
+        netMarginTyp:     3,    // India retail net margin 2–5%
+        dsoTypical:       7,    // Mostly cash/credit card
+        dsoAlert:         20,
+        attendanceCrit:   72,
+        varianceAlert:    0.20, // Hourly footfall naturally high variance
+        source: 'Damodaran India Retail Margins, CRISIL Retail Report, D&B'
+      },
+
+      rationale: {
+        var:   'Hourly footfall varies naturally — variance is not a strong Omega signal in retail.',
+        spike: 'No machine downtime equivalent; POS failures are brief. Low weight.',
+        drift: 'Declining day performance = permanently missed revenue. Critical signal.',
+        dir:   'Staff-to-sales alignment is the key lever — understaffing and overstaffing both hurt.',
+        cost:  'Net margins of 2–5% mean any cost overrun is immediately structural. Highest weight.',
+        order: 'Reorder pipeline and payment terms matter for working capital, moderate importance.'
+      }
+    },
+
+    // ── 3. CONSTRUCTION / CONTRACTOR ──────────────────────────────────────
+    contractor: {
+      id: 'contractor',
+      label: 'Construction / Contractor',
+      icon: '🏗',
+      description: 'Project-based, thin margins. Schedule slippage compounds exponentially. Payment cert delay and retention create sustained cashflow risk that dwarfs daily P&L.',
+
+      W: { var:0.10, spike:0.20, drift:0.20, dir:0.10, cost:0.15, order:0.25 },
+
+      omegaRef:          0.68,
+      omegaWarnHi:       0.52,
+      omegaStableFloor:  0.68,
+      payMax:            90,    // RERA: 30d cert + 45d payment = 75d norm, alert at 90
+      spikeDiv:          2.5,   // Lower threshold: safety incidents = hard stop
+      projHrs:           9,
+      attCrit:           68,
+      attWarn:           82,
+      marginThin:        3,     // Construction net margin 3–7%
+      marginTarget:      7,
+      confirmWarn:       60,
+      convWarn:          40,
+      payWarn:           60,    // 60d payment lead = cashflow stress
+      driftAlert:        -0.3,  // Schedule drift triggers earlier
+      revEffWarn:        60,
+
+      benchmarks: {
+        grossMarginTyp:   12,   // Construction gross margin 10–15%
+        netMarginLow:     2,
+        netMarginTyp:     5,
+        netMarginHigh:    8,
+        dsoTypical:       60,   // India construction: 45–75d cert+payment
+        dsoAlert:         90,
+        spiCrit:          0.90,  // Schedule Performance Index
+        spiWarn:          0.97,
+        reworkAlert:      8,    // Rework % above 8% = quality concern
+        attendanceCrit:   68,
+        source: 'RERA payment norms, NIC Construction Index, CRISIL Infrastructure'
+      },
+
+      rationale: {
+        var:   'Day-to-day site output varies by weather, crew — lower weight.',
+        spike: 'Safety incidents and material non-delivery stop the project completely. High weight.',
+        drift: 'Schedule slippage compounds: 1 day behind becomes 5 days by month end. Critical.',
+        dir:   'Labour tracking vs billing alignment matters but is less granular at daily level.',
+        cost:  'Margins thin but fairly predictable; not the primary daily signal.',
+        order: 'Cert approval, retention, and 60–90d payment lead create sustained cashflow crisis. Highest.'
+      }
+    },
+
+    // ── 4. EDUCATIONAL INSTITUTION ────────────────────────────────────────
+    education: {
+      id: 'education',
+      label: 'Educational Institution',
+      icon: '🎓',
+      description: 'Fixed-cost heavy; fee collection is the only revenue lever. No real hourly production variance signal. Pipeline = admissions + fee recovery cycle.',
+
+      W: { var:0.10, spike:0.10, drift:0.15, dir:0.15, cost:0.25, order:0.25 },
+
+      omegaRef:          0.68,
+      omegaWarnHi:       0.50,
+      omegaStableFloor:  0.68,
+      payMax:            30,    // Fee overdue >30d = cashflow risk
+      spikeDiv:          3,
+      projHrs:           8,    // School day
+      attCrit:           75,   // NAAC: below 75% = eligibility risk
+      attWarn:           85,
+      marginThin:        8,    // Private education net margin 8–20%
+      marginTarget:      15,
+      confirmWarn:       60,   // Admission conversion below 60% = intake risk
+      convWarn:          30,
+      payWarn:           30,   // Fee overdue 30d = working capital stress
+      driftAlert:        -0.4,
+      revEffWarn:        65,
+
+      // Education-specific
+      studAttCrit:       75,
+      studAttWarn:       85,
+      classDelAlert:     90,
+      passRateCrit:      70,
+      feeRecovWarn:      60,
+      syllabusHigh:      2,
+      syllabusModerate:  1,
+
+      benchmarks: {
+        grossMarginTyp:   40,   // Education gross margin 35–50%
+        netMarginLow:     8,
+        netMarginTyp:     15,
+        netMarginHigh:    25,
+        dsoTypical:       15,   // Fee should be collected within 15d of due date
+        dsoAlert:         30,
+        studentAttCrit:   75,   // UGC/NAAC exam eligibility threshold
+        classDeliveryCrit: 90,
+        passRateCrit:     70,
+        source: 'NAAC Quality Indicators, UGC Attendance Norms, CRISIL Education'
+      },
+
+      rationale: {
+        var:   'Period delivery naturally varies — not a strong signal.',
+        spike: 'Teacher absence is the only real spike; recoverable. Low weight.',
+        drift: 'Syllabus coverage trend and attendance trend matter moderately.',
+        dir:   'Teacher-student alignment moderately important.',
+        cost:  'Fixed salary + ops cost against fee collection: any shortfall is structural. High.',
+        order: 'Admission pipeline and fee recovery cycle drive institutional viability. Equal highest.'
+      }
+    },
+
+    // ── 5. LOGISTICS / SUPPLY CHAIN ───────────────────────────────────────
+    logistics: {
+      id: 'logistics',
+      label: 'Logistics / Supply Chain',
+      icon: '🚚',
+      description: 'SLA-driven. Delivery time variance and missed delivery spikes directly destroy client relationships and trigger penalties. Direction (utilisation vs revenue) is critical.',
+
+      W: { var:0.25, spike:0.20, drift:0.15, dir:0.20, cost:0.15, order:0.05 },
+
+      omegaRef:          0.70,
+      omegaWarnHi:       0.55,
+      omegaStableFloor:  0.70,
+      payMax:            45,    // Logistics: typically contract-based, shorter DSO
+      spikeDiv:          2.5,   // Missed delivery = harder threshold
+      projHrs:           10,
+      attCrit:           78,    // Driver availability critical
+      attWarn:           90,
+      marginThin:        3,     // Logistics net margin 2–6%
+      marginTarget:      6,
+      confirmWarn:       75,
+      convWarn:          55,
+      payWarn:           45,
+      driftAlert:        -0.5,
+      revEffWarn:        70,
+
+      benchmarks: {
+        grossMarginTyp:   18,
+        netMarginLow:     2,
+        netMarginTyp:     4,
+        netMarginHigh:    7,
+        dsoTypical:       30,
+        dsoAlert:         45,
+        onTimeDeliveryTarget: 95,  // OTD% world class
+        onTimeDeliveryWarn:   88,
+        vehicleUtilTarget:    80,  // Fleet utilisation % target
+        attendanceCrit:    78,
+        source: 'ATKearney Logistics Index, CRISIL India Logistics, SHRM'
+      },
+
+      rationale: {
+        var:   'Delivery time variance destroys SLA compliance scores. Highest weight.',
+        spike: 'Missed deliveries trigger client penalties and churn. High weight.',
+        drift: 'Fleet efficiency or route optimisation declining trend. Moderate.',
+        dir:   'Vehicle/driver utilisation vs revenue per km: critical operational ratio.',
+        cost:  'Fuel + driver cost as % of revenue: thin margin but somewhat predictable.',
+        order: 'Usually long-term contracts; pipeline uncertainty is lower. Low weight.'
+      }
+    },
+
+    // ── 6. HEALTHCARE / CLINIC ────────────────────────────────────────────
+    healthcare: {
+      id: 'healthcare',
+      label: 'Healthcare / Clinic',
+      icon: '🏥',
+      description: 'Appointment + consultation model. Doctor utilisation vs consultation revenue is the core ratio. No-show spikes are acute and irrecoverable.',
+
+      W: { var:0.15, spike:0.20, drift:0.10, dir:0.25, cost:0.25, order:0.05 },
+
+      omegaRef:          0.68,
+      omegaWarnHi:       0.52,
+      omegaStableFloor:  0.68,
+      payMax:            30,    // Insurance/TPA claims: 15–30d norm
+      spikeDiv:          2.5,
+      projHrs:           9,
+      attCrit:           75,    // Doctor attendance critical
+      attWarn:           88,
+      marginThin:        8,
+      marginTarget:      18,
+      confirmWarn:       70,    // Appointment confirmation rate
+      convWarn:          55,
+      payWarn:           30,
+      driftAlert:        -0.4,
+      revEffWarn:        68,
+
+      benchmarks: {
+        grossMarginTyp:   35,
+        netMarginLow:     8,
+        netMarginTyp:     18,
+        netMarginHigh:    30,
+        dsoTypical:       15,
+        dsoAlert:         30,
+        bedOccupancyTarget: 80,  // Hospital bed occupancy %
+        doctorUtilTarget:   70,  // Billable consultations / available slots
+        noShowWarn:         15,  // No-show rate above 15% = revenue risk
+        source: 'CRISIL Health Sector Report, NHA India, JCI Standards'
+      },
+
+      rationale: {
+        var:   'Appointment adherence varies — some natural variation acceptable.',
+        spike: 'No-shows, emergency surges, doctor absences = irrecoverable revenue loss.',
+        drift: 'Patient load is fairly stable; drift is less meaningful.',
+        dir:   'Doctor utilisation vs consultation revenue: the single most important ratio.',
+        cost:  'Consumables + staff + rent with tight insurance reimbursements. Critical.',
+        order: 'Walk-in/appointment model, not B2B order pipeline. Minimal weight.'
+      }
+    },
+
+    // ── 7. TECHNOLOGY / SAAS ──────────────────────────────────────────────
+    technology: {
+      id: 'technology',
+      label: 'Technology / SaaS',
+      icon: '💻',
+      description: 'Sprint velocity and MRR/ARR pipeline dominate. Declining delivery velocity and pipeline churn are the existential signals. Cost pressure moderate as margins can be high.',
+
+      W: { var:0.10, spike:0.15, drift:0.20, dir:0.20, cost:0.10, order:0.25 },
+
+      omegaRef:          0.72,
+      omegaWarnHi:       0.55,
+      omegaStableFloor:  0.72,
+      payMax:            30,    // SaaS: monthly billing, net-30 standard
+      spikeDiv:          3,
+      projHrs:           9,
+      attCrit:           80,    // Dev team availability critical
+      attWarn:           90,
+      marginThin:        15,    // SaaS net margin 15–40% target range
+      marginTarget:      30,
+      confirmWarn:       70,    // Trial-to-paid conversion
+      convWarn:          25,    // Lead-to-trial conversion
+      payWarn:           30,
+      driftAlert:        -0.3,  // Sprint velocity decline triggers early
+      revEffWarn:        70,
+
+      benchmarks: {
+        grossMarginLow:   60,   // SaaS gross margin target
+        grossMarginTyp:   72,
+        grossMarginHigh:  85,
+        netMarginLow:     10,
+        netMarginTyp:     25,
+        netMarginHigh:    40,
+        dsoTypical:       14,
+        dsoAlert:         30,
+        mrrGrowthTarget:  10,   // MRR growth % monthly
+        churnWarn:        3,    // Monthly churn % above 3% = critical
+        nrrTarget:        105,  // Net Revenue Retention % target
+        source: 'Bessemer BVP SaaS Index, KeyBanc SaaS Survey, Baremetrics'
+      },
+
+      rationale: {
+        var:   'Sprint velocity naturally varies; not a strong daily signal.',
+        spike: 'Production incidents, deployment failures cause revenue/reputation damage.',
+        drift: 'Declining velocity = delivery risk and team health issue. Critical leading indicator.',
+        dir:   'Developer capacity vs feature/revenue output: core engineering efficiency ratio.',
+        cost:  'Cloud + salary margins can be high; cost pressure less acute than other industries.',
+        order: 'MRR/ARR pipeline = survival. Churn + pipeline together are the existential signal.'
+      }
+    },
+
+    // ── 8. FOOD & BEVERAGE ────────────────────────────────────────────────
+    food_beverage: {
+      id: 'food_beverage',
+      label: 'Food & Beverage',
+      icon: '🍽',
+      description: 'Shift-based, perishable inventory. Food cost % is the primary KPI. Rush-hour spikes are irrecoverable. Staff alignment per shift = the operating lever.',
+
+      W: { var:0.15, spike:0.20, drift:0.10, dir:0.20, cost:0.30, order:0.05 },
+
+      omegaRef:          0.65,
+      omegaWarnHi:       0.50,
+      omegaStableFloor:  0.65,
+      payMax:            7,     // F&B suppliers: mostly 7–15d credit
+      spikeDiv:          2.5,   // Lower threshold: rush-hour failures critical
+      projHrs:           10,
+      attCrit:           75,    // Below 75% crew = service breakdown
+      attWarn:           88,
+      marginThin:        5,     // F&B net margin 3–9%
+      marginTarget:      9,
+      confirmWarn:       75,
+      convWarn:          55,
+      payWarn:           15,    // Supplier credit 7–15d
+      driftAlert:        -0.5,
+      revEffWarn:        72,
+
+      benchmarks: {
+        foodCostTarget:   28,   // Food cost % of revenue target
+        foodCostWarn:     35,   // NRA standard: above 35% = alert
+        laborCostTarget:  30,   // Labor cost % of revenue
+        laborCostWarn:    38,
+        grossMarginTyp:   68,   // F&B gross margin 60–75%
+        netMarginLow:     3,
+        netMarginTyp:     6,
+        netMarginHigh:    12,
+        dsoTypical:       1,    // Cash/POS — near-zero
+        dsoAlert:         7,
+        tableTurnTarget:  3,    // Covers/table/day
+        source: 'NRA Restaurant Industry Report, FSSAI India, Technopak F&B India'
+      },
+
+      rationale: {
+        var:   'Kitchen output varies shift to shift — moderate signal.',
+        spike: 'Rush-hour preparation failures and no-shows are irrecoverable revenue losses.',
+        drift: 'Service quality decline trend — moderate importance.',
+        dir:   'Staff/revenue alignment per shift is the primary operating lever.',
+        cost:  'Food cost % is THE primary F&B KPI. Cost pressure gets highest weight.',
+        order: 'Mostly walk-in; supplier orders short-cycle. Low pipeline uncertainty.'
+      }
+    },
+
+    // ── 9. PROFESSIONAL SERVICES / CONSULTING ─────────────────────────────
+    professional_services: {
+      id: 'professional_services',
+      label: 'Professional Services',
+      icon: '📋',
+      description: 'Billable utilisation is everything. Pipeline (proposals + retainers) and direction (billable vs available hours) dominate. Low variance, high direction sensitivity.',
+
+      W: { var:0.08, spike:0.12, drift:0.15, dir:0.30, cost:0.15, order:0.20 },
+
+      omegaRef:          0.70,
+      omegaWarnHi:       0.55,
+      omegaStableFloor:  0.70,
+      payMax:            45,    // Net-30 to net-45 standard
+      spikeDiv:          3,
+      projHrs:           9,
+      attCrit:           80,    // Consultant availability = delivery capacity
+      attWarn:           90,
+      marginThin:        15,
+      marginTarget:      25,
+      confirmWarn:       70,
+      convWarn:          40,
+      payWarn:           45,
+      driftAlert:        -0.3,
+      revEffWarn:        70,
+
+      benchmarks: {
+        grossMarginTyp:   45,
+        netMarginLow:     12,
+        netMarginTyp:     22,
+        netMarginHigh:    35,
+        dsoTypical:       30,
+        dsoAlert:         45,
+        billableUtilTarget: 75,  // Billable hours as % of available
+        billableUtilWarn:   65,
+        realisationTarget:  90,  // Billed vs budgeted hours %
+        source: 'SHRM Consulting Benchmarks, SPI Research PS Maturity Benchmark'
+      },
+
+      rationale: {
+        var:   'Project hours vary by nature; not a meaningful daily Omega signal.',
+        spike: 'Key person absence causes delivery gap; moderate impact.',
+        drift: 'Declining project progress rate is a delivery risk signal.',
+        dir:   'Billable utilisation vs total available hours is THE metric. Highest weight.',
+        cost:  'Salary + overhead vs billing rate: moderate pressure, manageable margins.',
+        order: 'Proposal pipeline + retainer renewal: survival signal. High weight.'
+      }
+    },
+
+    // ── 10. PROCESS MANUFACTURING (Chemicals/Pharma/FMCG) ────────────────
+    process_manufacturing: {
+      id: 'process_manufacturing',
+      label: 'Process Manufacturing',
+      icon: '⚗',
+      description: 'Continuous process. Variance IS the quality signal (GMP/GLP compliance). Drift and spikes are critical. Direction less relevant (automated lines). Pipeline moderate.',
+
+      W: { var:0.30, spike:0.25, drift:0.20, dir:0.08, cost:0.12, order:0.05 },
+
+      omegaRef:          0.72,
+      omegaWarnHi:       0.58,
+      omegaStableFloor:  0.72,
+      payMax:            60,
+      spikeDiv:          2,     // GMP: tighter tolerance on batch deviations
+      projHrs:           12,    // Shift-based continuous operations
+      attCrit:           80,    // Operator coverage critical on continuous lines
+      attWarn:           90,
+      marginThin:        12,
+      marginTarget:      22,
+      confirmWarn:       70,
+      convWarn:          50,
+      payWarn:           60,
+      driftAlert:        -0.2,  // Process drift triggers at lower threshold
+      revEffWarn:        72,
+
+      benchmarks: {
+        grossMarginTyp:   40,   // Pharma gross margin 40–60%; FMCG 35–50%
+        netMarginLow:     10,
+        netMarginTyp:     20,
+        netMarginHigh:    35,
+        dsoTypical:       45,
+        dsoAlert:         60,
+        batchVarianceAlert: 0.05, // GMP: batch CV% above 5% = OOS risk
+        oeeWorldClass:    85,
+        source: 'WHO GMP Guidelines, CRISIL Pharma India, Damodaran FMCG Margins'
+      },
+
+      rationale: {
+        var:   'Batch variance IS the quality/compliance signal in process industries. Highest weight.',
+        spike: 'Batch failure, reactor excursion, contamination event. Very high weight.',
+        drift: 'Gradual process drift before OOS (out-of-spec) event. Critical early warning.',
+        dir:   'Automated process lines — workforce direction less granular. Low weight.',
+        cost:  'Raw material cost + utility cost: moderate pressure, somewhat predictable.',
+        order: 'Long production runs with known demand; pipeline uncertainty low.'
+      }
+    },
+
+  }; // end PRESETS
+
+
+  // ── THRESHOLD ALERT BENCHMARKS BY INDUSTRY ──────────────────────────────
+  // These are industry-specific alert thresholds that override CFG defaults.
+  // Basis: published benchmark reports cited in PRESETS[id].benchmarks.source
+
+  var THRESHOLD_NORMS = {
+
+    // PAY_MAX (Days Sales Outstanding alert ceiling)
+    payMax: {
+      manufacturing:        60,
+      retail:               15,
+      contractor:           90,
+      education:            30,
+      logistics:            45,
+      healthcare:           30,
+      technology:           30,
+      food_beverage:        7,
+      professional_services: 45,
+      process_manufacturing: 60,
+      source: 'D&B India DSO norms, RBI MSME data, RERA construction payment timelines'
+    },
+
+    // NET MARGIN TARGET (%)
+    netMarginTarget: {
+      manufacturing:        20,
+      retail:               5,
+      contractor:           7,
+      education:            15,
+      logistics:            5,
+      healthcare:           18,
+      technology:           25,
+      food_beverage:        8,
+      professional_services: 22,
+      process_manufacturing: 20,
+      source: 'Damodaran India industry margin database, CRISIL sector reports 2023–24'
+    },
+
+    // NET MARGIN THIN ALERT (%) — below this = structural risk even if profitable
+    netMarginThin: {
+      manufacturing:        10,
+      retail:               2,
+      contractor:           3,
+      education:            8,
+      logistics:            2,
+      healthcare:           8,
+      technology:           12,
+      food_beverage:        4,
+      professional_services: 12,
+      process_manufacturing: 10,
+      source: 'Industry distress threshold analysis — below thin margin = covenant breach risk'
+    },
+
+    // ATTENDANCE CRITICAL (%) — below this = capacity loss
+    attendanceCrit: {
+      manufacturing:        70,
+      retail:               72,
+      contractor:           68,
+      education:            75,  // NAAC: 75% student attendance minimum
+      logistics:            78,
+      healthcare:           75,
+      technology:           80,
+      food_beverage:        75,
+      professional_services: 80,
+      process_manufacturing: 80,
+      source: 'SHRM staffing benchmarks, NAAC quality indicators, industry operational norms'
+    },
+
+    // SPIKE_DIV (σ multiple for acute event detection)
+    spikeDiv: {
+      manufacturing:        3.0,   // Standard 3σ
+      retail:               3.0,
+      contractor:           2.5,   // Tighter: safety incidents need earlier detection
+      education:            3.0,
+      logistics:            2.5,   // SLA sensitivity requires tighter threshold
+      healthcare:           2.5,   // No-show spike needs early detection
+      technology:           3.0,
+      food_beverage:        2.5,
+      professional_services: 3.0,
+      process_manufacturing: 2.0,  // GMP: tightest — batch deviation detection
+      source: 'Statistical process control norms, GMP batch deviation standards'
+    },
+
+  };
+
+
+  // ── WEIGHT VALIDATION ────────────────────────────────────────────────────
+
+  function validateWeights(W) {
+    var sum = W.var + W.spike + W.drift + W.dir + W.cost + W.order;
+    if (Math.abs(sum - 1.0) > 0.001) {
+      console.warn('UEDP_NORMS: weights sum to ' + Math.round(sum*1000)/1000 + ', not 1.000');
+      return false;
+    }
+    return true;
+  }
+
+
+  // ── PUBLIC API ────────────────────────────────────────────────────────────
+
+  return {
+
+    OC: OC,  // expose for reference — DO NOT USE AS CONFIGURABLE
+
+    /**
+     * Get a preset by industry ID.
+     * Returns an object compatible with UEDP CFG + W.
+     * @param {string} industryId — one of the keys in PRESETS
+     * @returns {object} preset with .W and threshold overrides
+     */
+    getPreset: function(industryId) {
+      var p = PRESETS[industryId];
+      if (!p) {
+        console.warn('UEDP_NORMS: unknown industry "' + industryId + '". Using default.');
+        return null;
+      }
+      validateWeights(p.W);
+      return JSON.parse(JSON.stringify(p));  // deep copy
+    },
+
+    /**
+     * List all available industry presets.
+     * @returns {Array} [{id, label, icon, description}]
+     */
+    listPresets: function() {
+      return Object.keys(PRESETS).map(function(id) {
+        return {
+          id:          PRESETS[id].id,
+          label:       PRESETS[id].label,
+          icon:        PRESETS[id].icon,
+          description: PRESETS[id].description
+        };
+      });
+    },
+
+    /**
+     * Get a specific threshold norm for an industry.
+     * @param {string} threshold — e.g. 'payMax', 'netMarginTarget'
+     * @param {string} industryId
+     * @returns {number|null}
+     */
+    getThreshold: function(threshold, industryId) {
+      if (!THRESHOLD_NORMS[threshold]) return null;
+      return THRESHOLD_NORMS[threshold][industryId] || null;
+    },
+
+    /**
+     * Get all threshold norms for an industry as a flat object.
+     * Useful for populating CFG overrides.
+     * @param {string} industryId
+     * @returns {object}
+     */
+    getThresholdsForIndustry: function(industryId) {
+      var result = {};
+      Object.keys(THRESHOLD_NORMS).forEach(function(key) {
+        if (key === 'source') return;
+        var val = THRESHOLD_NORMS[key][industryId];
+        if (val !== undefined) result[key] = val;
+      });
+      return result;
+    },
+
+    /**
+     * Merge a preset into an existing CFG object.
+     * Overwrites W and threshold fields. Ω_crit remains 1/e.
+     * @param {object} cfg — existing CFG
+     * @param {string} industryId
+     * @returns {object} merged CFG
+     */
+    applyPresetToCFG: function(cfg, industryId) {
+      var preset = this.getPreset(industryId);
+      if (!preset) return cfg;
+      var merged = JSON.parse(JSON.stringify(cfg));
+      // Apply W
+      merged.W = preset.W;
+      // Apply threshold overrides (only defined fields)
+      var threshold_keys = ['omegaRef','omegaWarnHi','omegaStableFloor','payMax','spikeDiv',
+        'projHrs','attCrit','attWarn','marginThin','marginTarget','confirmWarn','convWarn',
+        'payWarn','driftAlert','revEffWarn','studAttCrit','studAttWarn','classDelAlert',
+        'passRateCrit','feeRecovWarn','syllabusHigh','syllabusModerate'];
+      threshold_keys.forEach(function(k) {
+        if (preset[k] !== undefined) merged[k] = preset[k];
+      });
+      return merged;
+    },
+
+    /**
+     * Get the full benchmarks object for an industry.
+     * Used for display purposes (show industry norms alongside actual metrics).
+     * @param {string} industryId
+     * @returns {object|null}
+     */
+    getBenchmarks: function(industryId) {
+      var p = PRESETS[industryId];
+      return p ? JSON.parse(JSON.stringify(p.benchmarks)) : null;
+    },
+
+    /**
+     * Get the rationale text for each weight in an industry.
+     * Used in UI to explain WHY each weight has its value.
+     * @param {string} industryId
+     * @returns {object|null} {var, spike, drift, dir, cost, order}
+     */
+    getRationale: function(industryId) {
+      var p = PRESETS[industryId];
+      return p ? JSON.parse(JSON.stringify(p.rationale)) : null;
+    },
+
+    /**
+     * Compare actual Omega against industry norms.
+     * Returns interpretation of where the business stands vs its peers.
+     * @param {number} omega — actual Omega value
+     * @param {string} industryId
+     * @returns {object} {status, percentile_note, action}
+     */
+    interpretOmega: function(omega, industryId) {
+      var p = PRESETS[industryId];
+      if (!p) return null;
+      var ref  = p.omegaRef || 0.70;
+      var warn = p.omegaWarnHi || 0.55;
+      if (omega >= ref) return {
+        status: 'ABOVE_INDUSTRY_REF',
+        note: 'Omega is at or above the ' + p.label + ' reference level of ' + ref + '. System coherence is industry-healthy.',
+        action: 'Maintain. Focus on compounding gains.'
+      };
+      if (omega >= warn) return {
+        status: 'BELOW_REF_STABLE',
+        note: 'Omega is below the ' + p.label + ' reference (' + ref + ') but above the stress threshold (' + warn + ').',
+        action: 'Address top penalty driver. Monitor for drift below ' + warn + '.'
+      };
+      if (omega >= OC) return {
+        status: 'STRESS_ZONE',
+        note: 'Omega is in the stress zone for ' + p.label + '. Between Ω_crit (0.368) and the industry stress threshold (' + warn + ').',
+        action: 'Intervene. Top penalty driver is suppressing coherence toward critical boundary.'
+      };
+      return {
+        status: 'BELOW_CRITICAL',
+        note: 'Omega has crossed Ω_crit = 1/e. System is in the critical zone for ' + p.label + '. METP boundary crossed.',
+        action: 'Immediate action required. Cost of delay exceeds cost of intervention.'
+      };
+    },
+
+    /**
+     * Validate that a set of weights conforms to UEDP requirements.
+     * @param {object} W
+     * @returns {boolean}
+     */
+    validateWeights: validateWeights,
+
+    // Expose raw presets for advanced use
+    _presets: PRESETS,
+    _thresholds: THRESHOLD_NORMS,
+
+  };
+
+})();
+
+
+// ── If running in Node.js / CommonJS ──────────────────────────────────────
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = UEDP_NORMS;
+}
+
+// ── Quick self-test ────────────────────────────────────────────────────────
+if (typeof window === 'undefined') {
+  // Node environment — run quick checks
+  var presets = UEDP_NORMS.listPresets();
+  console.log('UEDP_NORMS loaded. Presets available:');
+  presets.forEach(function(p) {
+    var preset = UEDP_NORMS.getPreset(p.id);
+    var sum = Object.values(preset.W).reduce(function(a,b){return a+b;},0);
+    var ok = Math.abs(sum - 1.0) < 0.001;
+    console.log('  ' + (ok?'✓':'✗') + ' ' + p.icon + ' ' + p.label + ' (W sum = ' + Math.round(sum*1000)/1000 + ')');
+  });
+  console.log('Omega_crit = 1/e = ' + UEDP_NORMS.OC.toFixed(6) + ' (fixed by METP theory)');
+}
+
+</script>
 <script>
 'use strict';
 
@@ -1381,9 +2262,6 @@ function setDomain(d){
 function openConfig(){
   syncConfigToUI();
   document.getElementById('cfgOverlay').classList.add('open');
-}
-  function openNorms(){
-  window.open('uedp_industry_norms_ui.html', '_blank');
 }
 function closeConfig(){ document.getElementById('cfgOverlay').classList.remove('open'); }
 
@@ -3074,6 +3952,11 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
 
   // Financial Snapshot
   if(canSee('financial')){
+  // ── v4.1 NORMS: Industry benchmark panel (only when norm active) ────────
+  if (typeof renderIndustryBenchmarkPanel === 'function') {
+    h += renderIndustryBenchmarkPanel(R, inp);
+  }
+
   h+='<div class="sh '+shClass+'">Financial Snapshot</div>';
   if(inp.domain==='contractor'){
     // [FIX-CON-1]: Three distinct layers for construction finance
@@ -3274,6 +4157,33 @@ function render(R,alerts,inp,domainExtras,sens,evSuppressed,hasCriticalDataIssue
 
   // UEDP Protocol Diagnostics — MD only
   if(canSee('protocol')){
+  // ── Norms weight comparison (shown when a preset is active) ────────────
+  if (activeNormId && typeof UEDP_NORMS !== 'undefined') {
+    var normsPreset = UEDP_NORMS.getPreset(activeNormId);
+    if (normsPreset) {
+      h+='<div style="background:var(--bg3);border:1px solid rgba(0,184,176,.2);border-radius:7px;padding:12px;margin-bottom:14px;">';
+      h+='<div style="font-family:var(--mono);font-size:9px;color:var(--cyan2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">'+normsPreset.icon+' '+esc(normsPreset.label)+' — Preset vs Active Weights</div>';
+      h+='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;">';
+      var wks = ['var','spike','drift','dir','cost','order'];
+      var wlbs = ['Variance','Spike','Drift','Direction','Cost','Pipeline'];
+      var wclrs = ['#40d8d0','#f09050','#f5b830','#b09ae0','#f07070','#5aacf0'];
+      wks.forEach(function(k,i){
+        var preset_val = normsPreset.W[k];
+        var active_val = CFG.W[k];
+        var diff = Math.round((active_val - preset_val)*100);
+        var diffCol = diff===0?'var(--text3)':diff>0?'var(--amber2)':'var(--blue2)';
+        h+='<div style="background:var(--bg2);border-radius:4px;padding:7px 6px;text-align:center;">';
+        h+='<div style="font-family:var(--mono);font-size:7px;color:var(--text3);margin-bottom:3px;">W.'+k+'</div>';
+        h+='<div style="font-family:var(--mono);font-size:14px;font-weight:600;color:'+wclrs[i]+'">'+Math.round(active_val*100)+'%</div>';
+        h+='<div style="font-family:var(--mono);font-size:8px;color:'+diffCol+';margin-top:2px;">'+(diff===0?'= preset':(diff>0?'+'+diff:''+diff)+'% vs preset')+'</div>';
+        h+='</div>';
+      });
+      h+='</div>';
+      h+='<div style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:6px;">Modify in ⚙ CONFIG to override individual weights while keeping the preset as reference.</div>';
+      h+='</div>';
+    }
+  }
+
   h+='<div class="sh '+shClass+'" style="margin-top:18px;">UEDP v4 Protocol Diagnostics</div>';
   h+='<div class="kpi-grid">';
   h+=kpi('Ω_raw',r4(R.omega),R.omega>=OC?'g':'b','before safety adj');
@@ -3548,6 +4458,301 @@ window.addEventListener('DOMContentLoaded', function(){
 });
 
 
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   UEDP INDUSTRY NORMS INTEGRATION
+   Uses UEDP_NORMS object (loaded inline above main script)
+   ═══════════════════════════════════════════════════════════════════ */
+
+var activeNormId = null;   // currently selected industry norm ID
+var selectedNormId = null; // selected but not yet applied in modal
+
+function openNormsModal() {
+  selectedNormId = activeNormId;
+  renderNormsGrid();
+  document.getElementById('normsOverlay').classList.add('open');
+  if (selectedNormId) showNormDetail(selectedNormId);
+}
+function closeNormsModal() {
+  document.getElementById('normsOverlay').classList.remove('open');
+}
+
+function renderNormsGrid() {
+  var grid = document.getElementById('normsGrid');
+  var presets = UEDP_NORMS.listPresets();
+  grid.innerHTML = presets.map(function(p) {
+    var active = selectedNormId === p.id ? ' active' : '';
+    return `<div class="norms-card${active}" onclick="selectNorm('${p.id}')" id="nc_${p.id}">`
+      + '<div class="norms-card-icon">'+p.icon+'</div>'
+      + '<div class="norms-card-label">'+esc(p.label)+'</div>'
+      + '<div class="norms-card-desc">'+esc(p.description.substring(0,80))+'...</div>'
+      + '</div>';
+  }).join('');
+}
+
+function selectNorm(id) {
+  selectedNormId = id;
+  document.querySelectorAll('.norms-card').forEach(function(c){c.classList.remove('active');});
+  var card = document.getElementById('nc_'+id);
+  if (card) card.classList.add('active');
+  showNormDetail(id);
+  document.getElementById('normsApplyBtn').style.display = '';
+}
+
+function showNormDetail(id) {
+  var preset    = UEDP_NORMS.getPreset(id);
+  var bench     = UEDP_NORMS.getBenchmarks(id);
+  var rationale = UEDP_NORMS.getRationale(id);
+  var detail    = document.getElementById('normsDetail');
+  detail.classList.add('visible');
+
+  document.getElementById('normsDetailTitle').innerHTML =
+    preset.icon + ' ' + esc(preset.label) + ' — Industry Weight Preset';
+
+  // Weight cells
+  var wkeys  = ['var','spike','drift','dir','cost','order'];
+  var wlabels = ['Variance','Spike','Drift','Direction','Cost','Pipeline'];
+  var wcolors = ['#40d8d0','#f09050','#f5b830','#b09ae0','#f07070','#5aacf0'];
+  document.getElementById('normsWGrid').innerHTML = wkeys.map(function(k,i){
+    var val = preset.W[k];
+    var rat = rationale ? rationale[k] : '';
+    return '<div class="norms-w-cell">'
+      + '<div class="norms-w-key">W.'+k+'</div>'
+      + '<div class="norms-w-val" style="color:'+wcolors[i]+'">'+Math.round(val*100)+'%</div>'
+      + '<div class="norms-w-rat">'+esc(wlabels[i])+'</div>'
+      + '</div>';
+  }).join('');
+
+  // Benchmarks
+  var benchHtml = '';
+  if (bench) {
+    var benchKeys = Object.keys(bench).filter(function(k){return k!=='source';});
+    var benchLabels = {
+      grossMarginLow:'Gross Margin Low (%)', grossMarginTyp:'Gross Margin Typical (%)',
+      grossMarginHigh:'Gross Margin High (%)', netMarginLow:'Net Margin Low (%)',
+      netMarginTyp:'Net Margin Typical (%)', netMarginHigh:'Net Margin High (%)',
+      netMarginTarget:'Net Margin Target (%)', dsoTypical:'DSO Typical (days)',
+      dsoAlert:'DSO Alert (days)', attendanceCrit:'Attendance Critical (%)',
+      varianceAlert:'Variance Alert (CV²)', oeeWorldClass:'OEE World Class (%)',
+      oeeMedium:'OEE Typical (%)', oeeLow:'OEE Low (%)',
+      billableUtilTarget:'Billable Util Target (%)', billableUtilWarn:'Billable Util Warn (%)',
+      foodCostTarget:'Food Cost Target (% rev)', laborCostTarget:'Labor Cost Target (% rev)',
+      tableTurnTarget:'Table Turns/Day', onTimeDeliveryTarget:'On-Time Delivery Target (%)',
+      vehicleUtilTarget:'Vehicle Util Target (%)', bedOccupancyTarget:'Bed Occupancy Target (%)',
+      doctorUtilTarget:'Doctor Util Target (%)', noShowWarn:'No-Show Rate Warn (%)',
+      mrrGrowthTarget:'MRR Growth Target (%/mo)', churnWarn:'Monthly Churn Warn (%)',
+      nrrTarget:'Net Revenue Retention Target (%)', batchVarianceAlert:'Batch Variance Alert (CV%)'
+    };
+    benchHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px;">';
+    benchKeys.forEach(function(k){
+      var lbl = benchLabels[k] || k;
+      benchHtml += '<div class="norms-bench-row"><span class="norms-bench-lbl">'+esc(lbl)+'</span>'
+        + '<span class="norms-bench-val">'+bench[k]+'</span></div>';
+    });
+    benchHtml += '</div>';
+    if (bench.source) {
+      benchHtml += '<div style="font-family:var(--mono);font-size:8px;color:var(--text3);padding:5px 8px;background:var(--bg2);border-radius:3px;">Source: '+esc(bench.source)+'</div>';
+    }
+  }
+  document.getElementById('normsBenchGrid').innerHTML = benchHtml;
+
+  // Rationale
+  var ratHtml = '';
+  if (rationale) {
+    ratHtml = '<div style="margin:10px 0 6px;font-family:var(--mono);font-size:8px;color:var(--cyan2);text-transform:uppercase;letter-spacing:1px;">WHY THESE WEIGHTS FOR '+esc(preset.label.toUpperCase())+'</div>';
+    var wkeys2 = ['var','spike','drift','dir','cost','order'];
+    var wlabels2 = ['W.var (Variance)','W.spike (Spike)','W.drift (Drift)','W.dir (Direction)','W.cost (Cost)','W.order (Pipeline)'];
+    ratHtml += wkeys2.map(function(k,i){
+      return '<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);font-size:10px;">'
+        + '<div style="font-family:var(--mono);font-size:9px;color:var(--cyan2);width:120px;flex-shrink:0;">'+wlabels2[i]+'</div>'
+        + '<div style="color:var(--text2);line-height:1.5;">'+esc(rationale[k])+'</div>'
+        + '</div>';
+    }).join('');
+  }
+  document.getElementById('normsRationaleBlock').innerHTML = ratHtml;
+}
+
+function applySelectedNorm() {
+  if (!selectedNormId) return;
+  var preset = UEDP_NORMS.getPreset(selectedNormId);
+  if (!preset) return;
+  // Apply to CFG using UEDP_NORMS API
+  CFG = UEDP_NORMS.applyPresetToCFG(CFG, selectedNormId);
+  activeNormId = selectedNormId;
+  // Update the top bar badge
+  var badge = document.getElementById('normsBadge');
+  badge.style.display = '';
+  badge.className = 'norms-badge';
+  badge.textContent = preset.icon + ' ' + preset.label + ' norms active';
+  // Note in modal
+  document.getElementById('normsAppliedNote').textContent =
+    '✓ Applied. Weights and thresholds updated. Press ▶ COMPUTE Ω to see effect.';
+  // Also sync config UI if open
+  syncConfigToUI();
+  // Show rationale in config weight panel
+  var rationale = UEDP_NORMS.getRationale(selectedNormId);
+  var ratBlock  = document.getElementById('normsRationaleInConfig');
+  var ratTitle  = document.getElementById('normsRatTitle');
+  var ratBody   = document.getElementById('normsRatBody');
+  if (rationale && ratBlock) {
+    ratBlock.style.display = '';
+    ratTitle.textContent   = preset.icon + ' ' + preset.label + ' — weight rationale';
+    var wkeys = ['var','spike','drift','dir','cost','order'];
+    var wlabs = ['W.var (Variance)','W.spike (Spike)','W.drift (Drift)',
+                 'W.dir (Direction)','W.cost (Cost)','W.order (Pipeline)'];
+    ratBody.innerHTML = wkeys.map(function(k,i){
+      return '<div style="display:flex;gap:8px;padding:3px 0;border-bottom:1px solid var(--border);">'
+        + '<span style="font-family:var(--mono);font-size:9px;color:var(--cyan2);width:110px;flex-shrink:0;">'+wlabs[i]+'</span>'
+        + '<span>'+rationale[k]+'</span>'
+        + '</div>';
+    }).join('');
+  }
+  closeNormsModal();
+}
+
+function resetNorms() {
+  CFG = JSON.parse(JSON.stringify(DEFAULTS));
+  activeNormId = null;
+  var badge = document.getElementById('normsBadge');
+  badge.style.display = 'none';
+  syncConfigToUI();
+  document.getElementById('normsAppliedNote').textContent =
+    '↺ Reset to default weights.';
+  document.querySelectorAll('.norms-card').forEach(function(c){c.classList.remove('active');});
+  document.getElementById('normsDetail').classList.remove('visible');
+  document.getElementById('normsApplyBtn').style.display = 'none';
+  selectedNormId = null;
+}
+
+/* Render industry benchmark panel in output after compute */
+function renderIndustryBenchmarkPanel(R, inp) {
+  if (!activeNormId) return '';
+  var preset    = UEDP_NORMS.getPreset(activeNormId);
+  var bench     = UEDP_NORMS.getBenchmarks(activeNormId);
+  var interp    = UEDP_NORMS.interpretOmega(R.omega, activeNormId);
+  if (!preset || !bench) return '';
+
+  var INR = function(v){return Math.round(v).toLocaleString('en-IN');};
+  var h = '<div class="industry-benchmark-panel">';
+  h += '<div class="ibp-title">'+preset.icon+' '+esc(preset.label)+' — Industry Benchmarks vs Actual</div>';
+
+  h += '<div class="ibp-grid">';
+
+  // Net margin comparison
+  if (R.netMargin !== null && Math.abs(R.netMargin) <= 300 && bench.netMarginTyp) {
+    var nmDiff = R.netMargin - bench.netMarginTyp;
+    var nmCls  = nmDiff >= 0 ? 'above' : nmDiff >= -5 ? 'near' : 'below';
+    h += '<div class="ibp-cell"><div class="ibp-lbl">Net Margin Actual</div>'
+      + '<div class="ibp-val">'+Math.round(R.netMargin*10)/10+'%</div>'
+      + '<div class="ibp-act">Industry typical: '+bench.netMarginTyp+'%<span class="ibp-vs '+nmCls+'">'+(nmDiff>=0?'+':'')+Math.round(nmDiff*10)/10+'%</span></div>'
+      + '</div>';
+  }
+
+  // DSO comparison
+  var payLead = inp.paymentLeadDays || inp.conPayLead || 0;
+  if (payLead > 0 && bench.dsoTypical) {
+    var dsoDiff = payLead - bench.dsoTypical;
+    var dsoCls  = dsoDiff <= 0 ? 'above' : dsoDiff <= 15 ? 'near' : 'below';
+    h += '<div class="ibp-cell"><div class="ibp-lbl">Payment Lead Actual</div>'
+      + '<div class="ibp-val">'+payLead+'d</div>'
+      + '<div class="ibp-act">Industry typical: '+bench.dsoTypical+'d<span class="ibp-vs '+dsoCls+'">'+(dsoDiff>0?'+':'')+dsoDiff+'d</span></div>'
+      + '</div>';
+  }
+
+  // Attendance comparison
+  var attPct = Math.round(R.attendance * 100);
+  if (bench.attendanceCrit) {
+    var attDiff = attPct - (bench.attendanceCrit + 10);
+    var attCls  = attPct >= bench.attendanceCrit + 15 ? 'above' : attPct >= bench.attendanceCrit ? 'near' : 'below';
+    h += '<div class="ibp-cell"><div class="ibp-lbl">Attendance Actual</div>'
+      + '<div class="ibp-val">'+attPct+'%</div>'
+      + '<div class="ibp-act">Critical floor: '+bench.attendanceCrit+'%<span class="ibp-vs '+attCls+'">'+(attPct>=bench.attendanceCrit?'ABOVE':'BELOW')+'</span></div>'
+      + '</div>';
+  }
+
+  // Omega vs interpretation
+  if (interp) {
+    var interpCls = interp.status==='ABOVE_INDUSTRY_REF'?'above':interp.status==='BELOW_CRITICAL'?'below':'near';
+    h += '<div class="ibp-cell"><div class="ibp-lbl">Omega Position</div>'
+      + '<div class="ibp-val">'+Math.round(R.omega*10000)/10000+'</div>'
+      + '<div class="ibp-act">vs Ω_ref '+preset.omegaRef+'<span class="ibp-vs '+interpCls+'">'
+      + (interp.status==='ABOVE_INDUSTRY_REF'?'ABOVE REF':interp.status==='BELOW_CRITICAL'?'CRITICAL':interp.status==='STRESS_ZONE'?'STRESS':'BELOW REF')
+      + '</span></div>'
+      + '</div>';
+  }
+
+  // OEE if manufacturing
+  if (bench.oeeWorldClass && inp.hourlyProd && inp.hourlyProd.length >= 3) {
+    var prodEff = Math.round(R.prodEff * 100);
+    var oeeCls  = prodEff >= bench.oeeWorldClass ? 'above' : prodEff >= (bench.oeeMedium||70) ? 'near' : 'below';
+    h += '<div class="ibp-cell"><div class="ibp-lbl">Prod Efficiency (OEE proxy)</div>'
+      + '<div class="ibp-val">'+prodEff+'%</div>'
+      + '<div class="ibp-act">World class: '+bench.oeeWorldClass+'%<span class="ibp-vs '+oeeCls+'">'+(prodEff>=bench.oeeWorldClass?'WORLD-CLASS':prodEff>=(bench.oeeMedium||70)?'TYPICAL':'BELOW')+'</span></div>'
+      + '</div>';
+  }
+
+  h += '</div>'; // ibp-grid
+
+  // Interpretation note
+  if (interp) {
+    var interpBg = interp.status==='ABOVE_INDUSTRY_REF'?'rgba(26,136,80,.08)':interp.status==='BELOW_CRITICAL'?'rgba(192,48,48,.08)':'rgba(212,144,10,.07)';
+    var interpBorder = interp.status==='ABOVE_INDUSTRY_REF'?'rgba(26,136,80,.2)':interp.status==='BELOW_CRITICAL'?'rgba(192,48,48,.2)':'rgba(212,144,10,.2)';
+    var interpColor  = interp.status==='ABOVE_INDUSTRY_REF'?'var(--green2)':interp.status==='BELOW_CRITICAL'?'var(--red2)':'var(--amber2)';
+    h += '<div style="background:'+interpBg+';border:1px solid '+interpBorder+';border-radius:5px;padding:8px 12px;margin-bottom:8px;font-family:var(--mono);font-size:10px;color:'+interpColor+';line-height:1.6;">';
+    h += esc(interp.note) + '<br><strong style="color:var(--text)">Action: </strong>' + esc(interp.action);
+    h += '</div>';
+  }
+
+  // Active weights
+  h += '<div style="font-family:var(--mono);font-size:9px;color:var(--text3);">Active preset weights — '
+    + Object.keys(CFG.W).map(function(k){return 'W.'+k+'='+CFG.W[k];}).join(' · ')
+    + '</div>';
+
+  if (bench.source) {
+    h += '<div class="ibp-source">Benchmark sources: '+esc(bench.source)+'</div>';
+  }
+
+  h += '</div>'; // industry-benchmark-panel
+  return h;
+}
+
+/* Close on overlay click */
+document.addEventListener('DOMContentLoaded', function() {
+  var ov = document.getElementById('normsOverlay');
+  if (ov) ov.addEventListener('click', function(e){
+    if (e.target === ov) closeNormsModal();
+  });
+});
+
 </script>
+
+<!-- UEDP Industry Norms Modal -->
+<div class="norms-overlay" id="normsOverlay">
+  <div class="norms-modal">
+    <div class="norms-title">📊 INDUSTRY NORMS — Weight Presets</div>
+    <div class="norms-sub">
+      Select your industry to load pre-calibrated penalty weights and threshold norms.<br>
+      Derived from published benchmarks: OEE standards, D&B DSO norms, Damodaran margin data, SHRM, CRISIL sector reports.<br>
+      These are SUGGESTED starting points. Calibrate against your own 30-day Omega history for best accuracy.<br>
+      Ω_crit = 1/e is NEVER changed by any preset — it is fixed by METP theory.
+    </div>
+    <div class="norms-grid" id="normsGrid"></div>
+    <div class="norms-detail" id="normsDetail">
+      <div class="norms-detail-title" id="normsDetailTitle"></div>
+      <div class="norms-w-grid" id="normsWGrid"></div>
+      <div style="margin-bottom:10px;" id="normsBenchGrid"></div>
+      <div id="normsRationaleBlock"></div>
+      <div id="normsSourceBlock" style="font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:8px;padding:6px 10px;background:var(--bg2);border-radius:4px;"></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <button class="norms-apply-btn" id="normsApplyBtn" onclick="applySelectedNorm()" style="display:none">✓ APPLY PRESET</button>
+      <button class="norms-reset-btn" onclick="resetNorms()">↺ Reset to Defaults</button>
+      <button class="norms-reset-btn" onclick="closeNormsModal()">✕ Close</button>
+      <span id="normsAppliedNote" style="font-family:var(--mono);font-size:9px;color:var(--cyan2);"></span>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
